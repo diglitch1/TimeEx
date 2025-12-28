@@ -118,6 +118,49 @@ export default function Sidebar() {
                 </div>
             </div>
 
+            {/* Current Market Mover */}
+            <div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900">
+                    Current Marketmover
+                </h3>
+
+                <div className="rounded-xl bg-white border border-gray-300 p-4">
+
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-2">
+                        <img
+                            src="/assets/apple.png"
+                            className="w-16 h-16 rounded-md object-cover"/>
+
+                        <div>
+                            <p className="font-semibold text-gray-900">AAPL</p>
+                            <p className="text-sm text-gray-500">Apple</p>
+                        </div>
+
+                        <div className="ml-auto text-green-500 font-semibold">
+                            +2.80%
+                        </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="h-[90px] bg-blue-50 rounded-lg mb-2 p-3 overflow-hidden">
+                        <FakeChart data={aaplData.prices}/>
+                    </div>
+
+
+                    {/* Buy / Sell */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <button className="rounded-md bg-gray-400 text-white py-2 font-semibold">
+                            sell<br/>226.81
+                        </button>
+
+                        <button className="rounded-md bg-gray-600 text-white py-2 font-semibold">
+                            buy<br/>227.22
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </aside>
     );
 }
@@ -171,3 +214,39 @@ function ReadMoreButton() {
         </button>
     );
 }
+
+
+function FakeChart({ data }: { data: number[] }) {
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+
+    const points = data
+        .map((value, index) => {
+            const x = (index / (data.length - 1)) * 100;
+            const y = 100 - ((value - min) / (max - min)) * 100;
+            return `${x},${y}`;
+        })
+        .join(' ');
+
+    return (
+        <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            style={{
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
+                display: 'block',
+            }}>
+            <polyline
+                points={points}
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth="0.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
