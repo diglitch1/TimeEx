@@ -2,6 +2,10 @@
 
 import { useState, useEffect} from 'react';
 
+import { ETH_DATA, BTC_DATA } from '../utils/marketData';
+
+import { getChartData, type RangeKey } from '../utils/chartSelector';
+
 export default function MainTradePanel() {
 
     const timelineDates = [
@@ -75,6 +79,87 @@ export default function MainTradePanel() {
     });
 
 
+    const ASSETS = [
+        {
+            symbol: 'ETH',
+            name: 'Ethereum',
+            price: '3211.04',
+            change: 1.8,
+            positive: true,
+            spark: [10, 14, 13, 18, 16, 20, 22],
+            stopLossPct: 0.5,
+            takeProfitPct: 2.0,
+            data:ETH_DATA,
+        },
+        {
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            price: '63,420',
+            change: 0.92,
+            positive: true,
+            spark: [30, 31, 29, 32, 34, 33, 35],
+            stopLossPct: 0.3,
+            takeProfitPct: 2.5,
+            data: BTC_DATA,
+
+        },
+        {
+            symbol: 'EURUSD',
+            name: 'EUR / USD',
+            price: '1.16210',
+            change: -0.14,
+            positive: false,
+            spark: [16, 20, 19, 18, 19, 16, 15],
+            stopLossPct: 0.6,
+            takeProfitPct: 1.2,
+        },
+        {
+            symbol: 'OIL',
+            name: 'Oil',
+            price: '59.89',
+            change: 2.31,
+            positive: true,
+            spark: [8, 9, 11, 10, 13, 15, 16],
+            stopLossPct: 0.5,
+            takeProfitPct: 2.0,
+        },
+        {
+            symbol: 'GOLD',
+            name: 'Gold',
+            price: '4082.38',
+            change: -2.13,
+            positive: false,
+            spark: [27, 29, 28, 29, 30, 25, 24],
+            stopLossPct: 0.5,
+            takeProfitPct: 2.0,
+
+        },
+        {
+            symbol: 'NSDQ100',
+            name: 'NASDAQ 100',
+            price: '25062.27',
+            change: 0.24,
+            positive: true,
+            spark: [12, 13, 12, 14, 15, 16, 17],
+            stopLossPct: 0.5,
+            takeProfitPct: 2.0,
+        },
+        {
+            symbol: 'AAPL',
+            name: 'Apple',
+            price: '227.22',
+            change: +2.80,
+            positive: true,
+            spark: [16, 17, 18, 16, 20, 22, 24],
+            stopLossPct: 0.5,
+            takeProfitPct: 2.0,
+        },
+
+    ];
+
+    const [activeAsset, setActiveAsset] = useState(ASSETS[0]); // first asset from carousel selected by default
+
+
     return (
         <div className="flex-1 w-full bg-white px-10 py-8">
 
@@ -96,6 +181,53 @@ export default function MainTradePanel() {
                     className="w-14 h-14 rounded-full bg-[#e6f0ff] flex items-center justify-center border border-blue-200 hover:bg-blue-100 transition cursor-pointer">
                     <img src="/bell.png" alt="Notifications" className="w-10 h-10"/>
                 </button>
+            </div>
+
+            {/* ASSET CAROUSEL */}
+            <div className="w-full max-w-[1200px] mx-auto">
+                <div className="relative border border-gray-200 rounded-2xl px-4 py-4">
+                    <div className="flex gap-4 overflow-x-auto scroll-smooth pl-2" style={{ scrollbarWidth: 'none' }}>
+
+                        {ASSETS.map((asset) => {
+                            const isActive = asset.symbol === activeAsset.symbol;
+
+                            return (
+                                <div
+                                    key={asset.symbol}
+                                    onClick={() => setActiveAsset(asset)}
+                                    className={`min-w-[220px px-6 py-4 rounded-xl cursor-pointer flex justify-between items-center transition-all duration-150
+                                      ${isActive
+                                        ? 'bg-blue-100 border-[3px] border-blue-600'
+                                        : 'bg-white border border-gray-200 hover:border-gray-400'
+                                    }`} >
+                                    {/* asset card in carousel */}
+                                    <div className="flex flex-col gap-1">
+                                        <p className="text-sm font-semibold text-gray-500">
+                                            {asset.symbol}
+                                        </p>
+                                        <p className="text-xl font-bold text-gray-900">
+                                            {asset.price}
+                                        </p>
+                                        <p
+                                            className={`text-sm font-semibold ${
+                                                asset.positive ? 'text-green-600' : 'text-red-500'}`}>
+                                            {asset.positive ? '+' : ''}
+                                            {asset.change}%
+                                        </p>
+                                    </div>
+
+                                    {/* SPACE BETWEEN TEXT AND GRAPH */}
+                                    <div className="ml-6">
+                                        <MiniSparkline
+                                            data={asset.spark}
+                                            positive={asset.positive}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
 
         </div>
