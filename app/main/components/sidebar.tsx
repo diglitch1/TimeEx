@@ -161,6 +161,122 @@ export default function Sidebar() {
                 </div>
             </div>
 
+            {/* Lottery Tickets */}
+            <div>
+                <h3
+                    style={{
+                        color: '#E39B00',
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        fontSize: '20px',
+                        marginBottom: '0px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                    }}
+                    className="mb-3 flex items-center gap-2 w-fit"
+                >
+                    Lottery Tickets
+
+                </h3>
+
+                <div
+                    className="rounded-xl p-4 space-y-4"
+                    style={{
+                        backgroundImage: 'url(/lottery.png)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                    }}>
+                    {/* Ticket 1 */}
+                    <div
+                        className="rounded-xl px-6 py-3 flex items-center justify-between"
+                        style={{
+                            backgroundColor: '#FF7FA3',
+                            border: '2px solid white',
+                        }}>
+                        <div style={{color: 'white'}}>
+                            <div style={{fontSize: '18px', fontWeight: 700}}>
+                                Budget Banger
+                            </div>
+                            <div style={{fontSize: '16px'}}>
+                                Price: $5.00
+                            </div>
+                        </div>
+
+                        <button
+                            className="cursor-pointer hover:opacity-90 transition"
+                            style={{
+                                backgroundColor: 'white',
+                                color: '#FF4F82',
+                                fontWeight: 700,
+                                padding: '6px 18px',
+                                borderRadius: '999px',
+                            }}
+                        >
+                            buy
+                        </button>
+                    </div>
+
+                    {/* Ticket 2 */}
+                    <div
+                        className="rounded-xl px-6 py-3 flex items-center justify-between"
+                        style={{
+                            backgroundColor: '#4BE36A',
+                            border: '2px solid white',
+                        }}>
+                        <div style={{color: 'white'}}>
+                            <div style={{fontSize: '18px', fontWeight: 700}}>
+                                Mediocre Fortune
+                            </div>
+                            <div style={{fontSize: '16px'}}>
+                                Price: $15.00
+                            </div>
+                        </div>
+
+                        <button
+                            className="cursor-pointer hover:opacity-90 transition"                            style={{
+                                backgroundColor: 'white',
+                                color: '#22B856',
+                                fontWeight: 700,
+                                padding: '6px 18px',
+                                borderRadius: '999px',
+                            }}
+                        >
+                            buy
+                        </button>
+                    </div>
+
+                    {/* Ticket 3 */}
+                    <div
+                        className="rounded-xl px-6 py-3 flex items-center justify-between"
+                        style={{
+                            backgroundColor: '#FFF176',
+                            border: '2px solid white',
+                        }}>
+                        <div style={{color: '#D39B00'}}>
+                            <div style={{fontSize: '18px', fontWeight: 700}}>
+                                Eternal Riches… Maybe
+                            </div>
+                            <div style={{fontSize: '16px'}}>
+                                Price: $30.00
+                            </div>
+                        </div>
+
+                        <button
+                            className="cursor-pointer hover:opacity-90 transition"
+                            style={{
+                                backgroundColor: 'white',
+                                color: '#D39B00',
+                                fontWeight: 700,
+                                padding: '6px 18px',
+                                borderRadius: '999px',
+                            }}
+                        >
+                            buy
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </aside>
     );
 }
