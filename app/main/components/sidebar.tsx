@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { INITIAL_WALLET, type WalletItem } from '../utils/walletData';
 
 const aaplData = {
     symbol: 'AAPL',
@@ -16,7 +17,8 @@ const aaplData = {
     sell: 226.81,
     buy: 227.22,
 };
-export default function Sidebar() {
+export default function Sidebar({wallet,}: {
+    wallet: WalletItem[]; }) {
     return (
         <aside className="w-[380px] bg-[#f3f4f6] border-r border-gray-300 px-6 py-6 flex flex-col gap-4 text-base">
 
@@ -50,18 +52,14 @@ export default function Sidebar() {
 
                 {/* Scrollable assets */}
                 <div className="wallet-scroll max-h-[180px] overflow-y-auto pr-3 space-y-2 text-gray-800">
+                    {wallet.map(item => (
+                        <p key={item.id}>
+                            {item.label}:{' '}
+                            <span className="font-medium">{item.units.toFixed(3)} {item.unitLabel}</span>
+                            <span className="text-gray-500"> (~${item.usdValue})</span>
+                        </p>
 
-                    <p>Cash: <span className="font-medium">2456 $</span></p>
-                    <p>BTC: 0.005 (~$350)</p>
-                    <p>ETH: 1.24 (~$3,980)</p>
-                    <p>Oil: 1.8 bbl (~$108)</p>
-                    <p>Silver: 2.3 oz (~$54)</p>
-                    <p>Gold: 0.49 oz (~$2,000)</p>
-                    <p>AAPL: 0.40 shares (~$60)</p>
-                    <p>MSFT: 0.25 shares (~$95)</p>
-                    <p>NVDA: 0.12 shares (~$62)</p>
-                    <p>TSLA: 0.18 shares (~$47)</p>
-
+                    ))}
                 </div>
 
                 <div className="my-4 border-t border-gray-200"/>
