@@ -90,6 +90,34 @@ export default function Sidebar() {
                 </div>
             </div>
 
+            {/* News Feed */}
+            <div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900">
+                    News Feed
+                </h3>
+
+                <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-4">
+
+                    <NewsItem
+                        img="/news/news1.png"
+                        text="Goldman Sachs unveils its 10-year playbook — and AI is at the heart of it"
+                    />
+
+                    <NewsItem
+                        img="/news/news2.png"
+                        text="Earnings playbook: Nvidia, retailers headline the tail end of the season"
+                    />
+
+                    <NewsItem
+                        img="/news/news3.png"
+                        text="Ed Yardeni says gold is the best safe-haven play and ‘the new bitcoin’"
+                    />
+
+                    <ReadMoreButton />
+
+                </div>
+            </div>
+
         </aside>
     );
 }
@@ -106,5 +134,40 @@ function WatchItem({name, change, negative = false,}: {
                 {change}
             </span>
         </div>
+    );
+}
+
+
+function NewsItem({img, text,}: {
+    img: string;
+    text: string;
+}) {
+    return (
+        <div className="flex gap-4 items-start">
+            <img
+                src={img}
+                alt=""
+                className="w-16 h-16 rounded-md object-cover"
+            />
+            <p className="text-sm text-gray-900 leading-snug">
+                {text}
+            </p>
+        </div>
+    );
+}
+
+import { useRouter } from 'next/navigation';
+
+function ReadMoreButton() {
+    const router = useRouter();
+
+    return (
+        <button
+            onClick={() => router.push('/news')}
+            className="w-full mt-3 rounded-full bg-blue-500 text-white font-semibold py-2
+                       hover:bg-blue-400 cursor-pointer transition"
+        >
+            read more
+        </button>
     );
 }
