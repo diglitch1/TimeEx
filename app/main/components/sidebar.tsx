@@ -75,6 +75,36 @@ export default function Sidebar() {
                 </div>
             </div>
 
+            {/* Watchlist */}
+            <div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900">
+                    My watchlist
+                </h3>
+
+                <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-3">
+                    <WatchItem name="SOL" change="-1.86%" negative />
+                    <WatchItem name="GOLD" change="-0.72%" negative />
+                    <WatchItem name="TSLA" change="+2.34%" />
+                    <WatchItem name="NVDA" change="+1.30%" />
+                    <WatchItem name="ADA" change="+0.97%" />
+                </div>
+            </div>
+
         </aside>
+    );
+}
+
+function WatchItem({name, change, negative = false,}: {
+    name: string;
+    change: string;
+    negative?: boolean;
+}) {
+    return (
+        <div className="flex justify-between font-medium text-lg">
+            <span className="text-gray-900">{name}</span>
+            <span className={negative ? 'text-red-500' : 'text-green-500'}>
+                {change}
+            </span>
+        </div>
     );
 }
