@@ -1,11 +1,102 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { INITIAL_WALLET, type WalletItem } from './utils/walletData';
 import Sidebar from './components/sidebar';
-import MainPanel from "@/app/main/components/mainPanel";
+import MainPanel from './components/mainPanel';
+import { GAME_EVENTS } from './utils/events';
+import FamilyHelpModal from './components/familyHelp';
 
 export default function MainPage() {
+    const [activeEvent, setActiveEvent] = useState<string | null>(null);
+    const [triggeredEvents, setTriggeredEvents] = useState<string[]>([]);
+
+    const [wallet, setWallet] = useState<WalletItem[]>(INITIAL_WALLET);
+
+    const timelineDates = [
+        new Date('2000-03-06'),
+        new Date('2000-03-21'),
+        new Date('2000-03-25'),
+        new Date('2000-03-30'),
+        new Date('2000-04-04'),
+    ];
+
+    const TOTAL_SECONDS = 12 * 60;
+
+    const [gameSeconds, setGameSeconds] = useState(0);
+
+
+    const dayIndex = Math.min(
+        Math.floor(gameSeconds / TOTAL_SECONDS),
+        timelineDates.length - 1
+    );
+
+    const currentDate = timelineDates[dayIndex];
+
+    const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
+    const secondsLeft = TOTAL_SECONDS - secondsIntoDay;
+
+    const gameHour = Math.min(
+        Math.floor(secondsIntoDay / 30),
+        23
+    );
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setGameSeconds(s => s + 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // 🎯 EVENT TRIGGER
+    useEffect(() => {
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        GAME_EVENTS.forEach(event => {
+            if (
+                !triggeredEvents.includes(event.id) &&
+                event.date === dateStr &&
+                event.hour === gameHour
+            ) {
+                setActiveEvent(event.id);
+                setTriggeredEvents(prev => [...prev, event.id]);
+            }
+        });
+    }, [currentDate, gameHour, triggeredEvents]);
+
+    const skip30Seconds = () => {
+        setGameSeconds(s => s + 30);
+    };
+
+
     return (
-        <div className="flex min-h-screen w-full bg-gray-50">
-            <Sidebar />
-            <MainPanel />
-        </div>
+        <>
+            {/* GLOBAL EVENT MODAL */}
+            {activeEvent === 'family-help' && (
+                <FamilyHelpModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+
+                    onClose={() => {
+                        setActiveEvent(null);
+                    }}
+                />
+            )}
+
+
+            {/* MAIN PAGE LAYOUT */}
+            <div className="flex min-h-screen w-full bg-gray-50">
+                <Sidebar wallet={wallet}/>
+                <MainPanel
+                    wallet={wallet}
+                    currentDate={currentDate}
+                    secondsLeft={secondsLeft}
+                    gameHour={gameHour}
+                    onSkip30={skip30Seconds}
+                />
+
+            </div>
+        </>
     );
 }
