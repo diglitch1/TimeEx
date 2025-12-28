@@ -168,6 +168,18 @@ export default function MainTradePanel() {
         setMounted(true);
     }, []);
 
+    const [side, setSide] = useState<'buy' | 'sell'>('buy');
+
+    const [amount, setAmount] = useState<string>(''); // empty by default
+
+    const numericAmount = amount === '' ? 0 : Number(amount);
+
+    const stopLossValue =
+        numericAmount > 0 ? numericAmount * activeAsset.stopLossPct : 0;
+
+    const takeProfitValue =
+        numericAmount > 0 ? numericAmount * activeAsset.takeProfitPct : 0;
+
     return (
         <div className="flex-1 w-full bg-white px-10 py-8">
 
@@ -336,7 +348,100 @@ export default function MainTradePanel() {
 
 
             </div>
+
+                {/* RIGHT */}
+                <div className="border border-gray-300 rounded-2xl p-6">
+
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="flex border border-gray-300 rounded-full p-1 w-[260px] h-[52px]">
+                            <button
+                                onClick={() => setSide('buy')}
+                                className={`flex-1 rounded-full font-semibold text-lg transition
+                                    ${side === 'buy'
+                                    ? 'bg-green-500 text-white'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}>
+                                buy
+                            </button>
+
+                            <button
+                                onClick={() => setSide('sell')}
+                                className={`flex-1 py-2 rounded-full text-lg font-semibold transition
+                                    ${side === 'sell'
+                                    ? 'bg-red-500 text-white'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}>
+                                sell
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* AMOUNT */}
+                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
+                        <label className="text-sm text-gray-500 block mb-1">
+                            Amount
+                        </label>
+
+                        <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full text-lg font-semibold text-black outline-none bg-transparent"
+                            placeholder="$"
+                        />
+
+
+                    </div>
+
+                    {/* DEPOSIT */}
+                    {numericAmount > 0 && (
+                        <p className="text-red-500 text-sm mb-4">
+                            Deposit ${(numericAmount+1).toFixed(2)} in order to open this trade
+                        </p>
+                    )}
+
+                    {/* STOP LOSS */}
+                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
+                        <p className="text-sm text-gray-500">
+                            Stop Loss
+                        </p>
+
+                        {numericAmount === 0 ? (
+                            <p className="text-lg font-semibold text-red-500">
+                                No SL
+                            </p>
+                        ) : (
+                            <p className="text-lg font-semibold text-red-500">
+                                −${stopLossValue.toFixed(2)}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* TAKE PROFIT */}
+                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
+                        <p className="text-sm text-gray-500">
+                            Take Profit
+                        </p>
+
+                        {numericAmount === 0 ? (
+                            <p className="text-lg font-semibold text-gray-400">
+                                $0.00
+                            </p>
+                        ) : (
+                            <p className="text-lg font-semibold text-green-600">
+                                +${takeProfitValue.toFixed(2)}
+                            </p>
+                        )}
+                    </div>
+
+                    <button
+                        className="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-full text-lg font-semibold cursor-pointer">
+                        confirm
+                    </button>
+                </div>
+
             </div>
+            {/* ================= END TRADE PANEL ================= */}
 
         </div>
     );
