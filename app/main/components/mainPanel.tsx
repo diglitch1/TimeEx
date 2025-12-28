@@ -159,6 +159,14 @@ export default function MainTradePanel() {
 
     const [activeAsset, setActiveAsset] = useState(ASSETS[0]); // first asset from carousel selected by default
 
+    const [range, setRange] = useState<RangeKey>('1D');
+
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true);
+    }, []);
 
     return (
         <div className="flex-1 w-full bg-white px-10 py-8">
@@ -228,6 +236,106 @@ export default function MainTradePanel() {
                         })}
                     </div>
                 </div>
+            </div>
+
+            {/* ================= TRADE PANEL ================= */}
+
+            <div className="mt-10 grid grid-cols-[1fr_360px] gap-8">
+            {/* LEFT: CHART */}
+            <div className="border border-gray-300 rounded-2xl p-6 self-start">
+
+                {/* HEADER */}
+                <div className="flex items-center gap-4 mb-4">
+                    {activeAsset.data ? (
+                        <>
+                            <img
+                                src={`/assets/${activeAsset.symbol.toLowerCase()}.png`}
+                                alt={activeAsset.symbol}
+                                className="w-14 h-14"/>
+
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    {activeAsset.symbol} · {activeAsset.name}
+                                </p>
+
+                                <div className="flex items-center gap-3">
+                                    <p className="text-3xl font-bold text-gray-900">
+                                        {activeAsset.price}
+                                    </p>
+
+                                    <p
+                                        className={`font-semibold ${
+                                            activeAsset.positive ? 'text-green-600' : 'text-red-500'
+                                        }`}>
+                                        {activeAsset.positive ? '+' : ''}
+                                        {activeAsset.change}%
+                                    </p>
+                                </div>
+
+                                <p className="text-sm text-gray-400">Market Open</p>
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-red-500 font-semibold">
+                            Not enough data found
+                        </p>
+                    )}
+                </div>
+
+
+                {/* PERFORMANCE (above chart itself) */}
+                <div className="mb-3">
+                    <p className="font-semibold text-gray-800">Performance</p>
+
+                    {activeAsset.data ? (
+                        <p
+                            className={`text-sm font-semibold ${
+                                activeAsset.positive ? 'text-green-600' : 'text-red-500'
+                            }`}
+                        >
+                            {activeAsset.positive ? '▲' : '▼'} {Math.abs(activeAsset.change)}%
+                            <span className="text-gray-500"> Today</span>
+                        </p>) : (
+                        <p className="text-sm text-gray-400">
+                            Not enough data
+                        </p>
+                    )}
+                </div>
+
+
+                {/* CHART PLACEHOLDER */}
+                <div
+                    style={{height: '400px'}}
+                    className="relative w-full rounded-xl border border-gray-200 bg-green-50 p-4">
+                    {mounted && activeAsset.data ? (
+                        <FakeChart
+                            data={getChartData(activeAsset.data, range)}
+                            positive={activeAsset.positive}/>
+                    ) : (
+                        <div className="flex h-full items-center justify-center text-gray-400">
+                            Not enough data found
+                        </div>
+                    )}
+
+                </div>
+
+                {/* RANGE buttons */}
+                <div className="flex gap-6 mt-4 text-sm">
+                    {(['1D', '1W', '1M', '6M', '1Y'] as RangeKey[]).map(r => (
+                        <button
+                            key={r}
+                            disabled={!activeAsset.data}
+                            onClick={() => setRange(r)}
+                            className={`font-semibold transition ${
+                                !activeAsset.data ? 'text-gray-300 cursor-not-allowed' : range === r ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500'
+                            }`}>
+                            {r}
+                        </button>
+                    ))}
+                </div>
+
+
+            </div>
             </div>
 
         </div>
