@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
-function Card({id, title, period, description, selected, onSelect, onConfirm,}: {
+
+function Card({
+                  id,
+                  title,
+                  period,
+                  description,
+                  selected,
+                  onSelect,
+                  onConfirm,
+              }: {
     id: string;
     title: string;
     period: string;
@@ -30,9 +40,7 @@ function Card({id, title, period, description, selected, onSelect, onConfirm,}: 
                     <p className="text-lg font-medium mb-3 text-[#0A355B] text-center">
                         {period}
                     </p>
-                    <p className="text-lg text-[#0A355B] leading-relaxed">
-                        {description}
-                    </p>
+                    <p className="text-lg text-[#0A355B] leading-relaxed">{description}</p>
                 </div>
             </div>
 
@@ -51,12 +59,12 @@ function Card({id, title, period, description, selected, onSelect, onConfirm,}: 
 }
 
 export default function ScenarioPage() {
-
     const router = useRouter();
-
+    const searchParams = useSearchParams();
+    const character = searchParams.get("character");
     useEffect(() => {
-        if (!localStorage.getItem("character")) router.replace("/character");
-    }, []);
+        if (!character) router.replace("/character");
+    }, [character, router]);
 
     const [selected, setSelected] = useState<string | null>(() => {
         if (typeof window === "undefined") return null;
@@ -64,9 +72,8 @@ export default function ScenarioPage() {
     });
 
     const confirm = () => {
-        if (!selected) return;
-        localStorage.setItem("scenario", selected);
-        router.push("/preview");
+        if (!selected || !character) return;
+        router.push(`/preview?character=${character}&scenario=${selected}`);
     };
 
     return (
@@ -77,7 +84,6 @@ export default function ScenarioPage() {
             >
                 back
             </button>
-
 
             <h1 className="text-4xl font-bold text-center mb-12 text-[#0A355B]">
                 Pick scenario
