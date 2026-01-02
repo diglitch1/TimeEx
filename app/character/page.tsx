@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-function Card({id, title, selected, onSelect, onConfirm, children,}: {
+function Card({
+                  id,
+                  title,
+                  selected,
+                  onSelect,
+                  onConfirm,
+                  children,
+              }: {
     id: string;
     title: string;
     selected: string | null;
@@ -21,7 +28,8 @@ function Card({id, title, selected, onSelect, onConfirm, children,}: {
                     className={`w-100 h-[400px] rounded-xl p-6 cursor-pointer border ${
                         isSelected ? "border-[#9CC8F5]" : "border-[#B6D8F6]"
                     }`}
-                    style={{ backgroundColor: "#D9EEFF" }}>
+                    style={{ backgroundColor: "#D9EEFF" }}
+                >
                     <h2 className="text-2xl font-semibold mb-3 text-[#0A355B] text-center">
                         {title}
                     </h2>
@@ -52,8 +60,7 @@ export default function CharacterPage() {
     const router = useRouter();
 
     const confirmCharacter = (id: string) => {
-        localStorage.setItem("character", id);
-        router.push("/scenario");
+        router.push(`/scenario?character=${id}`);
     };
 
     return (
@@ -70,12 +77,24 @@ export default function CharacterPage() {
                     onSelect={setSelected}
                     onConfirm={confirmCharacter}
                 >
-                    <p><strong>Name:</strong> Sarah Novak</p>
-                    <p><strong>Age:</strong> 18</p>
-                    <p><strong>Occupation:</strong> Student</p>
-                    <p><strong>Background:</strong> Entering adulthood in early 2000s.</p>
-                    <p><strong>Motivation:</strong> Save for college.</p>
-                    <p><strong>Risk Level:</strong> Low–medium</p>
+                    <p>
+                        <strong>Name:</strong> Sarah Novak
+                    </p>
+                    <p>
+                        <strong>Age:</strong> 18
+                    </p>
+                    <p>
+                        <strong>Occupation:</strong> Student
+                    </p>
+                    <p>
+                        <strong>Background:</strong> Entering adulthood in early 2000s.
+                    </p>
+                    <p>
+                        <strong>Motivation:</strong> Save for college.
+                    </p>
+                    <p>
+                        <strong>Risk Level:</strong> Low–medium
+                    </p>
                 </Card>
 
                 <Card
@@ -85,12 +104,24 @@ export default function CharacterPage() {
                     onSelect={setSelected}
                     onConfirm={confirmCharacter}
                 >
-                    <p><strong>Name:</strong> Daniel Ruiz</p>
-                    <p><strong>Age:</strong> 28</p>
-                    <p><strong>Occupation:</strong> Junior Web Developer</p>
-                    <p><strong>Background:</strong> First stable tech job.</p>
-                    <p><strong>Motivation:</strong> Financial independence.</p>
-                    <p><strong>Risk Level:</strong> Medium</p>
+                    <p>
+                        <strong>Name:</strong> Daniel Ruiz
+                    </p>
+                    <p>
+                        <strong>Age:</strong> 28
+                    </p>
+                    <p>
+                        <strong>Occupation:</strong> Junior Web Developer
+                    </p>
+                    <p>
+                        <strong>Background:</strong> First stable tech job.
+                    </p>
+                    <p>
+                        <strong>Motivation:</strong> Financial independence.
+                    </p>
+                    <p>
+                        <strong>Risk Level:</strong> Medium
+                    </p>
                 </Card>
 
                 <Card
@@ -100,12 +131,24 @@ export default function CharacterPage() {
                     onSelect={setSelected}
                     onConfirm={confirmCharacter}
                 >
-                    <p><strong>Name:</strong> Maya Thompson</p>
-                    <p><strong>Age:</strong> 34</p>
-                    <p><strong>Occupation:</strong> Freelance Designer / Single Mom</p>
-                    <p><strong>Background:</strong> Balancing work and family.</p>
-                    <p><strong>Motivation:</strong> Long-term stability.</p>
-                    <p><strong>Risk Level:</strong> Medium–low</p>
+                    <p>
+                        <strong>Name:</strong> Maya Thompson
+                    </p>
+                    <p>
+                        <strong>Age:</strong> 34
+                    </p>
+                    <p>
+                        <strong>Occupation:</strong> Freelance Designer / Single Mom
+                    </p>
+                    <p>
+                        <strong>Background:</strong> Balancing work and family.
+                    </p>
+                    <p>
+                        <strong>Motivation:</strong> Long-term stability.
+                    </p>
+                    <p>
+                        <strong>Risk Level:</strong> Medium–low
+                    </p>
                 </Card>
             </div>
         </main>
