@@ -7,6 +7,7 @@ import MainPanel from './components/mainPanel';
 import { GAME_EVENTS } from './utils/events';
 import FamilyHelpModal from './components/familyHelp';
 import ApplyForCollegeModal from "@/app/main/components/ApplyForCollege";
+import CarInsuranceModal from "@/app/main/components/CarInsurance";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -84,6 +85,13 @@ export default function MainPage() {
 
             {activeEvent === 'family-help' && (
                 <FamilyHelpModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+            )}
+            {activeEvent === 'car-insurance' && (
+                <CarInsuranceModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={() => setActiveEvent(null)}
