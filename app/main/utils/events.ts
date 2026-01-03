@@ -6,8 +6,13 @@ export type GameEvent = {
 
 export const GAME_EVENTS: GameEvent[] = [
     {
-        id: 'family-help',
+        id: 'apply-for-college',
         date: '2000-03-21',
+        hour: 10,
+    },
+    {
+        id: 'family-help',
+        date: '2000-03-25',
         hour: 14,
     },
 ];

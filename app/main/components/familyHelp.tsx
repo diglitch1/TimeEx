@@ -49,7 +49,8 @@ export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl">
+            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl
+      animate-event-in">
 
                 {/* TITLE */}
                 <h2 className="text-2xl font-bold text-red-600 mb-3">
