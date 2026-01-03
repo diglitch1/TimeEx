@@ -25,12 +25,30 @@ export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
 
     const handleConfirm = () => {
         if (choice === 'decline') {
+            localStorage.setItem(
+                'familyHelpEvent',
+                JSON.stringify({
+                    helped: false,
+                    date: new Date().toISOString(),
+                })
+            );
+
             onClose();
             return;
         }
 
         const selected = wallet.find(w => w.id === source);
         if (!selected || selected.usdValue < REQUIRED_AMOUNT) return;
+
+        localStorage.setItem(
+            'familyHelpEvent',
+            JSON.stringify({
+                helped: true,
+                amount: REQUIRED_AMOUNT,
+                source,
+                date: new Date().toISOString(),
+            })
+        );
 
         setWallet(prev =>
             prev.map(item =>
@@ -41,10 +59,16 @@ export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
                         units:
                             item.id === 'cash'
                                 ? item.units - REQUIRED_AMOUNT
-                                : item.units - (REQUIRED_AMOUNT / item.usdValue) * item.units,
-                    } : item));
+                                : item.units -
+                                (REQUIRED_AMOUNT / item.usdValue) * item.units,
+                    }
+                    : item
+            )
+        );
+
         onClose();
     };
+
 
 
     return (
