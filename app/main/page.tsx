@@ -13,6 +13,7 @@ import CollegePartyInvite from "@/app/main/components/CollegePartyInvite";
 import PartyConsequencesModal from "@/app/main/components/CollegePartyConsequences";
 import ParentsSupportModal from "@/app/main/components/ParentsSupport";
 import CarCrashModal from "@/app/main/components/CarCrash";
+import FreelanceGigModal from "@/app/main/components/FreelanceGig";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function MainPage() {
         new Date('2000-04-14'),
         new Date('2000-04-19'),
         new Date('2000-04-24'),
+        new Date('2000-04-29'),
 
 
     ];
@@ -152,6 +154,13 @@ export default function MainPage() {
             )}
             {activeEvent === 'car-crash' && (
                 <CarCrashModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+            )}
+            {activeEvent === 'freelance-gig' && (
+                <FreelanceGigModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={() => setActiveEvent(null)}
