@@ -8,6 +8,7 @@ import { GAME_EVENTS } from './utils/events';
 import FamilyHelpModal from './components/familyHelp';
 import ApplyForCollegeModal from "@/app/main/components/ApplyForCollege";
 import CarInsuranceModal from "@/app/main/components/CarInsurance";
+import CollegeResultsModal from "@/app/main/components/CollegeResults";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -96,6 +97,14 @@ export default function MainPage() {
                     setWallet={setWallet}
                     onClose={() => setActiveEvent(null)}
                 />
+            )}
+            {activeEvent === 'college-results' && (
+                <CollegeResultsModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+
             )}
 
 
