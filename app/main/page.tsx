@@ -11,6 +11,7 @@ import CarInsuranceModal from "@/app/main/components/CarInsurance";
 import CollegeResultsModal from "@/app/main/components/CollegeResults";
 import CollegePartyInvite from "@/app/main/components/CollegePartyInvite";
 import PartyConsequencesModal from "@/app/main/components/CollegePartyConsequences";
+import ParentsSupportModal from "@/app/main/components/ParentsSupport";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -26,6 +27,8 @@ export default function MainPage() {
         new Date('2000-04-04'),
         new Date('2000-04-09'),
         new Date('2000-04-14'),
+        new Date('2000-04-19'),
+
 
     ];
 
@@ -139,7 +142,13 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
-
+            {activeEvent === 'parents-support' && (
+                <ParentsSupportModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+            )}
 
             {/* MAIN PAGE LAYOUT */}
             <div className="flex min-h-screen w-full bg-gray-50">
