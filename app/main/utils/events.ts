@@ -32,7 +32,12 @@ export const GAME_EVENTS: GameEvent[] = [
     },
     {
         id: 'party-consequences',
-        date: '2000-03-14',
+        date: '2000-04-14',
         hour: 6,
+    },
+    {
+        id: 'parents-support',
+        date: '2000-04-19',
+        hour: 13,
     },
 ];
