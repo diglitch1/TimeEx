@@ -9,6 +9,7 @@ import FamilyHelpModal from './components/familyHelp';
 import ApplyForCollegeModal from "@/app/main/components/ApplyForCollege";
 import CarInsuranceModal from "@/app/main/components/CarInsurance";
 import CollegeResultsModal from "@/app/main/components/CollegeResults";
+import CollegePartyInvite from "@/app/main/components/CollegePartyInvite";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -22,6 +23,8 @@ export default function MainPage() {
         new Date('2000-03-25'),
         new Date('2000-03-30'),
         new Date('2000-04-04'),
+        new Date('2000-04-09'),
+
     ];
 
     const TOTAL_SECONDS = 12 * 60;
@@ -105,6 +108,13 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
 
+            )}
+            {activeEvent === 'college-party-invite' && (
+                <CollegePartyInvite
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
             )}
 
 
