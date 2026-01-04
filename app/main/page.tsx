@@ -10,6 +10,7 @@ import ApplyForCollegeModal from "@/app/main/components/ApplyForCollege";
 import CarInsuranceModal from "@/app/main/components/CarInsurance";
 import CollegeResultsModal from "@/app/main/components/CollegeResults";
 import CollegePartyInvite from "@/app/main/components/CollegePartyInvite";
+import PartyConsequencesModal from "@/app/main/components/CollegePartyConsequences";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function MainPage() {
         new Date('2000-03-30'),
         new Date('2000-04-04'),
         new Date('2000-04-09'),
+        new Date('2000-04-14'),
 
     ];
 
@@ -46,7 +48,15 @@ export default function MainPage() {
         Math.floor(secondsIntoDay / 30),
         23
     );
-
+    const attendedCollegeParty = (() => {
+        try {
+            const raw = localStorage.getItem('collegeParty');
+            if (!raw) return false;
+            return JSON.parse(raw).attended === true;
+        } catch {
+            return false;
+        }
+    })();
     useEffect(() => {
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
@@ -61,15 +71,21 @@ export default function MainPage() {
 
         GAME_EVENTS.forEach(event => {
             if (
-                !triggeredEvents.includes(event.id) &&
-                event.date === dateStr &&
-                event.hour === gameHour
+                triggeredEvents.includes(event.id) ||
+                event.date !== dateStr ||
+                event.hour !== gameHour
             ) {
-                setActiveEvent(event.id);
-                setTriggeredEvents(prev => [...prev, event.id]);
+                return;
             }
+
+            if (event.id === 'party-consequences' && !attendedCollegeParty) {
+                return;
+            }
+
+            setActiveEvent(event.id);
+            setTriggeredEvents(prev => [...prev, event.id]);
         });
-    }, [currentDate, gameHour, triggeredEvents]);
+    }, [currentDate, gameHour, triggeredEvents, attendedCollegeParty]);
 
     const skip30Seconds = () => {
         setGameSeconds(s => s + 30);
@@ -116,7 +132,13 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
-
+            {activeEvent === 'party-consequences' && (
+                <PartyConsequencesModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+            )}
 
 
             {/* MAIN PAGE LAYOUT */}

@@ -30,4 +30,9 @@ export const GAME_EVENTS: GameEvent[] = [
         date: '2000-04-09',
         hour: 10,
     },
+    {
+        id: 'party-consequences',
+        date: '2000-03-14',
+        hour: 6,
+    },
 ];
