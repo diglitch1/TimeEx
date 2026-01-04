@@ -15,4 +15,9 @@ export const GAME_EVENTS: GameEvent[] = [
         date: '2000-03-25',
         hour: 14,
     },
+    {
+        id: 'car-insurance',
+        date: '2000-03-30',
+        hour: 16,
+    },
 ];
