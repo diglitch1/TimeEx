@@ -12,6 +12,7 @@ import CollegeResultsModal from "@/app/main/components/CollegeResults";
 import CollegePartyInvite from "@/app/main/components/CollegePartyInvite";
 import PartyConsequencesModal from "@/app/main/components/CollegePartyConsequences";
 import ParentsSupportModal from "@/app/main/components/ParentsSupport";
+import CarCrashModal from "@/app/main/components/CarCrash";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export default function MainPage() {
         new Date('2000-04-09'),
         new Date('2000-04-14'),
         new Date('2000-04-19'),
+        new Date('2000-04-24'),
 
 
     ];
@@ -68,7 +70,6 @@ export default function MainPage() {
         return () => clearInterval(interval);
     }, []);
 
-    // 🎯 EVENT TRIGGER
     useEffect(() => {
         const dateStr = currentDate.toISOString().split('T')[0];
 
@@ -144,6 +145,13 @@ export default function MainPage() {
             )}
             {activeEvent === 'parents-support' && (
                 <ParentsSupportModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+            )}
+            {activeEvent === 'car-crash' && (
+                <CarCrashModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={() => setActiveEvent(null)}
