@@ -14,6 +14,7 @@ import PartyConsequencesModal from "@/app/main/components/CollegePartyConsequenc
 import ParentsSupportModal from "@/app/main/components/ParentsSupport";
 import CarCrashModal from "@/app/main/components/CarCrash";
 import FreelanceGigModal from "@/app/main/components/FreelanceGig";
+import JobOpportunityModal from "@/app/main/components/JobOpportunity";
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -32,6 +33,7 @@ export default function MainPage() {
         new Date('2000-04-19'),
         new Date('2000-04-24'),
         new Date('2000-04-29'),
+        new Date('2000-05-04'),
 
 
     ];
@@ -64,6 +66,15 @@ export default function MainPage() {
             return false;
         }
     })();
+    const acceptedGig = (() => {
+        try {
+            const raw = localStorage.getItem('freelanceGig');
+            if (!raw) return false;
+            return JSON.parse(raw).accepted === true;
+        } catch {
+            return false;
+        }
+    })();
     useEffect(() => {
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
@@ -85,6 +96,9 @@ export default function MainPage() {
             }
 
             if (event.id === 'party-consequences' && !attendedCollegeParty) {
+                return;
+            }
+            if (event.id === 'job-opportunity' && !acceptedGig) {
                 return;
             }
 
@@ -161,6 +175,13 @@ export default function MainPage() {
             )}
             {activeEvent === 'freelance-gig' && (
                 <FreelanceGigModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={() => setActiveEvent(null)}
+                />
+            )}
+            {activeEvent === 'job-opportunity' && (
+                <JobOpportunityModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={() => setActiveEvent(null)}
