@@ -15,6 +15,8 @@ import ParentsSupportModal from "@/app/main/components/ParentsSupport";
 import CarCrashModal from "@/app/main/components/CarCrash";
 import FreelanceGigModal from "@/app/main/components/FreelanceGig";
 import JobOpportunityModal from "@/app/main/components/JobOpportunity";
+import Timeline from "@/app/main/components/Timeline";
+import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 
 export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -22,21 +24,12 @@ export default function MainPage() {
 
     const [wallet, setWallet] = useState<WalletItem[]>(INITIAL_WALLET);
 
-    const timelineDates = [
-        new Date('2000-03-06'),
-        new Date('2000-03-21'),
-        new Date('2000-03-25'),
-        new Date('2000-03-30'),
-        new Date('2000-04-04'),
-        new Date('2000-04-09'),
-        new Date('2000-04-14'),
-        new Date('2000-04-19'),
-        new Date('2000-04-24'),
-        new Date('2000-04-29'),
-        new Date('2000-05-04'),
-
-
-    ];
+    const timelineDates = TIMELINE_DATES.map(d => new Date(d));
+    const jumpToDate = (dateStr: string) => {
+        const idx = TIMELINE_DATES.indexOf(dateStr);
+        if (idx === -1) return;
+        setGameSeconds(idx * TOTAL_SECONDS); // jump to start of that day
+    };
 
     const TOTAL_SECONDS = 12 * 60;
 
@@ -190,16 +183,28 @@ export default function MainPage() {
 
             {/* MAIN PAGE LAYOUT */}
             <div className="flex min-h-screen w-full bg-gray-50">
-                <Sidebar wallet={wallet}/>
-                <MainPanel
-                    wallet={wallet}
-                    currentDate={currentDate}
-                    secondsLeft={secondsLeft}
-                    gameHour={gameHour}
-                    onSkip30={skip30Seconds}
-                />
+                <Sidebar wallet={wallet} />
+                <div className="flex-1 p-6">
+                    <Timeline
+                        timelineDates={TIMELINE_DATES}
+                        markers={TIMELINE}
+                        currentDate={currentDate}
+                        onJumpToDate={jumpToDate}
+                    />
 
+                    <div className="mt-6">
+                        <MainPanel
+                            wallet={wallet}
+                            currentDate={currentDate}
+                            secondsLeft={secondsLeft}
+                            gameHour={gameHour}
+                            onSkip30={skip30Seconds}
+                        />
+                    </div>
+                </div>
             </div>
+
+
         </>
     );
 }
