@@ -17,8 +17,38 @@ const aaplData = {
     sell: 226.81,
     buy: 227.22,
 };
-export default function Sidebar({wallet,}: {
-    wallet: WalletItem[]; }) {
+
+const ALL_ASSETS = ['ETH', 'BTC', 'EURUSD', 'OIL', 'GOLD', 'NSDQ100', 'AAPL', 'SOL', 'TSLA', 'NVDA', 'ADA'];
+
+const ASSET_LOOKUP: Record<
+    string,
+    { change: number; positive: boolean }
+> = {
+    ETH: { change: 1.8, positive: true },
+    BTC: { change: 0.92, positive: true },
+    EURUSD: { change: -0.14, positive: false },
+    OIL: { change: 2.31, positive: true },
+    GOLD: { change: -2.13, positive: false },
+    NSDQ100: { change: 0.24, positive: true },
+    AAPL: { change: 2.8, positive: true },
+    SOL: { change: -1.86, positive: false },
+    TSLA: { change: 2.34, positive: true },
+    NVDA: { change: 1.3, positive: true },
+    ADA: { change: 0.97, positive: true },
+};
+
+
+export default function Sidebar({
+                                    wallet,
+                                    watchlist,
+                                    setWatchlist,
+                                }: {
+    wallet: WalletItem[];
+    watchlist: string[];
+    setWatchlist: React.Dispatch<React.SetStateAction<string[]>>;
+}) {
+    const [open, setOpen] = useState(false);
+    const [mode, setMode] = useState<'add' | 'remove'>('add');
     return (
         <aside className="w-[380px] bg-[#f3f4f6] border-r border-gray-300 px-6 py-6 flex flex-col gap-4 text-base">
 
@@ -74,19 +104,82 @@ export default function Sidebar({wallet,}: {
             </div>
 
             {/* Watchlist */}
+            {/* Watchlist */}
             <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    My watchlist
-                </h3>
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                        My watchlist
+                    </h3>
+
+                    <button
+                        onClick={() => setOpen(o => !o)}
+                        className="text-sm px-3 py-1 rounded-full border border-gray-900 bg-blue-600 hover:bg-gray-900"
+                    >
+                        manage
+                    </button>
+                </div>
+
+                {open && (
+                    <div className="mb-3 rounded-lg border border-gray-300 bg-white p-3">
+                        <div className="flex gap-2 mb-2">
+                            <button
+                                onClick={() => setMode('add')}
+                                className={`px-3 py-1 rounded-full text-sm ${
+                                    mode === 'add' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                                }`}
+                            >
+                                add
+                            </button>
+
+                            <button
+                                onClick={() => setMode('remove')}
+                                className={`px-3 py-1 rounded-full text-sm ${
+                                    mode === 'remove' ? 'bg-red-500 text-white' : 'bg-gray-200'
+                                }`}
+                            >
+                                remove
+                            </button>
+                        </div>
+
+                        {(mode === 'add'
+                                ? ALL_ASSETS.filter(a => !watchlist.includes(a))
+                                : watchlist
+                        ).map(symbol => (
+                            <button
+                                key={symbol}
+                                onClick={() => {
+                                    setWatchlist(prev =>
+                                        mode === 'add'
+                                            ? [...prev, symbol]
+                                            : prev.filter(s => s !== symbol)
+                                    );
+                                }}
+                                className="block w-full text-left px-2 py-1 rounded hover:bg-gray-900 text-sm text-gray-600"
+                            >
+                                {symbol}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-3">
-                    <WatchItem name="SOL" change="-1.86%" negative />
-                    <WatchItem name="GOLD" change="-0.72%" negative />
-                    <WatchItem name="TSLA" change="+2.34%" />
-                    <WatchItem name="NVDA" change="+1.30%" />
-                    <WatchItem name="ADA" change="+0.97%" />
+                    {watchlist.map(symbol => {
+                        const asset = ASSET_LOOKUP[symbol];
+
+                        if (!asset) return null;
+
+                        return (
+                            <WatchItem
+                                key={symbol}
+                                name={symbol}
+                                change={`${asset.positive ? '+' : ''}${asset.change}%`}
+                                positive={asset.positive}
+                            />
+                        );
+                    })}
                 </div>
             </div>
+
 
             {/* News Feed */}
             <div>
@@ -279,17 +372,21 @@ export default function Sidebar({wallet,}: {
     );
 }
 
-function WatchItem({name, change, negative = false,}: {
+function WatchItem({
+                       name,
+                       change,
+                       positive,
+                   }: {
     name: string;
     change: string;
-    negative?: boolean;
+    positive: boolean;
 }) {
     return (
         <div className="flex justify-between font-medium text-lg">
             <span className="text-gray-900">{name}</span>
-            <span className={negative ? 'text-red-500' : 'text-green-500'}>
-                {change}
-            </span>
+            <span className={positive ? 'text-green-500' : 'text-red-500'}>
+        {change}
+      </span>
         </div>
     );
 }
@@ -314,6 +411,7 @@ function NewsItem({img, text,}: {
 }
 
 import { useRouter } from 'next/navigation';
+import {useState} from "react";
 
 function ReadMoreButton() {
     const router = useRouter();
