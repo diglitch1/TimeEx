@@ -22,7 +22,6 @@ export default function MainPage() {
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>([]);
 
-    const [wallet, setWallet] = useState<WalletItem[]>(INITIAL_WALLET);
 
     const timelineDates = TIMELINE_DATES.map(d => new Date(d));
     const jumpToDate = (dateStr: string) => {
@@ -54,7 +53,14 @@ export default function MainPage() {
 
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
     const inGameMinutes = secondsIntoDay * inGameMinutesPerSecond;
-
+    const [wallet, setWallet] = useState<WalletItem[]>(INITIAL_WALLET);
+    const [watchlist, setWatchlist] = useState<string[]>([
+        'SOL',
+        'GOLD',
+        'TSLA',
+        'NVDA',
+        'ADA',
+    ]);
 // build full in-game datetime
     const currentDateTime = new Date(baseDate);
     currentDateTime.setHours(0, 0, 0, 0);
@@ -200,8 +206,11 @@ export default function MainPage() {
 
             {/* MAIN PAGE LAYOUT */}
             <div className="flex min-h-screen w-full bg-gray-50">
-                <Sidebar wallet={wallet} />
-                <div className="flex-1 p-6">
+                <Sidebar
+                    wallet={wallet}
+                    watchlist={watchlist}
+                    setWatchlist={setWatchlist}
+                />                <div className="flex-1 p-6">
                     <Timeline
                         timelineDates={TIMELINE_DATES}
                         markers={TIMELINE}
