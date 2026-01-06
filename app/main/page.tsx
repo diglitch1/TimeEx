@@ -212,6 +212,7 @@ export default function MainPage() {
                     <div className="mt-6">
                         <MainPanel
                             wallet={wallet}
+                            setWallet={setWallet}
                             currentDate={currentDateTime}
                             secondsLeft={secondsLeft}
                             gameHour={gameHour}
