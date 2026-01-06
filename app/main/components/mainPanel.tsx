@@ -7,13 +7,21 @@ import { ETH_DATA, BTC_DATA } from '../utils/marketData';
 
 import { getChartData, type RangeKey } from '../utils/chartSelector';
 
-export default function MainTradePanel({currentDate, secondsLeft, wallet, gameHour, onSkip30,}: {
+export default function MainTradePanel({
+                                           currentDate,
+                                           secondsLeft,
+                                           wallet,
+                                           setWallet,
+                                           gameHour,
+                                           onSkip30,
+                                       }: {
     currentDate: Date;
     secondsLeft: number;
     wallet: WalletItem[];
+    setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     gameHour: number;
     onSkip30: () => void;
-})  {
+}) {
 
     const TOTAL_SECONDS = 12 * 60; // 12 minutes
 
@@ -134,6 +142,78 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, gameHo
     const takeProfitValue =
         numericAmount > 0 ? numericAmount * activeAsset.takeProfitPct : 0;
 
+    const getAssetPrice = () => {
+        return Number(activeAsset.price.toString().replace(',', ''));
+    };
+
+    const getWalletItem = (label: string) =>
+        wallet.find(w => w.label === label);
+
+    const updateWallet = (updates: WalletItem[]) => {
+        // this will be passed down from MainPage
+    };
+    const handleConfirmTrade = () => {
+        const price = Number(activeAsset.price.toString().replace(',', ''));
+        if (numericAmount <= 0 || isNaN(price)) return;
+
+        setWallet(prev => {
+            const next = [...prev];
+
+            const cash = next.find(w => w.label === 'Cash');
+            const asset = next.find(w => w.label === activeAsset.symbol);
+
+            if (!cash) return prev;
+
+            if (side === 'buy') {
+                const cost = numericAmount;
+
+                if (cash.units < cost) {
+                    alert('Not enough cash');
+                    return prev;
+                }
+
+                cash.units -= cost;
+                cash.usdValue = cash.units;
+
+                if (asset) {
+                    asset.units += cost / price;
+                    asset.usdValue = asset.units * price;
+                } else {
+                    next.push({
+                        id: crypto.randomUUID(),
+                        label: activeAsset.symbol,
+                        units: cost / price,
+                        unitLabel: activeAsset.symbol,
+                        usdValue: cost,
+                    });
+                }
+            }
+
+            if (side === 'sell') {
+                if (!asset || asset.units <= 0) {
+                    alert('No asset to sell');
+                    return prev;
+                }
+
+                const unitsToSell = numericAmount / price;
+
+                if (asset.units < unitsToSell) {
+                    alert('Not enough asset');
+                    return prev;
+                }
+
+                asset.units -= unitsToSell;
+                asset.usdValue = asset.units * price;
+
+                cash.units += numericAmount;
+                cash.usdValue = cash.units;
+            }
+
+            return next.filter(w => w.units > 0);
+        });
+
+        setAmount('');
+    };
 
     return (
         <div className="flex-1 w-full bg-white px-10 py-8">
@@ -356,12 +436,12 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, gameHo
 
                     </div>
 
-                    {/* DEPOSIT */}
+                    {/* DEPOSIT
                     {numericAmount > 0 && (
                         <p className="text-red-500 text-sm mb-4">
                             Deposit ${(numericAmount+1).toFixed(2)} in order to open this trade
                         </p>
-                    )}
+                    )}*/}
 
                     {/* STOP LOSS */}
                     <div className="border border-gray-300 rounded-xl p-4 mb-4">
@@ -398,9 +478,11 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, gameHo
                     </div>
 
                     <button
+                        onClick={handleConfirmTrade}
                         className="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-full text-lg font-semibold cursor-pointer">
                         confirm
                     </button>
+
                 </div>
 
             </div>
