@@ -40,16 +40,33 @@ export default function MainPage() {
         Math.floor(gameSeconds / TOTAL_SECONDS),
         timelineDates.length - 1
     );
+    const REAL_SECONDS_PER_DAY = 12 * 60; // 720
+    const GAME_MINUTES_PER_DAY = 24 * 60; // 1440
 
-    const currentDate = timelineDates[dayIndex];
+    const GAME_MINUTES_PER_REAL_SECOND =
+        GAME_MINUTES_PER_DAY / REAL_SECONDS_PER_DAY; // = 2
+
+    const baseDate = timelineDates[dayIndex];
+
+// 12 real minutes = 24 in-game hours
+// → 1 real second = 2 in-game minutes
+    const inGameMinutesPerSecond = 2;
 
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
+    const inGameMinutes = secondsIntoDay * inGameMinutesPerSecond;
+
+// build full in-game datetime
+    const currentDateTime = new Date(baseDate);
+    currentDateTime.setHours(0, 0, 0, 0);
+    currentDateTime.setMinutes(inGameMinutes);
+
+// derive hour from the actual in-game time
+    const gameHour = currentDateTime.getHours();
+
+
     const secondsLeft = TOTAL_SECONDS - secondsIntoDay;
 
-    const gameHour = Math.min(
-        Math.floor(secondsIntoDay / 30),
-        23
-    );
+
     const attendedCollegeParty = (() => {
         try {
             const raw = localStorage.getItem('collegeParty');
@@ -77,7 +94,7 @@ export default function MainPage() {
     }, []);
 
     useEffect(() => {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = currentDateTime.toISOString().split('T')[0];
 
         GAME_EVENTS.forEach(event => {
             if (
@@ -98,7 +115,7 @@ export default function MainPage() {
             setActiveEvent(event.id);
             setTriggeredEvents(prev => [...prev, event.id]);
         });
-    }, [currentDate, gameHour, triggeredEvents, attendedCollegeParty]);
+    }, [currentDateTime, gameHour, triggeredEvents, attendedCollegeParty]);
 
     const skip30Seconds = () => {
         setGameSeconds(s => s + 30);
@@ -188,14 +205,14 @@ export default function MainPage() {
                     <Timeline
                         timelineDates={TIMELINE_DATES}
                         markers={TIMELINE}
-                        currentDate={currentDate}
+                        currentDate={currentDateTime}
                         onJumpToDate={jumpToDate}
                     />
 
                     <div className="mt-6">
                         <MainPanel
                             wallet={wallet}
-                            currentDate={currentDate}
+                            currentDate={currentDateTime}
                             secondsLeft={secondsLeft}
                             gameHour={gameHour}
                             onSkip30={skip30Seconds}
