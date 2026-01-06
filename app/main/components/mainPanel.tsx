@@ -28,6 +28,8 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, gameHo
         month: 'long',
         day: 'numeric',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 
 
@@ -141,7 +143,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, gameHo
                 <div>
                     <p className="text-lg text-gray-800">
                         Time now:{' '}
-                        <span className="font-semibold">{gameDate} at {gameTime}</span>
+                        <span className="font-semibold">{gameDate} </span>
                     </p>
                     <p className={`text-xl font-semibold ${secondsLeft <= 180 ? 'text-red-500' : 'text-green-600'}`}>
                         Time remaining: {minutes}:{seconds.toString().padStart(2, '0')}
