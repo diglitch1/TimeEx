@@ -31,13 +31,21 @@ function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
 }
 
+function toLocalDateStr(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+
 type Tick = { at: number; label: string; kind: 'year' | 'month' };
 
 export default function TimelineBar({ timelineDates, markers, currentDate, onJumpToDate }: Props) {
     const [hoverDate, setHoverDate] = useState<string | null>(null);
 
     const currentStr = useMemo(
-        () => currentDate.toISOString().split('T')[0],
+        () => toLocalDateStr(currentDate),
         [currentDate]
     );
 
