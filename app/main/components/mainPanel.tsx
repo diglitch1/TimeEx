@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect, useMemo} from 'react';
+import {useState, useEffect, useMemo, useRef} from 'react';
 import { type WalletItem } from '../utils/walletData';
 
 import ERIC from '../data/ERIC.json';
@@ -174,8 +174,8 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
     const [side, setSide] = useState<'buy' | 'sell'>('buy');
 
-    const [amount, setAmount] = useState<string>(''); // $
-    const [units, setUnits] = useState<string>('');   // shares
+    const [amount, setAmount] = useState(''); // $
+    const [units, setUnits] = useState('');   // shares
 
     const price = activeAsset?.hasData ? activeAsset.price : 0;
 
@@ -185,7 +185,10 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         return activeAsset.price;
     };
 
+    const lastEdited = useRef<'amount' | 'units' | null>(null);
+
     const handleAmountChange = (val: string) => {
+        lastEdited.current = 'amount';
         setAmount(val);
 
         const num = Number(val);
@@ -198,6 +201,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
     };
 
     const handleUnitsChange = (val: string) => {
+        lastEdited.current = 'units';
         setUnits(val);
 
         const num = Number(val);
@@ -208,7 +212,6 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
         setAmount((num * price).toFixed(2));
     };
-
 
     const handleConfirmTrade = () => {
         if (!activeAsset || !activeAsset.hasData) {
@@ -287,16 +290,25 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         setUnits('');
     };
 
+    useEffect(() => {
+        if (!price) return;
 
-    const chartRows = useMemo(() => {
-        if (!activeAsset || !activeAsset.hasData) return [];
+        if (lastEdited.current === 'amount' && amount !== '') {
+            const num = Number(amount);
+            if (!isNaN(num)) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setUnits((num / price).toFixed(4));
+            }
+        }
 
-        return getChartData(
-            activeAsset.data,
-            range,
-            dateStr
-        );
-    }, [activeAsset, range, dateStr]);
+        if (lastEdited.current === 'units' && units !== '') {
+            const num = Number(units);
+            if (!isNaN(num)) {
+                setAmount((num * price).toFixed(2));
+            }
+        }
+    }, [price]);
+
 
     return (
         <div className="flex-1 w-full bg-white px-10 py-8">
@@ -493,7 +505,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                 {/* RIGHT */}
                 <div className="border border-gray-300 rounded-2xl p-6">
 
-                    <div className="flex items-center gap-3 mb-6">
+                    <div className="flex justify-center gap-3 mb-6">
                         <div className="flex border border-gray-300 rounded-full p-1 w-[260px] h-[52px]">
                             <button
                                 onClick={() => setSide('buy')}
@@ -517,55 +529,34 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                         </div>
                     </div>
 
-                    {/* AMOUNT */}
+                    {/* AMOUNT ($) */}
                     <div className="border border-gray-300 rounded-xl p-4 mb-4">
                         <label className="text-sm text-gray-500 block mb-1">
-                            Amount
+                            Amount ($)
                         </label>
 
                         <input
                             type="number"
                             value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            onChange={(e) => handleAmountChange(e.target.value)}
                             className="w-full text-lg font-semibold text-black outline-none bg-transparent"
                             placeholder="$"
                         />
-
-
                     </div>
 
-                    {/* STOP LOSS */}
-                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
-                        <p className="text-sm text-gray-500">
-                            Stop Loss
-                        </p>
+                    {/* UNITS */}
+                    <div className="border border-gray-300 rounded-xl p-4 mb-6">
+                        <label className="text-sm text-gray-500 block mb-1">
+                            Units
+                        </label>
 
-                        {numericAmount === 0 ? (
-                            <p className="text-lg font-semibold text-red-500">
-                                No SL
-                            </p>
-                        ) : (
-                            <p className="text-lg font-semibold text-red-500">
-                                −${stopLossValue.toFixed(2)}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* TAKE PROFIT */}
-                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
-                        <p className="text-sm text-gray-500">
-                            Take Profit
-                        </p>
-
-                        {numericAmount === 0 ? (
-                            <p className="text-lg font-semibold text-gray-400">
-                                $0.00
-                            </p>
-                        ) : (
-                            <p className="text-lg font-semibold text-green-600">
-                                +${takeProfitValue.toFixed(2)}
-                            </p>
-                        )}
+                        <input
+                            type="number"
+                            value={units}
+                            onChange={(e) => handleUnitsChange(e.target.value)}
+                            className="w-full text-lg font-semibold text-black outline-none bg-transparent"
+                            placeholder="0.0000"
+                        />
                     </div>
 
                     <button
