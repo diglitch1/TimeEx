@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { INITIAL_WALLET, type WalletItem } from '../utils/walletData';
+import { WalletItem } from '../utils/walletData';
 
 const aaplData = {
     symbol: 'AAPL',
@@ -49,6 +49,16 @@ export default function Sidebar({
 }) {
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<'add' | 'remove'>('add');
+
+    const STARTING_CASH = 7000;
+
+    const totalValue = wallet.reduce(
+        (sum, item) => sum + item.usdValue,
+        0
+    );
+
+    const gainLoss = totalValue - STARTING_CASH;
+
     return (
         <aside className="w-[380px] bg-[#f3f4f6] border-r border-gray-300 px-6 py-6 flex flex-col gap-4 text-base">
 
@@ -86,7 +96,7 @@ export default function Sidebar({
                         <p key={item.id}>
                             {item.label}:{' '}
                             <span className="font-medium">{item.units.toFixed(3)} {item.unitLabel}</span>
-                            <span className="text-gray-500"> (~${item.usdValue})</span>
+                            <span className="text-gray-500"> (~${item.usdValue.toFixed(2)})</span>
                         </p>
 
                     ))}
@@ -94,13 +104,19 @@ export default function Sidebar({
 
                 <div className="my-4 border-t border-gray-200"/>
 
-                <div className="text-red-600 font-semibold text-lg">
-                    Gain/Loss: -345 $
-                </div>
+                {/*  im not sure how exactly are gains/losses calculated, so leaving this out for now
+                  <div
+                    className={`font-semibold text-lg ${
+                        gainLoss >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                    Gain/Loss: {gainLoss >= 0 ? '+' : ''}
+                    {gainLoss.toFixed(2)} $
+                </div> */}
 
                 <div className="mt-1 font-semibold text-gray-900 text-lg">
-                    Cash Out Value: 7,268.00 $
+                    Cash Out Value: {totalValue.toFixed(2)} $
                 </div>
+
             </div>
 
             {/* Watchlist */}

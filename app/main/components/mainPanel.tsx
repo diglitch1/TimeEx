@@ -56,6 +56,7 @@ function findRowAtOrBefore(data: MarketRow[], dateStr: string): MarketRow | null
     return last;
 }
 
+
 function toLocalDateStr(d: Date) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -133,6 +134,31 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         });
     }, [dateStr]);
 
+    useEffect(() => {
+        setWallet(prev =>
+            prev.map(item => {
+                if (item.label === 'Cash') {
+                    return {
+                        ...item,
+                        usdValue: item.units,
+                    };
+                }
+                const asset = assetsWithMarket.find(
+                    (a): a is AssetWithData =>
+                        a.hasData && a.symbol === item.label
+                );
+
+                if (!asset) return item;
+
+                return {
+                    ...item,
+                    usdValue: item.units * asset.price,
+                };
+            })
+        );
+    }, [assetsWithMarket, dateStr, setWallet]);
+
+
     const [range, setRange] = useState<RangeKey>('1W');
 
     const [activeSymbol, setActiveSymbol] = useState<string | null>(null);
@@ -164,13 +190,6 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
 
     const hasActiveData = activeAsset?.hasData === true;
-
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMounted(true);
-    }, []);
 
     const [side, setSide] = useState<'buy' | 'sell'>('buy');
 
@@ -309,6 +328,15 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         }
     }, [price]);
 
+    const ownedAsset = useMemo(() => {
+        if (!activeAsset) return null;
+        return wallet.find(w => w.label === activeAsset.symbol) ?? null;
+    }, [wallet, activeAsset]);
+
+    const ownedUnits = ownedAsset?.units ?? 0;
+    const ownedValue = ownedUnits * price;
+
+
 
     return (
         <div className="flex-1 w-full bg-white px-10 py-8">
@@ -418,11 +446,9 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                                     {activeAsset.price.toFixed(2)}
                                 </p>
 
-                                <p
-                                    className={`font-semibold ${
+                                <p className={`font-semibold ${
                                         activeAsset.positive ? 'text-green-600' : 'text-red-500'
-                                    }`}
-                                >
+                                    }`}>
                                     {activeAsset.change >= 0 ? '+' : ''}
                                     {activeAsset.change.toFixed(2)}%
                                 </p>
@@ -463,12 +489,12 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                             style={{height: '400px'}}
                             className="mt-4 rounded-xl  bg-green-50 p-4"
                         >
-                            {mounted && hasActiveData && chartData.length > 1 ? (
+                            {hasActiveData && chartData.length > 1 ? (
                                 <div
                                     style={{height: '400px'}}
                                     className="mt-4 rounded-xl bg-green-50 p-4"
                                 >
-                                    {mounted && chartData.length > 1 ? (
+                                    {chartData.length > 1 ? (
                                         <HoverChart
                                             rows={chartData}
                                             positive={performance.positive}
@@ -527,15 +553,32 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
                             <button
                                 onClick={() => setSide('sell')}
-                                className={`flex-1 py-2 rounded-full text-lg font-semibold transition
-                                    ${side === 'sell'
+                                disabled={ownedUnits === 0}
+                                className={`flex-1 py-2 rounded-full text-lg font-semibold transition ${side === 'sell'
                                     ? 'bg-red-500 text-white'
-                                    : 'text-gray-500 hover:text-gray-700'
-                                }`}>
+                                    : ownedUnits === 0
+                                        ? 'text-gray-400 cursor-not-allowed'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
                                 sell
                             </button>
+
                         </div>
                     </div>
+
+                    {side === 'sell' && ownedUnits > 0 && (
+                        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                            <p className="text-gray-500">You own</p>
+                            <p className="font-semibold text-gray-900">
+                                {ownedUnits.toFixed(3)} {activeAsset?.symbol}
+                                <span className="text-gray-500">
+                        {' '} (~${ownedValue.toFixed(2)})
+                    </span>
+                            </p>
+                        </div>
+                    )}
+
 
                     {/* AMOUNT ($) */}
                     <div className="border border-gray-300 rounded-xl p-4 mb-4">
@@ -546,10 +589,16 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                         <input
                             type="number"
                             value={amount}
+                            disabled={side === 'sell'}
                             onChange={(e) => handleAmountChange(e.target.value)}
-                            className="w-full text-lg font-semibold text-black outline-none bg-transparent"
+                            className={`w-full text-lg font-semibold outline-none bg-transparent
+                            ${side === 'sell'
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-black'
+                            }`}
                             placeholder="$"
                         />
+
                     </div>
 
                     {/* UNITS */}
@@ -561,11 +610,27 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                         <input
                             type="number"
                             value={units}
-                            onChange={(e) => handleUnitsChange(e.target.value)}
+                            max={side === 'sell' ? ownedUnits : undefined}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (side === 'sell' && Number(val) > ownedUnits) return;
+                                handleUnitsChange(val);
+                            }}
                             className="w-full text-lg font-semibold text-black outline-none bg-transparent"
                             placeholder="0.0000"
                         />
+
                     </div>
+
+                    {side === 'sell' && units && Number(units) > 0 && (
+                        <p className="mt-2 text-sm text-gray-600">
+                            You will receive{' '}
+                            <span className="font-semibold text-gray-900">
+                        ${(Number(units) * price).toFixed(3)}
+                    </span>
+                        </p>
+                    )}
+
 
                     <button
                         onClick={handleConfirmTrade}
