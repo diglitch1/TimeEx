@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { INITIAL_WALLET, type WalletItem } from './utils/walletData';
+import type { WalletItem } from './utils/walletData';
+import { loadWallet, saveWallet } from './utils/walletStorage';
+
+import { useRouter } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
 import { GAME_EVENTS } from './utils/events';
@@ -19,6 +22,11 @@ import Timeline from "@/app/main/components/Timeline";
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 
 export default function MainPage() {
+
+    const [mounted, setMounted] = useState(false);
+
+    const STARTING_CASH = 7000;
+
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>([]);
 
@@ -47,13 +55,46 @@ export default function MainPage() {
 
     const baseDate = timelineDates[dayIndex];
 
-// 12 real minutes = 24 in-game hours
-// → 1 real second = 2 in-game minutes
     const inGameMinutesPerSecond = 2;
 
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
     const inGameMinutes = secondsIntoDay * inGameMinutesPerSecond;
-    const [wallet, setWallet] = useState<WalletItem[]>(INITIAL_WALLET);
+
+    const [wallet, setWallet] = useState<WalletItem[]>(() => {
+        const isNewGame = localStorage.getItem('newGame') === 'true';
+
+        if (isNewGame) {
+            localStorage.removeItem('newGame'); // consume flag
+
+            const freshWallet = [
+                {
+                    id: 'cash',
+                    label: 'Cash',
+                    units: STARTING_CASH,
+                    unitLabel: '$',
+                    usdValue: STARTING_CASH,
+                },
+            ];
+
+            saveWallet(freshWallet);
+            return freshWallet;
+        }
+
+        const stored = loadWallet();
+        if (stored) return stored;
+
+        return [
+            {
+                id: 'cash',
+                label: 'Cash',
+                units: STARTING_CASH,
+                unitLabel: '$',
+                usdValue: STARTING_CASH,
+            },
+        ];
+    });
+
+
     const [watchlist, setWatchlist] = useState<string[]>([
         'SOL',
         'GOLD',
@@ -127,6 +168,30 @@ export default function MainPage() {
         setGameSeconds(s => s + 30);
     };
 
+    useEffect(() => {
+        saveWallet(wallet);
+    }, [wallet]);
+
+    function getAssetPrice(symbol: string): number {
+
+        return 0;
+    }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true);
+    }, []);
+
+    const router = useRouter();
+
+    useEffect(() => {
+        const started = localStorage.getItem('gameStarted');
+        if (!started) {
+            router.replace('/'); // 👈 kick them back
+        }
+    }, [router]);
+
+    if (!mounted) return null;
 
     return (
         <>

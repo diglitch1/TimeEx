@@ -163,10 +163,10 @@ There’s a buy-in fee to cover the venue and guest list — but the connections
                                 <p key={item.id}>
                                     {item.label}:{' '}
                                     <span className="font-medium">
-                                        {item.units} {item.unitLabel}
+                                        {item.units.toFixed(3)} {item.unitLabel}
                                     </span>
                                     <span className="text-gray-500">
-                                        {' '}(${item.usdValue})
+                                        {' '}(${item.usdValue.toFixed(2)})
                                     </span>
                                 </p>
                             ))}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { resetGame } from '../main/utils/save';
 
 import Image from "next/image";
 import type React from "react";
@@ -478,11 +479,24 @@ export default function PreviewPage() {
                         </div>
 
                         <button
-                            onClick={() => router.push("/main")}
-                            className="w-full py-4 rounded-2xl bg-blue-700 text-white text-lg font-semibold hover:bg-blue-800 transition shadow-sm"
+                            onClick={() => {
+                                localStorage.setItem('newGame', 'true')
+                                const budgetMap = {
+                                    A: 7000,
+                                    B: 12000,
+                                    C: 9000,
+                                };
+
+                                const startingCash = budgetMap[characterInfo.id];
+
+                                resetGame(startingCash);
+                                router.push('/main');
+                            }}
+                            className="w-full py-4 rounded-2xl bg-blue-700 text-white text-lg font-semibold"
                         >
                             Start Simulation
                         </button>
+
                     </aside>
                 </div>
             </div>

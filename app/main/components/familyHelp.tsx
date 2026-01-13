@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { INITIAL_WALLET, type WalletItem } from '../utils/walletData';
+import { WalletItem } from '../utils/walletData';
 
 type Props = {
     wallet: WalletItem[];
@@ -159,10 +159,10 @@ export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
                                 <p key={item.id}>
                                     {item.label}:{' '}
                                     <span className="font-medium">
-                    {item.units} {item.unitLabel}
+                    {item.units.toFixed(3)} {item.unitLabel}
                   </span>
                                     <span className="text-gray-500">
-                    {' '}(${item.usdValue})
+                    {' '}(${item.usdValue.toFixed(2)})
                   </span>
                                 </p>
                             ))}

@@ -1,4 +1,4 @@
-export type RangeKey = '1D' | '1W' | '1M' | '6M' | '1Y';
+export type RangeKey = '1W' | '1M' | '6M' | '1Y';
 
 export type MarketRow = {
     date: string;
@@ -14,7 +14,6 @@ export function getChartData(
     if (!data.length) return [];
 
     const RANGE_DAYS: Record<RangeKey, number> = {
-        '1D': 1,
         '1W': 7,
         '1M': 31,
         '6M': 182,
