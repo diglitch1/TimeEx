@@ -20,7 +20,7 @@ export type MarketRow = {
     close: number;
     'adj close'?: number;
     volume: number;
-};
+}; // {"date":"1999-07-20","volume":19946500,"open":26.2119655609,"high":26.2119655609,"low":25.0340595245,"close":25.1192092896,"adj close":13.2619962692}
 
 type AssetBase = {
     symbol: string;
@@ -133,7 +133,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         });
     }, [dateStr]);
 
-    const [range, setRange] = useState<RangeKey>('1D');
+    const [range, setRange] = useState<RangeKey>('1W');
 
     const [activeSymbol, setActiveSymbol] = useState<string | null>(null);
 
@@ -400,6 +400,14 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
                     {/* HEADER */}
                     <div className="flex items-center gap-4 mb-4">
+                        {hasActiveData && (
+                            <img
+                                src={getAssetLogo(activeAsset.symbol)}
+                                alt={`${activeAsset.symbol} logo`}
+                                className="w-20 h-20 object-contain"
+                            />
+                        )}
+
                         {hasActiveData ? (
                             <>
                                 <p className="text-sm text-gray-500">
@@ -484,7 +492,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
                     {/* RANGE buttons */}
                     <div className="flex gap-6 mt-4 text-sm">
-                        {(['1D', '1W', '1M', '6M', '1Y'] as const).map(r => (
+                        {(['1W', '1M', '6M', '1Y'] as const).map(r => (
                             <button
                                 key={r}
                                 onClick={() => setRange(r)}
@@ -608,16 +616,19 @@ function MiniSparkline({data, positive,}: {
     );
 }
 
+function getAssetLogo(symbol: string) {
+    return `/assets/${symbol.toLowerCase()}.png`;
+}
+
 function calculatePerformance(
     data: { date: string; close: number }[],
-    range: '1D' | '1W' | '1M' | '6M' | '1Y'
+    range: '1W' | '1M' | '6M' | '1Y'
 ) {
     if (!data || data.length < 2) {
         return { value: 0, positive: true };
     }
 
     const lookbackMap: Record<typeof range, number> = {
-        '1D': 1,
         '1W': 5,
         '1M': 22,
         '6M': 126,
