@@ -27,6 +27,7 @@ type CharacterInfo = {
     motivation: string;
     experience: string;
     budget: string;
+    image: string;
 };
 
 type ScenarioInfo = {
@@ -35,6 +36,7 @@ type ScenarioInfo = {
     period: string;
     description: string; // used in sticky bar (same text as selection card)
     heroSubtitle: string; // the 1–2 sentences under the title on preview page
+    image: string;
 };
 
 const CHARACTERS: Record<CharacterId, CharacterInfo> = {
@@ -48,7 +50,9 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         risk: "Low-Medium",
         experience: "None",
         budget: "$7,000",
+        image: "/CharacterA.png",
     },
+
     B: {
         id: "B",
         name: "Daniel Ruiz",
@@ -59,6 +63,8 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         risk: "Medium",
         experience: "Beginner",
         budget: "$12,000",
+        image: "/CharacterA.png",
+
     },
     C: {
         id: "C",
@@ -70,6 +76,8 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         risk: "Medium-low",
         experience: "Low",
         budget: "$9,000",
+        image: "/CharacterA.png",
+
     },
 };
 
@@ -78,6 +86,7 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
         id: "dotcom",
         title: "Dot-com Bubble",
         period: "Late 1990s – early 2000s",
+        image: "/dotcom.jpeg",
         description:
             "The dot-com bubble was a period when internet-related companies grew very fast and investors poured money into them based\n" +
             "on future hopes instead of solid profits. Between the mid-1990s and around 2000, stock prices of many internet businesses\n" +
@@ -90,6 +99,7 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
         id: "housing",
         title: "Global Financial Crisis",
         period: "2007 – 2009",
+        image: "/dotcom.jpeg",
         description:
             "The Global Financial Crisis was caused by risky mortgages and excessive lending\n" +
             " in the housing market. These loans were turned into complex financial products and\n" +
@@ -102,6 +112,8 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
         id: "pandemic",
         title: "Pandemic Market Shock",
         period: "2020",
+        image: "/dotcom.jpeg",
+
         description:
             "The Pandemic Market Shock was triggered by a global health crisis that caused sudden\n" +
             " lockdowns, travel restrictions, and supply chain disruptions. Financial markets crashed rapidly\n" +
@@ -218,31 +230,36 @@ export default function PreviewPage() {
                                         represents the overall level of major technology stocks.
                                     </p>
 
-                                    <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                        <MetricCard
-                                            title="Market high before the crash"
-                                            value="5,048.62 index points"
-                                            note="This was the highest level the tech market reached before prices started to fall. (Mar 10, 2000)"
+                                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                                        <MetricIconCard
+                                            icon="/arrowU.png"
+                                            title="Market peak"
+                                            value="5,048"
+                                            note="Highest tech market level before the crash (Mar 2000)."
                                         />
 
-                                        <MetricCard
-                                            title="Lowest point after the crash"
-                                            value="1,114.11 index points "
-                                            note="This marks how low the market fell after confidence collapsed. (Oct 9, 2002)"
+                                        <MetricIconCard
+                                            icon="/arrowD.png"
+                                            title="Market low"
+                                            value="1,114"
+                                            note="Lowest point after confidence collapsed (Oct 2002)."
                                         />
 
-                                        <MetricCard
-                                            title="Total loss from high to low"
-                                            value="~78%"
-                                            note="Shows how much of the market’s value was lost during the downturn."
+                                        <MetricIconCard
+                                            icon="/loss.png"
+                                            title="Total loss"
+                                            value="≈ 78%"
+                                            note="Share of market value wiped out in the downturn."
                                         />
 
-                                        <MetricCard
-                                            title="Early warning sign"
-                                            value="“Irrational exuberance” "
-                                            note="A phrase used to warn that stock prices were rising faster than reality. (1996)"
+                                        <MetricIconCard
+                                            icon="/warning.png"
+                                            title="Warning sign"
+                                            value="Irrational exuberance"
+                                            note="Term warning prices had detached from reality (1996)."
                                         />
                                     </div>
+
                                 </section>
 
                                 {/* Context */}
@@ -439,44 +456,66 @@ export default function PreviewPage() {
 
                         {/* Character */}
                         <div className="rounded-2xl border border-[#9CC8F5] bg-[#D9EEFF] p-6">
-                            <h3 className="text-xl font-semibold mb-2">
-                                Character: {characterInfo.name}
-                            </h3>
-                            <p className="text-sm text-[#0A355B] leading-relaxed">
-                                Age: {characterInfo.age}
-                            </p>
-                            <p className="text-sm text-[#0A355B] leading-relaxed">
-                                Occupation: {characterInfo.occupation}
-                            </p>
-                            <p className="text-sm text-[#0A355B] leading-relaxed">
-                                Background: {characterInfo.background}
+                            <p className="text-xl font-semibold text-blue-700 mb-3">
+                                Character
                             </p>
 
+                            <div className="flex gap-4 items-start">
+                                <Image
+                                    src={characterInfo.image}
+                                    alt={characterInfo.name}
+                                    width={120}
+                                    height={128}
+                                    className="rounded-lg border border-[#B6D8F6] bg-white object-cover"
+                                />
+
+                                <div>
+                                    <h3 className="text-xl font-bold text-[#0A355B]">
+                                        {characterInfo.name}
+                                    </h3>
+
+
+
+                                    <p className="text-sm text-[#0A355B]">
+                                        Age: {characterInfo.age}
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                <Badge label="Risk" value={characterInfo.risk} />
-                                <Badge label="Motivation" value={characterInfo.motivation} />
-                                <Badge label="Experience" value={characterInfo.experience} />
+                                <Badge label="Occupation" value={characterInfo.occupation} />
                                 <Badge label="Budget" value={characterInfo.budget} />
                             </div>
                         </div>
 
+
                         {/* Scenario */}
                         <div className="rounded-2xl border border-[#9CC8F5] bg-[#D9EEFF] p-6">
-                            <h3 className="text-xl font-semibold mb-2">
-                                {" "}
-                                Scenario: {scenarioInfo.title}{" "}
-                            </h3>
-                            <p className="text-sm text-[#0A355B] leading-relaxed font-semibold">
-                                {scenarioInfo.period}
-                            </p>
-                            <p className="text-sm text-[#0A355B] leading-relaxed font-semibold">
-                                .
+                            <p className="text-xl font-semibold text-blue-700 mb-3">
+                                Scenario
                             </p>
 
-                            <p className="text-sm text-[#0A355B] leading-relaxed">
-                                {scenarioInfo.description}
-                            </p>
+                            <div className="flex gap-4 items-start">
+                                <Image
+                                    src={scenarioInfo.image}
+                                    alt={scenarioInfo.title}
+                                    width={120}
+                                    height={96}
+                                    className="rounded-lg border border-[#B6D8F6] bg-white object-cover"
+                                />
+
+                                <div>
+                                    <h3 className="text-xl font-bold text-[#0A355B]">
+                                        {scenarioInfo.title}
+                                    </h3>
+
+                                    <p className="text-sm text-[#0A355B] font-semibold">
+                                        {scenarioInfo.period}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
+
 
                         <button
                             onClick={() => {
@@ -563,6 +602,43 @@ function MetricCard({
             <p className="text-sm font-semibold text-blue-700">{title}</p>
             <p className="mt-2 text-xl font-extrabold text-[#0A355B]">{value}</p>
             <p className="mt-2 text-sm text-[#0A355B]">{note}</p>
+        </div>
+    );
+}
+function MetricIconCard({
+                            icon,
+                            title,
+                            value,
+                            note,
+                        }: {
+    icon: string;
+    title: string;
+    value: string;
+    note: string;
+}) {
+    return (
+        <div className="rounded-2xl border border-[#CFE3F8] bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-[#F3F9FF] flex items-center justify-center">
+                    <Image
+                        src={icon}
+                        alt=""
+                        width={50}
+                        height={50}
+                        className="opacity-80"
+                    />
+                </div>
+
+                <p className="text-sm font-semibold text-blue-700">{title}</p>
+            </div>
+
+            <p className="text-2xl font-extrabold text-[#0A355B] leading-none">
+                {value}
+            </p>
+
+            <p className="mt-2 text-xs text-[#0A355B] leading-snug">
+                {note}
+            </p>
         </div>
     );
 }
