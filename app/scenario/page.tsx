@@ -1,59 +1,131 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-
-function Card({
-                  id,
-                  title,
-                  period,
-                  description,
-                  selected,
-                  onSelect,
-                  onConfirm,
-              }: {
+function ScenarioCard({
+                          id,
+                          title,
+                          selected,
+                          playable,
+                          image,
+                          quickFacts,
+                          story,
+                          onSelect,
+                          onConfirm,
+                      }: {
     id: string;
     title: string;
-    period: string;
-    description: string;
     selected: string | null;
+    playable: boolean;
+    image: string;
+    quickFacts?: string[];
+    story?: string[];
     onSelect: (id: string) => void;
-    onConfirm: () => void;
+    onConfirm: (id: string) => void;
 }) {
     const isSelected = selected === id;
+    const [expanded, setExpanded] = useState(false);
 
     return (
         <div className="flex flex-col items-center">
-            <div className={`rounded-2xl p-[2px] ${isSelected ? "bg-[#9CC8F5]" : ""}`}>
-                <div
-                    onClick={() => onSelect(id)}
-                    className={`w-110 h-[500px] rounded-xl p-6 cursor-pointer border ${
-                        isSelected ? "border-[#9CC8F5]" : "border-[#B6D8F6]"
-                    }`}
-                    style={{ backgroundColor: "#D9EEFF" }}
-                >
-                    <h2 className="text-2xl font-semibold mb-1 text-[#0A355B] text-center">
-                        {title}
-                    </h2>
-                    <p className="text-lg font-medium mb-3 text-[#0A355B] text-center">
-                        {period}
-                    </p>
-                    <p className="text-lg text-[#0A355B] leading-relaxed">{description}</p>
+            {/* CARD */}
+            <div
+                onClick={() => playable && onSelect(id)}
+                className={`
+          w-[400px] rounded-2xl p-5 border transition-all duration-300
+          flex flex-col gap-5
+          ${playable ? "cursor-pointer" : "cursor-not-allowed"}
+          ${
+                    isSelected
+                        ? "border-blue-900 shadow-[0_0_0_3px_rgba(95,168,245,0.35)]"
+                        : "border-[#B6D8F6]"
+                }
+        `}
+                style={{ backgroundColor: "#D9EEFF" }}
+            >
+                {/* TITLE */}
+                <h2 className="text-2xl font-semibold text-[#0A355B] text-center">
+                    {title}
+                </h2>
+
+                {/* IMAGE FRAME */}
+                <div className="relative w-full rounded-xl border border-[#B6D8F6] bg-white p-3 overflow-hidden">
+                    <img
+                        src={image}
+                        alt={title}
+                        className={`w-full h-auto object-contain rounded-lg ${
+                            playable ? "" : "blur-[1.5px] opacity-70"
+                        }`}
+                    />
+
+                    {/* CENTERED LOCK */}
+                    {!playable && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <img
+                                src="/lock.png"
+                                className="w-14 h-14 opacity-90 drop-shadow-[0_0_12px_rgba(120,180,255,0.4)]"
+                            />
+                        </div>
+                    )}
                 </div>
+
+                {/* QUICK FACTS */}
+                {playable && quickFacts && (
+                    <div className="rounded-xl bg-white/80 border border-[#CFE3F8] p-4 space-y-2 text-[#0A355B]">
+                        {quickFacts.map((f, i) => (
+                            <p key={i} className="text-lg">• {f}</p>
+                        ))}
+                    </div>
+                )}
+
+                {/* READ MORE */}
+                {playable && story && (
+                    <div className="text-[#0A355B]">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setExpanded(!expanded);
+                            }}
+                            className="text-blue-700 text-sm font-semibold hover:underline mt-2"
+                        >
+                            {expanded ? "Hide details" : "Read more"}
+                        </button>
+
+                        {expanded && (
+                            <div className="mt-4 rounded-xl bg-white/90 border border-[#CFE3F8] p-5 space-y-3 leading-relaxed text-[15px]">
+                                {story.map((line, i) => (
+                                    <p key={i}>{line}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            <button
-                onClick={onConfirm}
-                className={`mt-6 px-20 py-5 rounded-full text-xl font-semibold border ${
-                    isSelected
-                        ? "border-[#9CC8F5] text-[#1E6FBF] bg-white hover:bg-[#F3F9FF]"
-                        : "opacity-0 pointer-events-none"
-                }`}
-            >
-                confirm
-            </button>
+            {/* COMING SOON */}
+            {!playable && (
+                <p className="mt-4 text-sm tracking-wide uppercase text-gray">
+                    Coming soon…
+                </p>
+            )}
+
+            {/* CONFIRM */}
+            {playable && (
+                <button
+                    onClick={() => onConfirm(id)}
+                    className={`
+            mt-6 px-20 py-5 rounded-full text-xl font-semibold border transition-all
+            ${
+                        isSelected
+                            ? "border-[#5FA8F5] text-[#1E6FBF] bg-white hover:bg-[#F3F9FF]"
+                            : "opacity-0 pointer-events-none"
+                    }
+          `}
+                >
+                    confirm
+                </button>
+            )}
         </div>
     );
 }
@@ -62,73 +134,75 @@ export default function ScenarioPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const character = searchParams.get("character");
+
     useEffect(() => {
         if (!character) router.replace("/character");
     }, [character, router]);
 
-    const [selected, setSelected] = useState<string | null>(() => {
-        if (typeof window === "undefined") return null;
-        return localStorage.getItem("scenario");
-    });
-
-    const confirm = () => {
-        if (!selected || !character) return;
-        router.push(`/preview?character=${character}&scenario=${selected}`);
-    };
+    const [selected, setSelected] = useState("dotcom");
 
     return (
-        <main className="relative min-h-screen px-10 py-16 bg-white">
-            <button
-                onClick={() => router.push("/character")}
-                className="absolute top-6 left-6 px-8 py-3 rounded-full bg-[#1E6FBF] text-white text-lg font-semibold hover:bg-[#165AA0]"
-            >
-                back
-            </button>
+        <main className="min-h-screen bg-[#F7FAFC] text-[#0A355B]">
+            {/* HERO */}
+            <div className="relative px-10 pt-12 pb-14 bg-gradient-to-b from-[#EAF4FF] to-[#F7FAFC] border-b border-[#CFE3F8]">
+                <button
+                    onClick={() => router.push("/character")}
+                    className="absolute top-6 left-6 px-8 py-3 rounded-full bg-[#1E6FBF] text-white text-lg font-semibold hover:bg-[#165AA0]"
+                >
+                    back
+                </button>
 
-            <h1 className="text-4xl font-bold text-center mb-12 text-[#0A355B]">
-                Pick scenario
-            </h1>
+                <h1 className="text-3xl font-bold text-center">Pick a scenario</h1>
+            </div>
 
-            <div className="flex justify-center gap-10">
-                <Card
-                    id="dotcom"
-                    title="Dot-com Bubble"
-                    period="1995 – 2002"
-                    description="The dot-com bubble was driven by rapid growth of internet companies and
-                    massive investor optimism. Many startups received huge investments despite having no
-                    clear business model or profits. Stock prices rose quickly as speculation replaced realistic
-                     evaluation. When investors realized that many companies would never become profitable,
-                      confidence collapsed, markets crashed, and thousands of tech companies failed."
-                    selected={selected}
-                    onSelect={setSelected}
-                    onConfirm={confirm}
-                />
+            {/* BODY */}
+            <div className="px-10 py-16">
+                <div className="flex justify-center gap-10">
 
-                <Card
-                    id="housing"
-                    title="Global Financial Crisis"
-                    period="2007 – 2009"
-                    description="The Global Financial Crisis was caused by risky mortgages and excessive lending
-                     in the housing market. These loans were turned into complex financial products and
-                     spread across the global financial system. When borrowers began to default, banks suffered
-                      massive losses, credit markets froze, and the world entered a deep economic recession."
-                    selected={selected}
-                    onSelect={setSelected}
-                    onConfirm={confirm}
-                />
+                    <ScenarioCard
+                        id="dotcom"
+                        title="Dot-com Bubble"
+                        selected={selected}
+                        playable
+                        image="/dotcom.jpeg"
+                        quickFacts={[
+                            "Late 1990s tech boom",
+                            "Stock prices exploded",
+                            "Companies with no profits",
+                            "Market crashed hard"
+                        ]}
+                        story={[
+                            "In the late 1990s, the internet felt like a gold rush. Every new website promised to change the world — and investors rushed in.",
+                            "Stock prices climbed far faster than real profits ever could. Even tiny startups became billion-dollar companies overnight.",
+                            "When reality caught up, the bubble burst. Thousands of companies vanished, and fortunes were wiped out."
+                        ]}
+                        onSelect={setSelected}
+                        onConfirm={(id) =>
+                            router.push(`/preview?character=${character}&scenario=${id}`)
+                        }
+                    />
 
-                <Card
-                    id="pandemic"
-                    title="Pandemic Market Shock"
-                    period="2020"
-                    description="The Pandemic Market Shock was triggered by a global health crisis that caused sudden
-                    lockdowns, travel restrictions, and supply chain disruptions. Financial markets crashed rapidly
-                     due to uncertainty and fear. Governments and central banks responded with large stimulus programs,
-                     leading to an uneven and volatile market recovery."
-                    selected={selected}
-                    onSelect={setSelected}
-                    onConfirm={confirm}
-                />
+                    <ScenarioCard
+                        id="housing"
+                        title="Future Scenario"
+                        selected={null}
+                        playable={false}
+                        image="/IMG.png"
+                        onSelect={() => {}}
+                        onConfirm={() => {}}
+                    />
+
+                    <ScenarioCard
+                        id="pandemic"
+                        title="Future Scenario"
+                        selected={null}
+                        playable={false}
+                        image="/IMG.png"
+                        onSelect={() => {}}
+                        onConfirm={() => {}}
+                    />
+
+                </div>
             </div>
         </main>
     );
