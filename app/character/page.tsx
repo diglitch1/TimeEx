@@ -129,7 +129,7 @@ export default function CharacterPage() {
                     {/* PLAYABLE CHARACTER */}
                     <CharacterCard
                         id="A"
-                        name="Sarah Novak"
+                        name="Kira Light"
                         selected={selected}
                         playable
                         image="/CharacterA.png"

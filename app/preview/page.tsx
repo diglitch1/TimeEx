@@ -42,7 +42,7 @@ type ScenarioInfo = {
 const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     A: {
         id: "A",
-        name: "Sarah Novak",
+        name: "Kira Light",
         age: "18",
         occupation: "Student",
         background: "Entering adulthood in early 2000s.",
