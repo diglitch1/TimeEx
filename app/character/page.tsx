@@ -95,12 +95,15 @@ function CharacterCard({
                 <button
                     onClick={() => onConfirm(id)}
                     className={`
-            mt-6 px-20 py-5 rounded-full text-xl font-semibold border transition-all
-            ${isSelected
-                        ? "border-[#5FA8F5] text-[#1E6FBF] bg-white hover:bg-[#F3F9FF]"
+  mt-6 px-20 py-5 rounded-full text-xl font-semibold border
+  transition-all duration-300 ease-out
+  transform
+  ${isSelected
+                        ? "border-[#5FA8F5] text-[#1E6FBF] bg-white hover:bg-[#F3F9FF] hover:scale-105 hover:shadow-lg active:scale-95 active:shadow-md"
                         : "opacity-0 pointer-events-none"
                     }
-          `}
+`}
+
                 >
                     confirm
                 </button>

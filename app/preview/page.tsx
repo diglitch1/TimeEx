@@ -531,7 +531,15 @@ export default function PreviewPage() {
                                 resetGame(startingCash);
                                 router.push('/main');
                             }}
-                            className="w-full py-4 rounded-2xl bg-blue-700 text-white text-lg font-semibold"
+                            className="
+                                w-full py-4 rounded-2xl
+                                bg-blue-700 text-white text-lg font-semibold
+                                transition-all duration-300 ease-out
+                                transform
+                                hover:bg-blue-600 hover:scale-105 hover:shadow-xl
+                                active:scale-95 active:shadow-md
+                                "
+
                         >
                             Start Simulation
                         </button>

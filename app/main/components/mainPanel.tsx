@@ -447,8 +447,8 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                                 </p>
 
                                 <p className={`font-semibold ${
-                                        activeAsset.positive ? 'text-green-600' : 'text-red-500'
-                                    }`}>
+                                    activeAsset.positive ? 'text-green-600' : 'text-red-500'
+                                }`}>
                                     {activeAsset.change >= 0 ? '+' : ''}
                                     {activeAsset.change.toFixed(2)}%
                                 </p>
@@ -474,9 +474,9 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
                                 <span className="text-sm text-gray-500">Past {range === '1W' ? 'Week' : range === '1M'
                                     ? 'Month'
-                                        : range === '6M'
-                                            ? '6 Months'
-                                            : 'Year'}
+                                    : range === '6M'
+                                        ? '6 Months'
+                                        : 'Year'}
                             </span>
                             </div>
                         </div>
@@ -486,7 +486,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                     <div className="mt-4 rounded-xl border border-gray-200 bg-green-50 p-4">
                         {/* CHART PLACEHOLDER */}
                         <div
-                            style={{height: '400px'}}
+                            style={{height: '420px'}}
                             className="mt-4 rounded-xl  bg-green-50 p-4"
                         >
                             {hasActiveData && chartData.length > 1 ? (
@@ -537,7 +537,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
 
                 {/* RIGHT */}
-                <div className="border border-gray-300 rounded-2xl p-6">
+                <div className="border border-gray-300 rounded-2xl p-6 self-start">
 
                     <div className="flex justify-center gap-3 mb-6">
                         <div className="flex border border-gray-300 rounded-full p-1 w-[260px] h-[52px]">
@@ -674,7 +674,7 @@ function MiniSparkline({data, positive,}: {
                 points={points}
                 fill="none"
                 stroke={positive ? '#22c55e' : '#ef4444'}
-                strokeWidth="3"
+                strokeWidth="2"
                 strokeLinecap="round"
             />
         </svg>
@@ -757,7 +757,33 @@ function HoverChart({
                     );
                 }}
                 onMouseLeave={() => setHoverIndex(null)}
+
             >
+                {[10, 20, 30, 40,50,60,70,80].map((y) => (
+                    <line
+                        key={y}
+                        x1={0}
+                        x2={100}
+                        y1={y}
+                        y2={y}
+                        stroke="#bfc8c2"
+                        strokeWidth="0.2"
+                        strokeDasharray="1 1"
+                    />
+                ))}
+
+                    {[10,20,30, 40,50, 60,70,80,90,100,110,120].map((x) => (
+                        <line
+                            key={`v-${x}`}
+                            x1={x}
+                            x2={x}
+                            y1={0}
+                            y2={100}
+                            stroke="#bfc8c2"
+                            strokeWidth="0.15"
+                            strokeDasharray="1 1"
+                        />
+                    ))}
                 {/* LINE */}
                 <polyline
                     points={points.map(p => `${p.x},${p.y}`).join(' ')}
@@ -777,13 +803,13 @@ function HoverChart({
                             y1={0}
                             y2={100}
                             stroke={positive ? '#22c55e' : '#ef4444'}
-                            strokeWidth="0.2"
+                            strokeWidth="0.1"
                             strokeDasharray="1 1"
                         />
                         <circle
                             cx={points[hoverIndex].x}
                             cy={points[hoverIndex].y}
-                            r={0.45}
+                            r={0.35}
                             fill={positive ? '#22c55e' : '#ef4444'}
                         />
                     </>
