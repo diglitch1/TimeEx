@@ -22,6 +22,9 @@ import Timeline from "@/app/main/components/Timeline";
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 
 export default function MainPage() {
+    const DAY_DURATION_SECONDS = 6 * 60;
+    const DAY_START_MINUTES = 2 * 60;
+    const DAY_END_MINUTES = (24 * 60) - 1;
 
     const [mounted, setMounted] = useState(false);
 
@@ -38,7 +41,7 @@ export default function MainPage() {
         setGameSeconds(idx * TOTAL_SECONDS); // jump to start of that day
     };
 
-    const TOTAL_SECONDS = 12 * 60;
+    const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 
     const [gameSeconds, setGameSeconds] = useState(0);
 
@@ -47,18 +50,14 @@ export default function MainPage() {
         Math.floor(gameSeconds / TOTAL_SECONDS),
         timelineDates.length - 1
     );
-    const REAL_SECONDS_PER_DAY = 12 * 60; // 720
-    const GAME_MINUTES_PER_DAY = 24 * 60; // 1440
-
-    const GAME_MINUTES_PER_REAL_SECOND =
-        GAME_MINUTES_PER_DAY / REAL_SECONDS_PER_DAY; // = 2
-
     const baseDate = timelineDates[dayIndex];
 
-    const inGameMinutesPerSecond = 2;
-
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
-    const inGameMinutes = secondsIntoDay * inGameMinutesPerSecond;
+    const playableMinutes = DAY_END_MINUTES - DAY_START_MINUTES;
+    const dayProgress =
+        TOTAL_SECONDS <= 1 ? 0 : secondsIntoDay / (TOTAL_SECONDS - 1);
+    const inGameMinutes =
+        DAY_START_MINUTES + Math.round(dayProgress * playableMinutes);
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
         const isNewGame = localStorage.getItem('newGame') === 'true';
