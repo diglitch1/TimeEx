@@ -22,8 +22,8 @@ export default function LandingPage() {
 
             {/* CONTENT */}
             <div className="content">
-                <img src="/Logo_sep.png" alt="TimeEx logo" className="logo" />
-                <img src="/TEXT.png" alt="TimeEx title" className="title" />
+                <img src="/images/Logo_sep.png" alt="TimeEx logo" className="logo" />
+                <img src="/images/TEXT.png" alt="TimeEx title" className="title" />
 
                 {/* TIMELINE */}
                 <div className="timeline-wrap">
@@ -45,7 +45,7 @@ export default function LandingPage() {
 
                 {/* PLAY BUTTON */}
                 <button onClick={handlePlay} className="play" aria-label="Play">
-                    <img src="/Button.png" alt="Play button" />
+                    <img src="/images/Button.png" alt="Play button" />
                 </button>
             </div>
 
@@ -68,7 +68,7 @@ export default function LandingPage() {
                 .bg {
                     position: absolute;
                     inset: 0;
-                    background-image: url('/theIMAGE.jpeg');
+                    background-image: url('/images/theIMAGE.jpeg');
                     background-size: 100% auto;
                     background-position: center;
                     background-repeat: no-repeat;

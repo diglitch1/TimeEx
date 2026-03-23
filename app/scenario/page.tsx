@@ -63,7 +63,7 @@ function ScenarioCard({
                     {!playable && (
                         <div className="absolute inset-0 flex items-center justify-center">
                             <img
-                                src="/lock.png"
+                                src="/images/lock.png"
                                 className="w-14 h-14 opacity-90 drop-shadow-[0_0_12px_rgba(120,180,255,0.4)]"
                             />
                         </div>
@@ -166,7 +166,7 @@ export default function ScenarioPage() {
                         title="Dot-com Bubble"
                         selected={selected}
                         playable
-                        image="/dotcom.jpeg"
+                        image="/images/dotcom.jpeg"
                         quickFacts={[
                             "Late 1990s tech boom",
                             "Stock prices exploded",
@@ -189,7 +189,7 @@ export default function ScenarioPage() {
                         title="Future Scenario"
                         selected={null}
                         playable={false}
-                        image="/IMG.png"
+                        image="/images/IMG.png"
                         onSelect={() => {}}
                         onConfirm={() => {}}
                     />
@@ -199,7 +199,7 @@ export default function ScenarioPage() {
                         title="Future Scenario"
                         selected={null}
                         playable={false}
-                        image="/IMG.png"
+                        image="/images/IMG.png"
                         onSelect={() => {}}
                         onConfirm={() => {}}
                     />

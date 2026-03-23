@@ -65,7 +65,7 @@ function CharacterCard({
                     {!playable && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <img
-                                src="/lock.png"
+                                src="/images/lock.png"
                                 className="w-14 h-14 opacity-90 drop-shadow-[0_0_10px_rgba(120,180,255,0.4)]"
                             />
                         </div>
@@ -135,7 +135,7 @@ export default function CharacterPage() {
                         name="Kira Light"
                         selected={selected}
                         playable
-                        image="/CharacterA.png"
+                        image="/images/CharacterA.png"
                         stats={[
                             { label: "Age", value: "18" },
                             { label: "Occupation", value: "Student" },
@@ -151,7 +151,7 @@ export default function CharacterPage() {
                         name="Future Character"
                         selected={null}
                         playable={false}
-                        image="/man.jpeg"
+                        image="/images/man.jpeg"
                         onSelect={() => {}}
                         onConfirm={() => {}}
                     />
@@ -163,7 +163,7 @@ export default function CharacterPage() {
                         name="Future Character"
                         selected={null}
                         playable={false}
-                        image="/man.jpeg"
+                        image="/images/man.jpeg"
                         onSelect={() => {}}
                         onConfirm={() => {}}
                     />

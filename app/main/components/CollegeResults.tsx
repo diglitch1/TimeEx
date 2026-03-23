@@ -54,14 +54,14 @@ const FALLBACK_SCHOOL = 'State University';
 
 
 
-const IMG_CLOSED = '/events/laptop-closed.png';
-const IMG_HALF = '/events/laptop-half.png';
-const IMG_OPEN = '/events/laptop-open.png';
-const IMG_DESKTOP = '/events/desktop.png';
-const IMG_INTERVIEWER = '/events/man.png';
-const IMG_ACCEPTED_GREEN = '/events/accepted_green.png';
-const IMG_ACCEPTED_BLUE = '/events/accepted_blue.png';
-const IMG_DECLINED_RED = '/events/declined_red.png';
+const IMG_CLOSED = '/images/events/laptop-closed.png';
+const IMG_HALF = '/images/events/laptop-half.png';
+const IMG_OPEN = '/images/events/laptop-open.png';
+const IMG_DESKTOP = '/images/events/desktop.png';
+const IMG_INTERVIEWER = '/images/events/man.png';
+const IMG_ACCEPTED_GREEN = '/images/events/accepted_green.png';
+const IMG_ACCEPTED_BLUE = '/images/events/accepted_blue.png';
+const IMG_DECLINED_RED = '/images/events/declined_red.png';
 
 export default function CollegeResultsModal({ wallet, setWallet, onClose }: Props) {
     let application: {

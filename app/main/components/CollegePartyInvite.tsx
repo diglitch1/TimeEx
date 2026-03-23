@@ -10,7 +10,7 @@ type Props = {
 };
 
 const PARTY_COST = 120;
-const IMG_GANG = '/events/gang.png';
+const IMG_GANG = '/images/events/gang.png';
 
 export default function CollegePartyInvite({
                                                wallet,

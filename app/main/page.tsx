@@ -167,6 +167,14 @@ export default function MainPage() {
         setGameSeconds(s => s + 30);
     };
 
+    const skipToNextDay = () => {
+        setGameSeconds(current => {
+            const nextDayStart = (Math.floor(current / TOTAL_SECONDS) + 1) * TOTAL_SECONDS;
+            const lastDayStart = (timelineDates.length - 1) * TOTAL_SECONDS;
+            return Math.min(nextDayStart, lastDayStart);
+        });
+    };
+
     useEffect(() => {
         saveWallet(wallet);
     }, [wallet]);
@@ -276,7 +284,7 @@ export default function MainPage() {
                     setWatchlist={setWatchlist}
                 />
                 <div className="flex-1 p-6">
-                    <div className="mx-auto w-full max-w-[1360px]">
+                    <div className="mx-auto w-full max-w-[1420px]">
                         <Timeline
                             timelineDates={TIMELINE_DATES}
                             markers={TIMELINE}
@@ -292,6 +300,7 @@ export default function MainPage() {
                                 secondsLeft={secondsLeft}
                                 gameHour={gameHour}
                                 onSkip30={skip30Seconds}
+                                onSkipDay={skipToNextDay}
                             />
                         </div>
                     </div>

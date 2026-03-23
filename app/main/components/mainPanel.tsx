@@ -43,6 +43,15 @@ type AssetWithData = AssetBase & {
 
 type AssetMarket = AssetWithData | AssetWithoutData;
 
+const ASSET_CATALOG: AssetBase[] = [
+    { symbol: 'ERIC', name: 'Ericsson', data: ERIC as MarketRow[] },
+    { symbol: 'IBM', name: 'IBM', data: IBM as MarketRow[] },
+    { symbol: 'INTC', name: 'Intel', data: INTC as MarketRow[] },
+    { symbol: 'MSFT', name: 'Microsoft', data: MSFT as MarketRow[] },
+    { symbol: 'NOK', name: 'Nokia', data: NOK as MarketRow[] },
+    { symbol: 'ORCL', name: 'Oracle', data: ORCL as MarketRow[] },
+];
+
 
 function findRowAtOrBefore(data: MarketRow[], dateStr: string): MarketRow | null {
     if (!data || data.length === 0) return null;
@@ -65,13 +74,14 @@ function toLocalDateStr(d: Date) {
     return `${y}-${m}-${day}`;
 }
 
-export default function MainTradePanel({currentDate, secondsLeft, wallet, setWallet, gameHour, onSkip30,}: {
+export default function MainTradePanel({currentDate, secondsLeft, wallet, setWallet, gameHour, onSkip30, onSkipDay,}: {
     currentDate: Date;
     secondsLeft: number;
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     gameHour: number;
     onSkip30: () => void;
+    onSkipDay: () => void;
 }) {
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -87,17 +97,8 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
     const dateStr = toLocalDateStr(currentDate);
 
-    const ASSETS = [
-        { symbol: 'ERIC', name: 'Ericsson', data: ERIC as MarketRow[] },
-        { symbol: 'IBM', name: 'IBM', data: IBM as MarketRow[] },
-        { symbol: 'INTC', name: 'Intel', data: INTC as MarketRow[] },
-        { symbol: 'MSFT', name: 'Microsoft', data: MSFT as MarketRow[] },
-        { symbol: 'NOK', name: 'Nokia', data: NOK as MarketRow[] },
-        { symbol: 'ORCL', name: 'Oracle', data: ORCL as MarketRow[] },
-    ];
-
     const assetsWithMarket = useMemo<AssetMarket[]>(() => {
-        return ASSETS.map(asset => {
+        return ASSET_CATALOG.map(asset => {
             const sortedData = [...asset.data].sort(
                 (a, b) => a.date.localeCompare(b.date)
             );
@@ -191,37 +192,55 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
     const price = activeAsset?.hasData ? activeAsset.price : 0;
 
-
-    const getAssetPrice = () => {
-        if (!activeAsset || !activeAsset.hasData) return 0;
-        return activeAsset.price;
-    };
-
     const lastEdited = useRef<'amount' | 'units' | null>(null);
+
+    const cashBalance = useMemo(() => {
+        return wallet.find(item => item.label === 'Cash')?.units ?? 0;
+    }, [wallet]);
+
+    const resetTradeDraft = () => {
+        setAmount('');
+        setUnits('');
+        lastEdited.current = null;
+    };
 
     const handleAmountChange = (val: string) => {
         lastEdited.current = 'amount';
-        setAmount(val);
-
         const num = Number(val);
         if (!price || isNaN(num)) {
+            setAmount(val);
             setUnits('');
             return;
         }
 
+        if (tradeSide === 'sell') {
+            const boundedUnits = Math.min(num / price, ownedUnits);
+            setUnits(boundedUnits.toFixed(4));
+            setAmount((boundedUnits * price).toFixed(2));
+            return;
+        }
+
+        setAmount(val);
         setUnits((num / price).toFixed(4));
     };
 
     const handleUnitsChange = (val: string) => {
         lastEdited.current = 'units';
-        setUnits(val);
-
         const num = Number(val);
         if (!price || isNaN(num)) {
+            setUnits(val);
             setAmount('');
             return;
         }
 
+        if (tradeSide === 'sell') {
+            const boundedUnits = Math.min(num, ownedUnits);
+            setUnits(boundedUnits.toFixed(4));
+            setAmount((boundedUnits * price).toFixed(2));
+            return;
+        }
+
+        setUnits(val);
         setAmount((num * price).toFixed(2));
     };
 
@@ -236,12 +255,12 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         const dollarAmount = Number(amount);
         const unitAmount = Number(units);
 
-        if (side === 'buy' && (isNaN(dollarAmount) || dollarAmount <= 0)) {
+        if (tradeSide === 'buy' && (isNaN(dollarAmount) || dollarAmount <= 0)) {
             alert('Enter dollar amount');
             return;
         }
 
-        if (side === 'sell' && (isNaN(unitAmount) || unitAmount <= 0)) {
+        if (tradeSide === 'sell' && (isNaN(unitAmount) || unitAmount <= 0)) {
             alert('Enter units');
             return;
         }
@@ -254,7 +273,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
             if (!cash) return prev;
 
             /* ===== BUY ===== */
-            if (side === 'buy') {
+            if (tradeSide === 'buy') {
                 if (cash.units < dollarAmount) {
                     alert('Not enough cash');
                     return prev;
@@ -280,7 +299,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
             }
 
             /* ===== SELL ===== */
-            if (side === 'sell') {
+            if (tradeSide === 'sell') {
                 if (!asset || asset.units < unitAmount) {
                     alert('Not enough asset');
                     return prev;
@@ -298,8 +317,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
             return next.filter(w => w.units > 0);
         });
 
-        setAmount('');
-        setUnits('');
+        resetTradeDraft();
     };
 
     useEffect(() => {
@@ -319,7 +337,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                 setAmount((num * price).toFixed(2));
             }
         }
-    }, [price]);
+    }, [price, amount, units]);
 
     const ownedAsset = useMemo(() => {
         if (!activeAsset) return null;
@@ -328,6 +346,34 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
     const ownedUnits = ownedAsset?.units ?? 0;
     const ownedValue = ownedUnits * price;
+    const tradeSide: 'buy' | 'sell' = side === 'sell' && ownedUnits <= 0 ? 'buy' : side;
+    const marketStatus = gameHour >= 9 && gameHour < 16
+        ? { label: 'Market Open', tone: 'bg-emerald-100 text-emerald-700 border-emerald-200' }
+        : { label: 'Market Closed', tone: 'bg-gray-100 text-gray-600 border-gray-200' };
+    const amountValue = Number(amount);
+    const unitsValue = Number(units);
+    const validAmount = Number.isFinite(amountValue) ? amountValue : 0;
+    const validUnits = Number.isFinite(unitsValue) ? unitsValue : 0;
+    const estimatedValue = tradeSide === 'buy' ? validAmount : validUnits * price;
+    const canAffordTrade = tradeSide === 'buy' ? validAmount > 0 && validAmount <= cashBalance : validUnits > 0 && validUnits <= ownedUnits;
+    const isTradeReady = hasActiveData && canAffordTrade;
+
+    const applyBuyPreset = (preset: number) => {
+        if (!price) return;
+        const nextAmount = Math.min(preset, cashBalance);
+        if (nextAmount <= 0) return;
+        lastEdited.current = 'amount';
+        setAmount(nextAmount.toFixed(2));
+        setUnits((nextAmount / price).toFixed(4));
+    };
+
+    const applySellPreset = (ratio: number) => {
+        if (!price || ownedUnits <= 0) return;
+        const nextUnits = ownedUnits * ratio;
+        lastEdited.current = 'units';
+        setUnits(nextUnits.toFixed(4));
+        setAmount((nextUnits * price).toFixed(2));
+    };
 
 
 
@@ -335,7 +381,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         <div className="flex-1 w-full bg-transparent px-4 py-4">
 
             {/* TIME INFO */}
-            <div className="flex justify-between items-center mb-10">
+            <div className="mb-10 flex items-center justify-between">
                 <div>
                     <p className="text-lg text-gray-800">
                         Time now:{' '}
@@ -347,19 +393,30 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
                 </div>
 
-                <button
-                    onClick={onSkip30}
-                    className="px-4 py-2 rounded-full bg-blue-600 text-white font-semibold
-                   hover:bg-blue-500 transition cursor-pointer text-sm"
-                    title="Skip 30 seconds"
-                >
-                    +30s
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={onSkip30}
+                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 cursor-pointer"
+                        title="Skip 30 seconds"
+                    >
+                        +30s
+                    </button>
 
-                <button
-                    className="w-14 h-14 rounded-full bg-[#e6f0ff] flex items-center justify-center border border-blue-200 hover:bg-blue-100 transition cursor-pointer">
-                    <img src="/bell.png" alt="Notifications" className="w-10 h-10"/>
-                </button>
+                    <button
+                        onClick={onSkipDay}
+                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 cursor-pointer"
+                        title="Skip to next day"
+                    >
+                        Next Day
+                    </button>
+
+                    <button
+                        className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
+                        title="Notifications"
+                    >
+                        <Image src="/images/bellicon.png" alt="Notifications" width={100} height={100} className="h-10 w-10 object-contain"/>
+                    </button>
+                </div>
             </div>
 
             {/* ASSET CAROUSEL */}
@@ -372,7 +429,14 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                             return (
                                 <div
                                     key={asset.symbol}
-                                    onClick={() => asset.hasData && setActiveSymbol(asset.symbol)}
+                                    onClick={() => {
+                                        if (!asset.hasData) return;
+                                        resetTradeDraft();
+                                        setActiveSymbol(asset.symbol);
+                                        if (!wallet.some(item => item.label === asset.symbol && item.units > 0)) {
+                                            setSide('buy');
+                                        }
+                                    }}
 
                                     className={`min-w-[300px] cursor-pointer rounded-[24px] border px-6 py-5 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
                     ${isActive
@@ -525,103 +589,218 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                 {/* RIGHT */}
                 <div className="self-start rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
 
-                    <div className="flex justify-center gap-3 mb-6">
-                        <div className="flex h-[52px] w-[260px] rounded-full border border-gray-200 bg-gray-50 p-1">
+                    <div className={`mb-6 rounded-[24px] border p-4 ${
+                        tradeSide === 'buy'
+                            ? 'border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white'
+                            : 'border-red-100 bg-gradient-to-br from-red-50 via-white to-white'
+                    }`}>
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                    Trade Ticket
+                                </p>
+                                <p className="mt-1 text-2xl font-semibold tracking-tight text-gray-950">
+                                    {activeAsset?.symbol ?? 'Select Asset'}
+                                </p>
+                            </div>
+                            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${marketStatus.tone}`}>
+                                {marketStatus.label}
+                            </span>
+                        </div>
+
+                        <div className="mb-4 grid grid-cols-2 gap-3">
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    Price
+                                </p>
+                                <p className="mt-1 text-lg font-semibold text-gray-950">
+                                    {hasActiveData ? formatCurrency(price) : 'N/A'}
+                                </p>
+                            </div>
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    {tradeSide === 'buy' ? 'Cash Available' : 'Units Owned'}
+                                </p>
+                                <p className="mt-1 text-lg font-semibold text-gray-950">
+                                    {tradeSide === 'buy'
+                                        ? formatCurrency(cashBalance)
+                                        : `${ownedUnits.toFixed(4)} ${activeAsset?.symbol ?? ''}`.trim()}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-center gap-3">
+                            <div className="flex h-[52px] w-full rounded-full border border-gray-200 bg-white p-1">
                             <button
-                                onClick={() => setSide('buy')}
+                                onClick={() => {
+                                    if (tradeSide === 'buy') return;
+                                    resetTradeDraft();
+                                    setSide('buy');
+                                }}
                                 className={`flex-1 rounded-full font-semibold text-lg transition
-                                    ${side === 'buy'
-                                    ? 'bg-green-500 text-white'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                    ${tradeSide === 'buy'
+                                    ? 'bg-emerald-500 text-white shadow-sm'
+                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                                 }`}>
-                                buy
+                                Buy
                             </button>
 
                             <button
-                                onClick={() => setSide('sell')}
+                                onClick={() => {
+                                    if (ownedUnits === 0 || tradeSide === 'sell') return;
+                                    resetTradeDraft();
+                                    setSide('sell');
+                                }}
                                 disabled={ownedUnits === 0}
-                                className={`flex-1 py-2 rounded-full text-lg font-semibold transition ${side === 'sell'
-                                    ? 'bg-red-500 text-white'
+                                className={`flex-1 py-2 rounded-full text-lg font-semibold transition ${tradeSide === 'sell'
+                                    ? 'bg-red-500 text-white shadow-sm'
                                     : ownedUnits === 0
                                         ? 'text-gray-400 cursor-not-allowed'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                                 }`}
                             >
-                                sell
+                                Sell
                             </button>
 
                         </div>
                     </div>
+                    </div>
 
-                    {side === 'sell' && ownedUnits > 0 && (
-                        <div className="mb-4 rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm">
-                            <p className="text-gray-500">You own</p>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {(tradeSide === 'buy'
+                            ? [50, 250, 500, 1000].map(preset => ({
+                                key: String(preset),
+                                label: formatCurrency(preset),
+                                action: () => applyBuyPreset(preset),
+                                disabled: cashBalance <= 0,
+                            }))
+                            : [0.25, 0.5, 0.75, 1].map(ratio => ({
+                                key: String(ratio),
+                                label: `${Math.round(ratio * 100)}%`,
+                                action: () => applySellPreset(ratio),
+                                disabled: ownedUnits <= 0,
+                            }))
+                        ).map(preset => (
+                            <button
+                                key={preset.key}
+                                type="button"
+                                disabled={preset.disabled}
+                                onClick={preset.action}
+                                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:text-gray-300"
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {tradeSide === 'sell' && ownedUnits > 0 && (
+                        <div className="mb-4 rounded-[20px] border border-red-100 bg-red-50/60 p-4 text-sm">
+                            <p className="text-red-600">Your position</p>
                             <p className="font-semibold text-gray-900">
-                                {ownedUnits.toFixed(3)} {activeAsset?.symbol}
+                                {ownedUnits.toFixed(4)} {activeAsset?.symbol}
                                 <span className="text-gray-500">
-                        {' '} (~${ownedValue.toFixed(2)})
-                    </span>
+                                    {' '}({formatCurrency(ownedValue)})
+                                </span>
                             </p>
                         </div>
                     )}
 
 
                     {/* AMOUNT ($) */}
-                    <div className="mb-4 rounded-[20px] border border-gray-200 p-4">
-                        <label className="text-sm text-gray-500 block mb-1">
-                            Amount ($)
+                    <div className={`mb-4 rounded-[22px] border p-4 transition ${
+                        tradeSide === 'buy'
+                            ? 'border-emerald-100 bg-emerald-50/40 focus-within:border-emerald-300'
+                            : 'border-red-100 bg-red-50/35 focus-within:border-red-300'
+                    }`}>
+                        <label className="mb-1 block text-sm text-gray-500">
+                            {tradeSide === 'buy' ? 'Order Amount (USD)' : 'Target Proceeds (USD)'}
                         </label>
 
                         <input
                             type="number"
                             value={amount}
-                            disabled={side === 'sell'}
                             onChange={(e) => handleAmountChange(e.target.value)}
-                            className={`w-full text-lg font-semibold outline-none bg-transparent
-                            ${side === 'sell'
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-black'
-                            }`}
-                            placeholder="$"
+                            className="w-full bg-transparent text-2xl font-semibold text-black outline-none"
+                            placeholder="0.00"
                         />
-
+                        <p className="mt-2 text-xs text-gray-500">
+                            {tradeSide === 'buy'
+                                ? `Cash available: ${formatCurrency(cashBalance)}`
+                                : `Maximum you can sell: ${formatCurrency(ownedValue)}`}
+                        </p>
                     </div>
 
                     {/* UNITS */}
-                    <div className="mb-6 rounded-[20px] border border-gray-200 p-4">
-                        <label className="text-sm text-gray-500 block mb-1">
+                    <div className={`mb-4 rounded-[22px] border p-4 transition ${
+                        tradeSide === 'buy'
+                            ? 'border-blue-100 bg-blue-50/35 focus-within:border-blue-300'
+                            : 'border-amber-100 bg-amber-50/40 focus-within:border-amber-300'
+                    }`}>
+                        <label className="mb-1 block text-sm text-gray-500">
                             Units
                         </label>
 
                         <input
                             type="number"
                             value={units}
-                            max={side === 'sell' ? ownedUnits : undefined}
+                            max={tradeSide === 'sell' ? ownedUnits : undefined}
                             onChange={(e) => {
                                 const val = e.target.value;
-                                if (side === 'sell' && Number(val) > ownedUnits) return;
                                 handleUnitsChange(val);
                             }}
-                            className="w-full text-lg font-semibold text-black outline-none bg-transparent"
+                            className="w-full bg-transparent text-2xl font-semibold text-black outline-none"
                             placeholder="0.0000"
                         />
-
+                        <p className="mt-2 text-xs text-gray-500">
+                            {tradeSide === 'buy'
+                                ? `Estimated units at current price`
+                                : `Owned units: ${ownedUnits.toFixed(4)} ${activeAsset?.symbol ?? ''}`.trim()}
+                        </p>
                     </div>
 
-                    {side === 'sell' && units && Number(units) > 0 && (
-                        <p className="mt-2 text-sm text-gray-600">
-                            You will receive{' '}
-                            <span className="font-semibold text-gray-900">
-                        ${(Number(units) * price).toFixed(3)}
-                    </span>
+                    <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                            Trade Preview
                         </p>
-                    )}
-
+                        <div className="mt-3 space-y-3 text-sm">
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Action</span>
+                                <span className="font-semibold text-gray-900">
+                                    {tradeSide === 'buy' ? 'Buy' : 'Sell'} {activeAsset?.symbol ?? ''}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Estimated Value</span>
+                                <span className="font-semibold text-gray-900">
+                                    {formatCurrency(estimatedValue || 0)}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Units</span>
+                                <span className="font-semibold text-gray-900">
+                                    {validUnits > 0 ? validUnits.toFixed(4) : '0.0000'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Status</span>
+                                <span className={`font-semibold ${isTradeReady ? 'text-emerald-700' : 'text-amber-600'}`}>
+                                    {isTradeReady ? 'Ready to submit' : tradeSide === 'buy' ? 'Enter a valid affordable amount' : 'Enter sellable units'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
 
                     <button
                         onClick={handleConfirmTrade}
-                        className="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-full text-lg font-semibold cursor-pointer">
-                        confirm
+                        disabled={!isTradeReady}
+                        className={`mt-6 w-full rounded-full py-4 text-lg font-semibold transition ${
+                            isTradeReady
+                                ? tradeSide === 'buy'
+                                    ? 'bg-emerald-500 text-white hover:bg-emerald-400 cursor-pointer'
+                                    : 'bg-red-500 text-white hover:bg-red-400 cursor-pointer'
+                                : 'cursor-not-allowed bg-gray-200 text-gray-400'
+                        }`}>
+                        {tradeSide === 'buy' ? `Buy ${activeAsset?.symbol ?? ''}`.trim() : `Sell ${activeAsset?.symbol ?? ''}`.trim()}
                     </button>
 
                 </div>
@@ -668,7 +847,7 @@ function MiniSparkline({data, positive,}: {
 }
 
 function getAssetLogo(symbol: string) {
-    return `/assets/${symbol.toLowerCase()}.png`;
+    return `/images/assets/${symbol.toLowerCase()}.png`;
 }
 
 function calculateRangeSummary(rows: { date: string; close: number }[]) {

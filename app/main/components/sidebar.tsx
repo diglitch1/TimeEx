@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { WalletItem } from '../utils/walletData';
 
 const aaplData = {
@@ -58,334 +60,286 @@ export default function Sidebar({
     );
 
     const gainLoss = totalValue - STARTING_CASH;
-    const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
+    const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
+    const sectionLabelClass = 'mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-gray-400';
 
     return (
-        <aside className="w-[380px] border-r border-gray-200 bg-white px-6 py-6 flex flex-col gap-4 text-base">
-
-            {/* Logo */}
-            <div className="flex items-center gap-3 pb-4 border-b border-gray-300">
-                <Image
-                    src="/logo.png"
-                    alt="TimeEx logo"
-                    width={36}
-                    height={36}
-                />
-                <span className="text-2xl font-bold text-blue-600">
-                    TimeEx
-                </span>
-            </div>
-
-            {/* Profile */}
-            <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-400"/>
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Profile
-                </h2>
-            </div>
-
-            {/* Wallet window */}
-            <h3 className="text-xl font-semibold text-gray-900 " style={{marginBottom: -8}}>
-                Wallet
-            </h3>
-
-            <div className={panelClass}>
-
-                {/* Scrollable assets */}
-                <div className="wallet-scroll max-h-[180px] overflow-y-auto pr-3 space-y-2 text-gray-800">
-                    {wallet.map(item => (
-                        <p key={item.id}>
-                            {item.label}:{' '}
-                            <span className="font-medium">{item.units.toFixed(3)} {item.unitLabel}</span>
-                            <span className="text-gray-500"> (~${item.usdValue.toFixed(2)})</span>
-                        </p>
-
-                    ))}
-                </div>
-
-                <div className="my-4 border-t border-gray-200"/>
-
-                {/*  im not sure how exactly are gains/losses calculated, so leaving this out for now
-                  <div
-                    className={`font-semibold text-lg ${
-                        gainLoss >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    Gain/Loss: {gainLoss >= 0 ? '+' : ''}
-                    {gainLoss.toFixed(2)} $
-                </div> */}
-
-                <div className="mt-1 font-semibold text-gray-900 text-lg">
-                    Cash Out Value: {totalValue.toFixed(2)} $
-                </div>
-
-            </div>
-
-            {/* Watchlist */}
-            {/* Watchlist */}
-            <div>
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                        My watchlist
-                    </h3>
-
-                    <button
-                        onClick={() => setOpen(o => !o)}
-                        className="rounded-full border border-gray-200 bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-500"
-                    >
-                        manage
-                    </button>
-                </div>
-
-                {open && (
-                    <div className="mb-3 rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                        <div className="flex gap-2 mb-2">
-                            <button
-                                onClick={() => setMode('add')}
-                                className={`px-3 py-1 rounded-full text-sm ${
-                                    mode === 'add' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-                                }`}
-                            >
-                                add
-                            </button>
-
-                            <button
-                                onClick={() => setMode('remove')}
-                                className={`px-3 py-1 rounded-full text-sm ${
-                                    mode === 'remove' ? 'bg-red-500 text-white' : 'bg-gray-200'
-                                }`}
-                            >
-                                remove
-                            </button>
-                        </div>
-
-                        {(mode === 'add'
-                                ? ALL_ASSETS.filter(a => !watchlist.includes(a))
-                                : watchlist
-                        ).map(symbol => (
-                            <button
-                                key={symbol}
-                                onClick={() => {
-                                    setWatchlist(prev =>
-                                        mode === 'add'
-                                            ? [...prev, symbol]
-                                            : prev.filter(s => s !== symbol)
-                                    );
-                                }}
-                                className="block w-full text-left px-2 py-1 rounded hover:bg-gray-900 text-sm text-gray-600"
-                            >
-                                {symbol}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                <div className={`${panelClass} space-y-3`}>
-                    {watchlist.map(symbol => {
-                        const asset = ASSET_LOOKUP[symbol];
-
-                        if (!asset) return null;
-
-                        return (
-                            <WatchItem
-                                key={symbol}
-                                name={symbol}
-                                change={`${asset.positive ? '+' : ''}${asset.change}%`}
-                                positive={asset.positive}
-                            />
-                        );
-                    })}
-                </div>
-            </div>
-
-
-            {/* News Feed */}
-            <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    News Feed
-                </h3>
-
-                <div className={`${panelClass} space-y-4`}>
-
-                    <NewsItem
-                        img="/news/news1.png"
-                        text="Goldman Sachs unveils its 10-year playbook — and AI is at the heart of it"
-                    />
-
-                    <NewsItem
-                        img="/news/news2.png"
-                        text="Earnings playbook: Nvidia, retailers headline the tail end of the season"
-                    />
-
-                    <NewsItem
-                        img="/news/news3.png"
-                        text="Ed Yardeni says gold is the best safe-haven play and ‘the new bitcoin’"
-                    />
-
-                    <ReadMoreButton />
-
-                </div>
-            </div>
-
-            {/* Current Market Mover */}
-            <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    Current Marketmover
-                </h3>
-
+        <aside className="w-[416px] shrink-0 border-r border-gray-200 bg-[#f8fafc] px-5 py-6 text-base">
+            <div className="flex h-full flex-col gap-5">
                 <div className={panelClass}>
-
-                    {/* Header */}
-                    <div className="flex items-center gap-3 mb-2">
-                        <img
-                            src="/assets/apple.png"
-                            alt="Apple logo"
-                            className="h-16 w-16 rounded-[20px] object-cover"/>
-
-                        <div>
-                            <p className="font-semibold text-gray-900">AAPL</p>
-                            <p className="text-sm text-gray-500">Apple</p>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-gray-200 bg-white">
+                            <Image
+                                src="/images/logo.png"
+                                alt="TimeEx logo"
+                                width={28}
+                                height={28}
+                            />
                         </div>
-
-                        <div className="ml-auto text-green-500 font-semibold">
-                            +2.80%
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                Portfolio Terminal
+                            </p>
+                            <p className="text-2xl font-semibold tracking-tight text-gray-950">
+                                TimeEx
+                            </p>
                         </div>
                     </div>
 
-                    {/* Chart */}
-                    <div className="mb-2 h-[90px] overflow-hidden rounded-[20px] bg-blue-50 p-3">
-                        <FakeChart data={aaplData.prices}/>
+                    <div className="mt-5 rounded-[24px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                    Net Worth
+                                </p>
+                                <p className="mt-1 text-[2.6rem] font-semibold tracking-tight text-gray-950">
+                                    {formatSidebarCurrency(totalValue)}
+                                </p>
+                            </div>
+                            <div className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                                gainLoss >= 0
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-red-100 text-red-700'
+                            }`}>
+                                {gainLoss >= 0 ? '+' : '-'}
+                                {formatSidebarCurrency(Math.abs(gainLoss))}
+                            </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    Starting Cash
+                                </p>
+                                <p className="mt-1 text-xl font-semibold text-gray-950">
+                                    {formatSidebarCurrency(STARTING_CASH)}
+                                </p>
+                            </div>
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    Holdings
+                                </p>
+                                <p className="mt-1 text-xl font-semibold text-gray-950">
+                                    {wallet.length}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p className={sectionLabelClass}>Wallet</p>
+                    <div className={panelClass}>
+                        <div className="wallet-scroll max-h-[260px] space-y-3 overflow-y-auto pr-2">
+                            {wallet.map(item => (
+                                <div
+                                    key={item.id}
+                                    className="flex items-center gap-4 rounded-[22px] border border-gray-200 bg-gradient-to-r from-gray-50 to-white px-4 py-4"
+                                >
+                                    <WalletIcon label={item.label} />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="truncate text-base font-semibold text-gray-950">
+                                                {item.label}
+                                            </p>
+                                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                                                {item.label === 'Cash' ? 'Cash' : 'Stock'}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {item.label === 'Cash'
+                                                ? `${formatSidebarCurrency(item.units)} available`
+                                                : `${item.units.toFixed(4)} ${item.unitLabel}`}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-base font-semibold text-gray-950">
+                                            {formatSidebarCurrency(item.usdValue)}
+                                        </p>
+                                        <p className="mt-1 text-xs font-medium text-gray-400">
+                                            {totalValue > 0 ? `${((item.usdValue / totalValue) * 100).toFixed(1)}% of wallet` : '0.0% of wallet'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div className="mb-3 flex items-center justify-between">
+                        <p className={sectionLabelClass}>Watchlist</p>
+                        <button
+                            onClick={() => setOpen(o => !o)}
+                            className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-gray-600 transition hover:border-blue-200 hover:text-blue-600"
+                        >
+                            Manage
+                        </button>
                     </div>
 
+                    {open && (
+                        <div className="mb-3 rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                            <div className="mb-3 flex gap-2">
+                                <button
+                                    onClick={() => setMode('add')}
+                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${
+                                        mode === 'add'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-600'
+                                    }`}
+                                >
+                                    Add
+                                </button>
 
-                    {/* Buy / Sell */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <button className="rounded-[18px] bg-gray-400 py-2 font-semibold text-white">
-                            sell<br/>226.81
-                        </button>
+                                <button
+                                    onClick={() => setMode('remove')}
+                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${
+                                        mode === 'remove'
+                                            ? 'bg-red-600 text-white'
+                                            : 'bg-gray-100 text-gray-600'
+                                    }`}
+                                >
+                                    Remove
+                                </button>
+                            </div>
 
-                        <button className="rounded-[18px] bg-gray-600 py-2 font-semibold text-white">
-                            buy<br/>227.22
-                        </button>
+                            <div className="space-y-1">
+                                {(mode === 'add'
+                                        ? ALL_ASSETS.filter(a => !watchlist.includes(a))
+                                        : watchlist
+                                ).map(symbol => (
+                                    <button
+                                        key={symbol}
+                                        onClick={() => {
+                                            setWatchlist(prev =>
+                                                mode === 'add'
+                                                    ? [...prev, symbol]
+                                                    : prev.filter(s => s !== symbol)
+                                            );
+                                        }}
+                                        className="block w-full rounded-[14px] px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                    >
+                                        {symbol}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={panelClass}>
+                        <div className="space-y-3">
+                            {watchlist.map(symbol => {
+                                const asset = ASSET_LOOKUP[symbol];
+
+                                if (!asset) return null;
+
+                                return (
+                                    <WatchItem
+                                        key={symbol}
+                                        name={symbol}
+                                        change={`${asset.positive ? '+' : ''}${asset.change}%`}
+                                        positive={asset.positive}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p className={sectionLabelClass}>News Feed</p>
+                    <div className={panelClass}>
+                        <div className="space-y-4">
+                            <NewsItem
+                                img="/images/news/news1.png"
+                                text="Goldman Sachs unveils its 10-year playbook and AI is at the heart of it"
+                            />
+
+                            <NewsItem
+                                img="/images/news/news2.png"
+                                text="Earnings playbook: Nvidia and retailers headline the tail end of the season"
+                            />
+
+                            <NewsItem
+                                img="/images/news/news3.png"
+                                text="Ed Yardeni says gold is the best safe-haven play and the new bitcoin"
+                            />
+                        </div>
+
+                        <ReadMoreButton />
+                    </div>
+                </div>
+
+                <div>
+                    <p className={sectionLabelClass}>Market Mover</p>
+                    <div className={panelClass}>
+                        <div className="flex items-center gap-3">
+                            <Image
+                                src="/images/assets/apple.png"
+                                alt="Apple logo"
+                                width={56}
+                                height={56}
+                                className="h-14 w-14 rounded-[20px] object-cover"
+                            />
+
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-gray-950">Apple</p>
+                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    AAPL
+                                </p>
+                            </div>
+
+                            <div className="ml-auto text-right">
+                                <p className="text-lg font-semibold text-gray-950">
+                                    {formatSidebarCurrency(aaplData.buy)}
+                                </p>
+                                <p className="text-sm font-semibold text-emerald-700">
+                                    +{aaplData.change.toFixed(2)}%
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 rounded-[22px] border border-blue-100 bg-gradient-to-b from-blue-50 via-white to-white p-3">
+                            <div className="h-[110px] overflow-hidden rounded-[18px] bg-white px-3 py-2">
+                                <FakeChart data={aaplData.prices}/>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                            <button className="rounded-[18px] border border-gray-200 bg-gray-50 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
+                                Sell {formatSidebarCurrency(aaplData.sell)}
+                            </button>
+
+                            <button className="rounded-[18px] bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-500">
+                                Buy {formatSidebarCurrency(aaplData.buy)}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p className={sectionLabelClass}>Tickets</p>
+                    <div className="rounded-[28px] border border-yellow-100 bg-gradient-to-br from-yellow-50 via-white to-orange-50 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                        <div className="space-y-3">
+                            <LotteryTicket
+                                title="Budget Banger"
+                                price="$5.00"
+                                tone="pink"
+                            />
+                            <LotteryTicket
+                                title="Mediocre Fortune"
+                                price="$15.00"
+                                tone="green"
+                            />
+                            <LotteryTicket
+                                title="Eternal Riches Maybe"
+                                price="$30.00"
+                                tone="gold"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Lottery Tickets */}
-            <div>
-                <h3
-                    style={{
-                        color: '#E39B00',
-                        padding: '8px 16px',
-                        borderRadius: '10px',
-                        fontWeight: 700,
-                        fontSize: '20px',
-                        marginBottom: '0px',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                    }}
-                    className="mb-3 flex items-center gap-2 w-fit"
-                >
-                    Lottery Tickets
-
-                </h3>
-
-                <div
-                    className="rounded-[28px] p-4 space-y-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
-                    style={{
-                        backgroundImage: 'url(/lottery.png)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                    }}>
-                    {/* Ticket 1 */}
-                    <div
-                        className="rounded-[24px] px-6 py-3 flex items-center justify-between"
-                        style={{
-                            backgroundColor: '#FF7FA3',
-                            border: '2px solid white',
-                        }}>
-                        <div style={{color: 'white'}}>
-                            <div style={{fontSize: '18px', fontWeight: 700}}>
-                                Budget Banger
-                            </div>
-                            <div style={{fontSize: '16px'}}>
-                                Price: $5.00
-                            </div>
-                        </div>
-
-                        <button
-                            className="cursor-pointer hover:opacity-90 transition"
-                            style={{
-                                backgroundColor: 'white',
-                                color: '#FF4F82',
-                                fontWeight: 700,
-                                padding: '6px 18px',
-                                borderRadius: '999px',
-                            }}
-                        >
-                            buy
-                        </button>
-                    </div>
-
-                    {/* Ticket 2 */}
-                    <div
-                        className="rounded-[24px] px-6 py-3 flex items-center justify-between"
-                        style={{
-                            backgroundColor: '#4BE36A',
-                            border: '2px solid white',
-                        }}>
-                        <div style={{color: 'white'}}>
-                            <div style={{fontSize: '18px', fontWeight: 700}}>
-                                Mediocre Fortune
-                            </div>
-                            <div style={{fontSize: '16px'}}>
-                                Price: $15.00
-                            </div>
-                        </div>
-
-                        <button
-                            className="cursor-pointer hover:opacity-90 transition"                            style={{
-                                backgroundColor: 'white',
-                                color: '#22B856',
-                                fontWeight: 700,
-                                padding: '6px 18px',
-                                borderRadius: '999px',
-                            }}
-                        >
-                            buy
-                        </button>
-                    </div>
-
-                    {/* Ticket 3 */}
-                    <div
-                        className="rounded-[24px] px-6 py-3 flex items-center justify-between"
-                        style={{
-                            backgroundColor: '#FFF176',
-                            border: '2px solid white',
-                        }}>
-                        <div style={{color: '#D39B00'}}>
-                            <div style={{fontSize: '18px', fontWeight: 700}}>
-                                Eternal Riches… Maybe
-                            </div>
-                            <div style={{fontSize: '16px'}}>
-                                Price: $30.00
-                            </div>
-                        </div>
-
-                        <button
-                            className="cursor-pointer hover:opacity-90 transition"
-                            style={{
-                                backgroundColor: 'white',
-                                color: '#D39B00',
-                                fontWeight: 700,
-                                padding: '6px 18px',
-                                borderRadius: '999px',
-                            }}
-                        >
-                            buy
-                        </button>
-                    </div>
-                </div>
-            </div>
-
         </aside>
     );
 }
@@ -400,11 +354,46 @@ function WatchItem({
     positive: boolean;
 }) {
     return (
-        <div className="flex justify-between font-medium text-lg">
-            <span className="text-gray-900">{name}</span>
-            <span className={positive ? 'text-green-500' : 'text-red-500'}>
-        {change}
-      </span>
+        <div className="flex items-center justify-between rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-3">
+            <div>
+                <p className="text-sm font-semibold text-gray-950">{name}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-400">
+                    Live Watch
+                </p>
+            </div>
+            <span className={`text-sm font-semibold ${positive ? 'text-emerald-700' : 'text-red-700'}`}>
+                {change}
+            </span>
+        </div>
+    );
+}
+
+function WalletIcon({ label }: { label: string }) {
+    if (label === 'Cash') {
+        return (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-emerald-200 bg-gradient-to-br from-emerald-100 via-white to-emerald-50 p-2 shadow-[0_6px_16px_rgba(16,185,129,0.18)]">
+                <Image
+                    src="/images/money.png"
+                    alt="Cash icon"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-contain"
+                />
+            </div>
+        );
+    }
+
+    const iconPath = `/images/assets/${label.toLowerCase()}.png`;
+
+    return (
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]">
+            <Image
+                src={iconPath}
+                alt={`${label} logo`}
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+            />
         </div>
     );
 }
@@ -415,21 +404,25 @@ function NewsItem({img, text,}: {
     text: string;
 }) {
     return (
-        <div className="flex gap-4 items-start">
-            <img
+        <div className="flex items-start gap-4">
+            <Image
                 src={img}
                 alt=""
-                className="w-16 h-16 rounded-md object-cover"
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-[18px] object-cover"
             />
-            <p className="text-sm text-gray-900 leading-snug">
-                {text}
-            </p>
+            <div className="min-w-0">
+                <p className="text-sm font-medium leading-snug text-gray-900">
+                    {text}
+                </p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                    Market News
+                </p>
+            </div>
         </div>
     );
 }
-
-import { useRouter } from 'next/navigation';
-import {useState} from "react";
 
 function ReadMoreButton() {
     const router = useRouter();
@@ -437,10 +430,9 @@ function ReadMoreButton() {
     return (
         <button
             onClick={() => router.push('/news')}
-            className="w-full mt-3 rounded-full bg-blue-500 text-white font-semibold py-2
-                       hover:bg-blue-400 cursor-pointer transition"
+            className="mt-5 w-full rounded-full border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-600"
         >
-            read more
+            Read More
         </button>
     );
 }
@@ -472,10 +464,59 @@ function FakeChart({ data }: { data: number[] }) {
                 points={points}
                 fill="none"
                 stroke="#3B82F6"
-                strokeWidth="0.7"
+                strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
             />
         </svg>
     );
+}
+
+function LotteryTicket({
+    title,
+    price,
+    tone,
+}: {
+    title: string;
+    price: string;
+    tone: 'pink' | 'green' | 'gold';
+}) {
+    const styles = {
+        pink: {
+            card: 'border-pink-200 bg-pink-50',
+            button: 'bg-pink-600 text-white hover:bg-pink-500',
+            price: 'text-pink-700',
+        },
+        green: {
+            card: 'border-emerald-200 bg-emerald-50',
+            button: 'bg-emerald-600 text-white hover:bg-emerald-500',
+            price: 'text-emerald-700',
+        },
+        gold: {
+            card: 'border-amber-200 bg-amber-50',
+            button: 'bg-amber-500 text-white hover:bg-amber-400',
+            price: 'text-amber-700',
+        },
+    }[tone];
+
+    return (
+        <div className={`flex items-center justify-between rounded-[22px] border px-4 py-4 ${styles.card}`}>
+            <div>
+                <p className="text-sm font-semibold text-gray-950">{title}</p>
+                <p className={`mt-1 text-sm font-semibold ${styles.price}`}>{price}</p>
+            </div>
+            <button className={`rounded-full px-4 py-2 text-sm font-semibold transition ${styles.button}`}>
+                Buy
+            </button>
+        </div>
+    );
+}
+
+function formatSidebarCurrency(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
 }

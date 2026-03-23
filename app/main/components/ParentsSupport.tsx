@@ -71,7 +71,7 @@ export default function ParentsSupportModal({
                 </h2>
                 {/* IMAGE */}
                 <img
-                    src="/events/car.png"
+                    src="/images/events/car.png"
                     alt="New car"
                     className="w-full h-[380px] object-cover rounded-xl mb-6"
                 />
