@@ -58,9 +58,10 @@ export default function Sidebar({
     );
 
     const gainLoss = totalValue - STARTING_CASH;
+    const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
 
     return (
-        <aside className="w-[380px] bg-[#f3f4f6] border-r border-gray-300 px-6 py-6 flex flex-col gap-4 text-base">
+        <aside className="w-[380px] border-r border-gray-200 bg-white px-6 py-6 flex flex-col gap-4 text-base">
 
             {/* Logo */}
             <div className="flex items-center gap-3 pb-4 border-b border-gray-300">
@@ -88,7 +89,7 @@ export default function Sidebar({
                 Wallet
             </h3>
 
-            <div className="rounded-xl bg-white border border-gray-300 p-4">
+            <div className={panelClass}>
 
                 {/* Scrollable assets */}
                 <div className="wallet-scroll max-h-[180px] overflow-y-auto pr-3 space-y-2 text-gray-800">
@@ -129,14 +130,14 @@ export default function Sidebar({
 
                     <button
                         onClick={() => setOpen(o => !o)}
-                        className="text-sm px-3 py-1 rounded-full border border-gray-900 bg-blue-600 hover:bg-gray-900"
+                        className="rounded-full border border-gray-200 bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-500"
                     >
                         manage
                     </button>
                 </div>
 
                 {open && (
-                    <div className="mb-3 rounded-lg border border-gray-300 bg-white p-3">
+                    <div className="mb-3 rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
                         <div className="flex gap-2 mb-2">
                             <button
                                 onClick={() => setMode('add')}
@@ -178,7 +179,7 @@ export default function Sidebar({
                     </div>
                 )}
 
-                <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-3">
+                <div className={`${panelClass} space-y-3`}>
                     {watchlist.map(symbol => {
                         const asset = ASSET_LOOKUP[symbol];
 
@@ -203,7 +204,7 @@ export default function Sidebar({
                     News Feed
                 </h3>
 
-                <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-4">
+                <div className={`${panelClass} space-y-4`}>
 
                     <NewsItem
                         img="/news/news1.png"
@@ -231,13 +232,14 @@ export default function Sidebar({
                     Current Marketmover
                 </h3>
 
-                <div className="rounded-xl bg-white border border-gray-300 p-4">
+                <div className={panelClass}>
 
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-2">
                         <img
                             src="/assets/apple.png"
-                            className="w-16 h-16 rounded-md object-cover"/>
+                            alt="Apple logo"
+                            className="h-16 w-16 rounded-[20px] object-cover"/>
 
                         <div>
                             <p className="font-semibold text-gray-900">AAPL</p>
@@ -250,18 +252,18 @@ export default function Sidebar({
                     </div>
 
                     {/* Chart */}
-                    <div className="h-[90px] bg-blue-50 rounded-lg mb-2 p-3 overflow-hidden">
+                    <div className="mb-2 h-[90px] overflow-hidden rounded-[20px] bg-blue-50 p-3">
                         <FakeChart data={aaplData.prices}/>
                     </div>
 
 
                     {/* Buy / Sell */}
                     <div className="grid grid-cols-2 gap-2">
-                        <button className="rounded-md bg-gray-400 text-white py-2 font-semibold">
+                        <button className="rounded-[18px] bg-gray-400 py-2 font-semibold text-white">
                             sell<br/>226.81
                         </button>
 
-                        <button className="rounded-md bg-gray-600 text-white py-2 font-semibold">
+                        <button className="rounded-[18px] bg-gray-600 py-2 font-semibold text-white">
                             buy<br/>227.22
                         </button>
                     </div>
@@ -287,7 +289,7 @@ export default function Sidebar({
                 </h3>
 
                 <div
-                    className="rounded-xl p-4 space-y-4"
+                    className="rounded-[28px] p-4 space-y-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]"
                     style={{
                         backgroundImage: 'url(/lottery.png)',
                         backgroundSize: 'cover',
@@ -295,7 +297,7 @@ export default function Sidebar({
                     }}>
                     {/* Ticket 1 */}
                     <div
-                        className="rounded-xl px-6 py-3 flex items-center justify-between"
+                        className="rounded-[24px] px-6 py-3 flex items-center justify-between"
                         style={{
                             backgroundColor: '#FF7FA3',
                             border: '2px solid white',
@@ -325,7 +327,7 @@ export default function Sidebar({
 
                     {/* Ticket 2 */}
                     <div
-                        className="rounded-xl px-6 py-3 flex items-center justify-between"
+                        className="rounded-[24px] px-6 py-3 flex items-center justify-between"
                         style={{
                             backgroundColor: '#4BE36A',
                             border: '2px solid white',
@@ -354,7 +356,7 @@ export default function Sidebar({
 
                     {/* Ticket 3 */}
                     <div
-                        className="rounded-xl px-6 py-3 flex items-center justify-between"
+                        className="rounded-[24px] px-6 py-3 flex items-center justify-between"
                         style={{
                             backgroundColor: '#FFF176',
                             border: '2px solid white',
@@ -477,4 +479,3 @@ function FakeChart({ data }: { data: number[] }) {
         </svg>
     );
 }
-

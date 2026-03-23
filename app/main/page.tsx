@@ -269,28 +269,31 @@ export default function MainPage() {
             )}
 
             {/* MAIN PAGE LAYOUT */}
-            <div className="flex min-h-screen w-full bg-gray-50">
+            <div className="flex min-h-screen w-full bg-[#f8fafc]">
                 <Sidebar
                     wallet={wallet}
                     watchlist={watchlist}
                     setWatchlist={setWatchlist}
-                />                <div className="flex-1 p-6">
-                    <Timeline
-                        timelineDates={TIMELINE_DATES}
-                        markers={TIMELINE}
-                        currentDate={currentDateTime}
-                        onJumpToDate={jumpToDate}
-                    />
-
-                    <div className="mt-6">
-                        <MainPanel
-                            wallet={wallet}
-                            setWallet={setWallet}
+                />
+                <div className="flex-1 p-6">
+                    <div className="mx-auto w-full max-w-[1360px]">
+                        <Timeline
+                            timelineDates={TIMELINE_DATES}
+                            markers={TIMELINE}
                             currentDate={currentDateTime}
-                            secondsLeft={secondsLeft}
-                            gameHour={gameHour}
-                            onSkip30={skip30Seconds}
+                            onJumpToDate={jumpToDate}
                         />
+
+                        <div className="mt-6">
+                            <MainPanel
+                                wallet={wallet}
+                                setWallet={setWallet}
+                                currentDate={currentDateTime}
+                                secondsLeft={secondsLeft}
+                                gameHour={gameHour}
+                                onSkip30={skip30Seconds}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import {useState, useEffect, useMemo, useRef} from 'react';
+import {useState, useEffect, useMemo, useRef, useId} from 'react';
+import Image from 'next/image';
 import { type WalletItem } from '../utils/walletData';
 
 import ERIC from '../data/ERIC.json';
@@ -175,19 +176,11 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         return getChartData(activeAsset.data, range, dateStr);
     }, [activeAsset, range, dateStr]);
 
+    const rangeSummary = useMemo(() => {
+        return calculateRangeSummary(chartData);
+    }, [chartData]);
 
-    const performance = useMemo(() => {
-        if (!activeAsset || !activeAsset.hasData) {
-            return { value: 0, positive: true };
-        }
-
-        const visibleData = activeAsset.data
-            .filter(d => d.date <= dateStr)
-            .sort((a, b) => a.date.localeCompare(b.date));
-
-        return calculatePerformance(visibleData, range);
-    }, [activeAsset, range, dateStr]);
-
+    const rangeLabel = getRangeLabel(range);
 
     const hasActiveData = activeAsset?.hasData === true;
 
@@ -339,7 +332,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
 
     return (
-        <div className="flex-1 w-full bg-white px-10 py-8">
+        <div className="flex-1 w-full bg-transparent px-4 py-4">
 
             {/* TIME INFO */}
             <div className="flex justify-between items-center mb-10">
@@ -370,9 +363,9 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
             </div>
 
             {/* ASSET CAROUSEL */}
-            <div className="w-full max-w-[1200px] mx-auto">
-                <div className="relative border border-gray-200 rounded-2xl px-4 py-4">
-                    <div className="flex gap-4 overflow-x-auto pl-2">
+            <div className="w-full">
+                <div className="relative rounded-[28px] border border-gray-200 bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                    <div className="flex gap-5 overflow-x-auto px-1 pb-1">
                         {assetsWithMarket.map(asset => {
                             const isActive = activeAsset !== null && asset.symbol === activeAsset.symbol;
 
@@ -381,35 +374,40 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                                     key={asset.symbol}
                                     onClick={() => asset.hasData && setActiveSymbol(asset.symbol)}
 
-                                    className={`min-w-[220px] px-6 py-4 rounded-xl cursor-pointer flex justify-between items-center transition
-                    ${isActive ? 'bg-blue-100 border-[3px] border-blue-600' : 'bg-white border border-gray-200 hover:border-gray-400'}
+                                    className={`min-w-[300px] cursor-pointer rounded-[24px] border px-6 py-5 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
+                    ${isActive
+                                        ? 'border-blue-500 bg-blue-50/80'
+                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70'}
                   `}
                                 >
-                                    <div className="flex flex-col gap-1">
-                                        <p className="text-sm font-semibold text-gray-500">
-                                            {asset.symbol}
-                                        </p>
+                                    <div className="flex items-start justify-between gap-6">
+                                        <div className="flex min-w-0 flex-col gap-1.5">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                                {asset.symbol}
+                                            </p>
+                                            <p className="truncate text-lg font-semibold text-gray-950">
+                                                {asset.name}
+                                            </p>
+                                            <p className="text-3xl font-semibold tracking-tight text-gray-950">
+                                                {asset.hasData ? formatCurrency(asset.price) : '—'}
+                                            </p>
+                                            <p className={`text-sm font-semibold ${
+                                                !asset.hasData ? 'text-gray-400' :
+                                                    asset.positive ? 'text-emerald-700' : 'text-red-700'
+                                            }`}>
+                                                {asset.hasData
+                                                    ? `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}% today`
+                                                    : 'No data'}
+                                            </p>
+                                        </div>
 
-                                        <p className="text-xl font-bold text-gray-900">
-                                            {asset.hasData ? asset.price.toFixed(2) : '—'}
-                                        </p>
-
-                                        <p className={`text-sm font-semibold ${
-                                            !asset.hasData ? 'text-gray-400' :
-                                                asset.positive ? 'text-green-600' : 'text-red-500'
-                                        }`}>
-                                            {asset.hasData
-                                                ? `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`
-                                                : 'No data'}
-                                        </p>
-                                    </div>
-
-                                    <div className="ml-6">
                                         {asset.hasData && (
-                                            <MiniSparkline
-                                                data={asset.spark}
-                                                positive={asset.positive}
-                                            />
+                                            <div className="w-28 shrink-0 pt-3">
+                                                <MiniSparkline
+                                                    data={asset.spark}
+                                                    positive={asset.positive}
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -420,112 +418,77 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
             </div>
             {/* ================= TRADE PANEL ================= */}
 
-            <div className="mt-10 grid grid-cols-[1fr_360px] gap-8">
+            <div className="mt-10 grid grid-cols-[minmax(0,1fr)_360px] items-start gap-8">
 
 
                 {/* LEFT: CHART */}
-                <div className="border border-gray-300 rounded-2xl p-6 self-start">
+                <div className="min-w-0 self-start rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
 
                     {/* HEADER */}
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="mb-5 border-b border-gray-200 pb-5">
                         {hasActiveData && (
-                            <img
-                                src={getAssetLogo(activeAsset.symbol)}
-                                alt={`${activeAsset.symbol} logo`}
-                                className="w-20 h-20 object-contain"
-                            />
+                            <div className="mb-4 flex items-center gap-4">
+                                <Image
+                                    src={getAssetLogo(activeAsset.symbol)}
+                                    alt={`${activeAsset.symbol} logo`}
+                                    width={56}
+                                    height={56}
+                                    className="h-14 w-14 rounded-2xl border border-gray-200 bg-white p-2 object-contain"
+                                />
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">
+                                        {activeAsset.symbol}
+                                    </p>
+                                    <p className="text-[2rem] font-semibold tracking-tight text-gray-950">
+                                        {activeAsset.name}
+                                    </p>
+                                </div>
+                            </div>
                         )}
 
                         {hasActiveData ? (
-                            <>
-                                <p className="text-sm text-gray-500">
-                                    {activeAsset.symbol} · {activeAsset.name}
+                            <div className="flex flex-wrap items-end gap-3">
+                                <p className="text-5xl font-semibold tracking-tight text-gray-950">
+                                    {formatCurrency(activeAsset.price)}
                                 </p>
 
-                                <p className="text-3xl font-bold text-gray-900">
-                                    {activeAsset.price.toFixed(2)}
-                                </p>
-
-                                <p className={`font-semibold ${
-                                    activeAsset.positive ? 'text-green-600' : 'text-red-500'
+                                <span className={`inline-flex items-center rounded-full px-3 py-1 text-base font-semibold ${
+                                    rangeSummary.positive
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : 'bg-red-100 text-red-700'
                                 }`}>
-                                    {activeAsset.change >= 0 ? '+' : ''}
-                                    {activeAsset.change.toFixed(2)}%
+                                    {rangeSummary.percent >= 0 ? '+' : ''}
+                                    {rangeSummary.percent.toFixed(2)}%
+                                </span>
+
+                                <p className={`pb-1 text-xl font-semibold ${
+                                    rangeSummary.positive ? 'text-emerald-700' : 'text-red-700'
+                                }`}>
+                                    {rangeSummary.absolute >= 0 ? '+' : '-'}
+                                    {formatCurrency(Math.abs(rangeSummary.absolute))} {rangeLabel}
                                 </p>
-                            </>
+                            </div>
                         ) : (
                             <p className="text-red-500 font-semibold">
                                 Not enough data found
                             </p>
                         )}
+                        {hasActiveData && (
+                            <p className="mt-2 text-sm text-gray-500">
+                                {gameDate} · USD
+                            </p>
+                        )}
                     </div>
 
-
-                    {/* PERFORMANCE */}
-                    {hasActiveData && (
-                        <div className="mb-4">
-                            <p className="text-sm text-gray-500 font-medium">Performance</p>
-
-                            <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-lg font-bold ${performance.positive ? 'text-green-600' : 'text-red-500'}`}>
-                        {performance.positive ? '+' : ''}
-                          {performance.value.toFixed(2)}%
-                      </span>
-
-                                <span className="text-sm text-gray-500">Past {range === '1W' ? 'Week' : range === '1M'
-                                    ? 'Month'
-                                    : range === '6M'
-                                        ? '6 Months'
-                                        : 'Year'}
-                            </span>
-                            </div>
-                        </div>
-                    )}
-
-
-                    <div className="mt-4 rounded-xl border border-gray-200 bg-green-50 p-4">
-                        {/* CHART PLACEHOLDER */}
-                        <div
-                            style={{height: '420px'}}
-                            className="mt-4 rounded-xl  bg-green-50 p-4"
-                        >
-                            {hasActiveData && chartData.length > 1 ? (
-                                <div
-                                    style={{height: '400px'}}
-                                    className="mt-4 rounded-xl bg-green-50 p-4"
-                                >
-                                    {chartData.length > 1 ? (
-                                        <HoverChart
-                                            rows={chartData}
-                                            positive={performance.positive}
-                                        />
-                                    ) : (
-                                        <div className="flex h-full items-center justify-center text-gray-400">
-                                            No data found for this date
-                                        </div>
-                                    )}
-                                </div>
-
-                            ) : (
-                                <div className="flex h-full items-center justify-center text-gray-400">
-                                    No data found for this date
-                                </div>
-                            )}
-
-                        </div>
-
-                    </div>
-
-                    {/* RANGE buttons */}
-                    <div className="flex gap-6 mt-4 text-sm">
+                    <div className="mb-5 flex gap-2 text-sm">
                         {(['1W', '1M', '6M', '1Y'] as const).map(r => (
                             <button
                                 key={r}
                                 onClick={() => setRange(r)}
-                                className={`font-semibold transition ${
+                                className={`rounded-full px-3 py-1.5 font-semibold transition ${
                                     range === r
-                                        ? 'text-blue-600'
-                                        : 'text-gray-500 hover:text-blue-500'
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
                                 }`}
                             >
                                 {r}
@@ -533,14 +496,37 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                         ))}
                     </div>
 
+                    <div className={`rounded-[28px] border p-4 ${
+                        rangeSummary.positive
+                            ? 'border-emerald-100 bg-gradient-to-b from-emerald-50 via-white to-white'
+                            : 'border-red-100 bg-gradient-to-b from-red-50 via-white to-white'
+                    }`}>
+                        <div
+                            style={{height: '430px'}}
+                            className="mx-auto w-full max-w-[1080px] rounded-[24px] bg-white p-3"
+                        >
+                            {hasActiveData && chartData.length > 1 ? (
+                                <HoverChart
+                                    rows={chartData}
+                                    positive={rangeSummary.positive}
+                                    range={range}
+                                />
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-gray-400">
+                                    No data found for this date
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                 </div>
 
 
                 {/* RIGHT */}
-                <div className="border border-gray-300 rounded-2xl p-6 self-start">
+                <div className="self-start rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
 
                     <div className="flex justify-center gap-3 mb-6">
-                        <div className="flex border border-gray-300 rounded-full p-1 w-[260px] h-[52px]">
+                        <div className="flex h-[52px] w-[260px] rounded-full border border-gray-200 bg-gray-50 p-1">
                             <button
                                 onClick={() => setSide('buy')}
                                 className={`flex-1 rounded-full font-semibold text-lg transition
@@ -568,7 +554,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                     </div>
 
                     {side === 'sell' && ownedUnits > 0 && (
-                        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                        <div className="mb-4 rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm">
                             <p className="text-gray-500">You own</p>
                             <p className="font-semibold text-gray-900">
                                 {ownedUnits.toFixed(3)} {activeAsset?.symbol}
@@ -581,7 +567,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
 
                     {/* AMOUNT ($) */}
-                    <div className="border border-gray-300 rounded-xl p-4 mb-4">
+                    <div className="mb-4 rounded-[20px] border border-gray-200 p-4">
                         <label className="text-sm text-gray-500 block mb-1">
                             Amount ($)
                         </label>
@@ -602,7 +588,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                     </div>
 
                     {/* UNITS */}
-                    <div className="border border-gray-300 rounded-xl p-4 mb-6">
+                    <div className="mb-6 rounded-[20px] border border-gray-200 p-4">
                         <label className="text-sm text-gray-500 block mb-1">
                             Units
                         </label>
@@ -667,7 +653,7 @@ function MiniSparkline({data, positive,}: {
     return (
         <svg
             viewBox="0 0 100 100"
-            className="w-16 h-8"
+            className="h-12 w-full"
             preserveAspectRatio="none"
         >
             <polyline
@@ -685,44 +671,83 @@ function getAssetLogo(symbol: string) {
     return `/assets/${symbol.toLowerCase()}.png`;
 }
 
-function calculatePerformance(
-    data: { date: string; close: number }[],
-    range: '1W' | '1M' | '6M' | '1Y'
-) {
-    if (!data || data.length < 2) {
-        return { value: 0, positive: true };
+function calculateRangeSummary(rows: { date: string; close: number }[]) {
+    if (!rows || rows.length < 2) {
+        return { absolute: 0, percent: 0, positive: true };
     }
 
-    const lookbackMap: Record<typeof range, number> = {
-        '1W': 5,
-        '1M': 22,
-        '6M': 126,
-        '1Y': 252,
-    };
-
-    const lookback = lookbackMap[range];
-
-    const endIndex = data.length - 1;
-    const startIndex = Math.max(0, endIndex - lookback);
-
-    const startPrice = data[startIndex].close;
-    const endPrice = data[endIndex].close;
-
-    const value = ((endPrice - startPrice) / startPrice) * 100;
+    const start = rows[0].close;
+    const end = rows[rows.length - 1].close;
+    const absolute = end - start;
+    const percent = start === 0 ? 0 : (absolute / start) * 100;
 
     return {
-        value,
-        positive: value >= 0,
+        absolute,
+        percent,
+        positive: absolute >= 0,
     };
 }
+
+function getRangeLabel(range: RangeKey) {
+    if (range === '1W') return '1W';
+    if (range === '1M') return '1M';
+    if (range === '6M') return '6M';
+    return '1Y';
+}
+
+function formatCurrency(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
+}
+
+function formatAxisValue(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: value < 10 ? 2 : 0,
+        maximumFractionDigits: value < 10 ? 2 : 0,
+    }).format(value);
+}
+
+function formatChartDate(dateStr: string, range: RangeKey) {
+    const date = new Date(`${dateStr}T00:00:00`);
+
+    return new Intl.DateTimeFormat(
+        'en-US',
+        range === '1W' || range === '1M'
+            ? { month: 'short', day: 'numeric' }
+            : { month: 'short', year: '2-digit' }
+    ).format(date);
+}
+
+function buildDateTicks(
+    rows: { date: string; close: number }[],
+    range: RangeKey
+) {
+    if (rows.length === 0) return [];
+
+    const rawIndices = [0, Math.floor((rows.length - 1) / 3), Math.floor(((rows.length - 1) * 2) / 3), rows.length - 1];
+    const indices = Array.from(new Set(rawIndices));
+
+    return indices.map(index => ({
+        index,
+        label: formatChartDate(rows[index].date, range),
+    }));
+}
+
 function HoverChart({
-                        rows,
-                        positive,
-                    }: {
+    rows,
+    positive,
+    range,
+}: {
     rows: { date: string; close: number }[];
     positive: boolean;
+    range: RangeKey;
 }) {
     const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+    const gradientId = useId();
 
     if (rows.length === 0) return null;
 
@@ -730,109 +755,171 @@ function HoverChart({
     const max = Math.max(...values);
     const min = Math.min(...values);
 
-    const padding = (max - min) * 0.15;
+    const spread = Math.max(max - min, max * 0.08, 1);
+    const padding = spread * 0.2;
     const safeMax = max + padding;
     const safeMin = min - padding;
 
+    const viewWidth = 1000;
+    const viewHeight = 420;
+    const chartLeft = 96;
+    const chartRight = 970;
+    const chartTop = 34;
+    const chartBottom = 326;
+
     const points = values.map((v, i) => {
-        const x = (i / (values.length - 1)) * 100;
-        const y = 100 - ((v - safeMin) / (safeMax - safeMin)) * 100;
+        const x = chartLeft + (i / (values.length - 1)) * (chartRight - chartLeft);
+        const y =
+            chartBottom - ((v - safeMin) / (safeMax - safeMin)) * (chartBottom - chartTop);
         return { x, y };
     });
+
+    const linePath = points
+        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+        .join(' ');
+    const areaPath = [
+        `M ${points[0].x} ${chartBottom}`,
+        ...points.map((point, index) => `${index === 0 ? 'L' : 'L'} ${point.x} ${point.y}`),
+        `L ${points[points.length - 1].x} ${chartBottom}`,
+        'Z',
+    ].join(' ');
+
+    const yTicks = Array.from({ length: 5 }, (_, index) => {
+        const ratio = index / 4;
+        const y = chartTop + ratio * (chartBottom - chartTop);
+        const value = safeMax - ratio * (safeMax - safeMin);
+        return { y, value };
+    });
+
+    const xTicks = buildDateTicks(rows, range);
+    const activeIndex = hoverIndex ?? rows.length - 1;
+    const activePoint = points[activeIndex];
+    const lineColor = positive ? '#16a34a' : '#dc2626';
 
     return (
         <div className="relative w-full h-full">
             <svg
                 width="100%"
                 height="100%"
-                viewBox="0 0 100 100"
+                viewBox={`0 0 ${viewWidth} ${viewHeight}`}
                 preserveAspectRatio="none"
+                className="overflow-visible"
                 onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const x = e.clientX - rect.left;
-                    const pct = x / rect.width;
+                    const clampedX = Math.max(chartLeft / viewWidth, Math.min(chartRight / viewWidth, x / rect.width));
+                    const pct = (clampedX - chartLeft / viewWidth) / ((chartRight - chartLeft) / viewWidth);
                     const index = Math.round(pct * (rows.length - 1));
                     setHoverIndex(
                         Math.max(0, Math.min(rows.length - 1, index))
                     );
                 }}
                 onMouseLeave={() => setHoverIndex(null)}
-
             >
-                {[10, 20, 30, 40,50,60,70,80].map((y) => (
-                    <line
-                        key={y}
-                        x1={0}
-                        x2={100}
-                        y1={y}
-                        y2={y}
-                        stroke="#bfc8c2"
-                        strokeWidth="0.2"
-                        strokeDasharray="1 1"
-                    />
+                <defs>
+                    <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor={lineColor} stopOpacity="0.22" />
+                        <stop offset="65%" stopColor={lineColor} stopOpacity="0.08" />
+                        <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
+                    </linearGradient>
+                </defs>
+
+                {yTicks.map(tick => (
+                    <g key={tick.y}>
+                        <line
+                            x1={chartLeft}
+                            x2={chartRight}
+                            y1={tick.y}
+                            y2={tick.y}
+                            stroke="#e5e7eb"
+                            strokeWidth="1"
+                            vectorEffect="non-scaling-stroke"
+                        />
+                        <text
+                            x={chartLeft - 18}
+                            y={tick.y + 4}
+                            fontSize="12"
+                            fill="#94a3b8"
+                            textAnchor="end"
+                        >
+                            {formatAxisValue(tick.value)}
+                        </text>
+                    </g>
                 ))}
 
-                    {[10,20,30, 40,50, 60,70,80,90,100,110,120].map((x) => (
-                        <line
-                            key={`v-${x}`}
-                            x1={x}
-                            x2={x}
-                            y1={0}
-                            y2={100}
-                            stroke="#bfc8c2"
-                            strokeWidth="0.15"
-                            strokeDasharray="1 1"
-                        />
-                    ))}
-                {/* LINE */}
-                <polyline
-                    points={points.map(p => `${p.x},${p.y}`).join(' ')}
+                <path d={areaPath} fill={`url(#${gradientId})`} />
+                <path
+                    d={linePath}
                     fill="none"
-                    stroke={positive ? '#22c55e' : '#ef4444'}
-                    strokeWidth="0.35"
+                    stroke={lineColor}
+                    strokeWidth="3"
                     strokeLinejoin="round"
                     strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
                 />
 
-                {/* VERTICAL GUIDE + ACTIVE DOT */}
-                {hoverIndex !== null && (
-                    <>
-                        <line
-                            x1={points[hoverIndex].x}
-                            x2={points[hoverIndex].x}
-                            y1={0}
-                            y2={100}
-                            stroke={positive ? '#22c55e' : '#ef4444'}
-                            strokeWidth="0.1"
-                            strokeDasharray="1 1"
-                        />
-                        <circle
-                            cx={points[hoverIndex].x}
-                            cy={points[hoverIndex].y}
-                            r={0.35}
-                            fill={positive ? '#22c55e' : '#ef4444'}
-                        />
-                    </>
-                )}
+                <line
+                    x1={activePoint.x}
+                    x2={activePoint.x}
+                    y1={chartTop}
+                    y2={chartBottom}
+                    stroke={lineColor}
+                    strokeWidth="1.5"
+                    strokeDasharray="4 5"
+                    opacity={hoverIndex === null ? 0.35 : 0.7}
+                    vectorEffect="non-scaling-stroke"
+                />
+
+                <circle
+                    cx={activePoint.x}
+                    cy={activePoint.y}
+                    r={8}
+                    fill="#ffffff"
+                    stroke={lineColor}
+                    strokeWidth="2"
+                    vectorEffect="non-scaling-stroke"
+                />
+
+                <circle
+                    cx={activePoint.x}
+                    cy={activePoint.y}
+                    r={3.5}
+                    fill={lineColor}
+                />
+
+                {xTicks.map(tick => {
+                    const point = points[tick.index];
+                    return (
+                        <text
+                            key={`${tick.index}-${tick.label}`}
+                            x={point.x}
+                            y={387}
+                            fontSize="12"
+                            fill="#94a3b8"
+                            textAnchor={tick.index === 0 ? 'start' : tick.index === rows.length - 1 ? 'end' : 'middle'}
+                        >
+                            {tick.label}
+                        </text>
+                    );
+                })}
             </svg>
 
             {/* TOOLTIP */}
-            {hoverIndex !== null && (
+            {activeIndex !== null && (
                 <div
-                    className="absolute rounded-md shadow-lg px-3 py-2 text-xs
-                     bg-gray-900 text-white border border-gray-700"
+                    className="absolute rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 shadow-[0_14px_30px_rgba(15,23,42,0.14)]"
                     style={{
-                        left: `${points[hoverIndex].x}%`,
-                        top: `${points[hoverIndex].y}%`,
-                        transform: 'translate(-50%, -120%)',
+                        left: `${(activePoint.x / viewWidth) * 100}%`,
+                        top: `${(activePoint.y / viewHeight) * 100}%`,
+                        transform: activePoint.x > viewWidth * 0.8 ? 'translate(-105%, -120%)' : 'translate(-10%, -120%)',
                         pointerEvents: 'none',
                     }}
                 >
-                    <div className="font-semibold">
-                        {rows[hoverIndex].date}
+                    <div className="font-semibold text-gray-500">
+                        {formatChartDate(rows[activeIndex].date, range)}
                     </div>
-                    <div>
-                        ${values[hoverIndex].toFixed(2)}
+                    <div className="mt-1 text-sm font-bold text-gray-950">
+                        {formatCurrency(values[activeIndex])}
                     </div>
                 </div>
             )}
