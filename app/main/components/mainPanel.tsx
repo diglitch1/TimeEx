@@ -159,7 +159,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
     }, [assetsWithMarket, dateStr, setWallet]);
 
 
-    const [range, setRange] = useState<RangeKey>('1W');
+    const [range, setRange] = useState<RangeKey>('1Y');
 
     const [activeSymbol, setActiveSymbol] = useState<string | null>(null);
 
@@ -254,7 +254,7 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
         }
 
         setWallet(prev => {
-            const next = [...prev];
+            const next = prev.map(item => ({ ...item }));
             const cash = next.find(w => w.label === 'Cash');
             const asset = next.find(w => w.label === activeAsset.symbol);
 
@@ -267,21 +267,21 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                     return prev;
                 }
 
-                const boughtUnits = dollarAmount / price;
+                const boughtUnits = Number((dollarAmount / price).toFixed(6));
 
-                cash.units -= dollarAmount;
+                cash.units = Number((cash.units - dollarAmount).toFixed(2));
                 cash.usdValue = cash.units;
 
                 if (asset) {
-                    asset.units += boughtUnits;
-                    asset.usdValue = asset.units * price;
+                    asset.units = Number((asset.units + boughtUnits).toFixed(6));
+                    asset.usdValue = Number((asset.units * price).toFixed(2));
                 } else {
                     next.push({
                         id: crypto.randomUUID(),
                         label: activeAsset.symbol,
                         units: boughtUnits,
                         unitLabel: activeAsset.symbol,
-                        usdValue: boughtUnits * price,
+                        usdValue: Number((boughtUnits * price).toFixed(2)),
                     });
                 }
             }
@@ -293,16 +293,16 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                     return prev;
                 }
 
-                const cashReceived = unitAmount * price;
+                const cashReceived = Number((unitAmount * price).toFixed(2));
 
-                asset.units -= unitAmount;
-                asset.usdValue = asset.units * price;
+                asset.units = Number((asset.units - unitAmount).toFixed(6));
+                asset.usdValue = Number((asset.units * price).toFixed(2));
 
-                cash.units += cashReceived;
+                cash.units = Number((cash.units + cashReceived).toFixed(2));
                 cash.usdValue = cash.units;
             }
 
-            return next.filter(w => w.units > 0);
+            return next.filter(w => w.units > 0.000001);
         });
 
         setAmount('');
@@ -789,7 +789,7 @@ function HoverChart({
                     points={points.map(p => `${p.x},${p.y}`).join(' ')}
                     fill="none"
                     stroke={positive ? '#22c55e' : '#ef4444'}
-                    strokeWidth="0.35"
+                    strokeWidth="0.2"
                     strokeLinejoin="round"
                     strokeLinecap="round"
                 />

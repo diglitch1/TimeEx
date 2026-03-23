@@ -22,79 +22,12 @@ import Timeline from "@/app/main/components/Timeline";
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 
 export default function MainPage() {
-
     const [mounted, setMounted] = useState(false);
-
-    const STARTING_CASH = 7000;
+    const [wallet, setWallet] = useState<WalletItem[]>([]);
+    const [walletReady, setWalletReady] = useState(false);
 
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>([]);
-
-
-    const timelineDates = TIMELINE_DATES.map(d => new Date(d));
-    const jumpToDate = (dateStr: string) => {
-        const idx = TIMELINE_DATES.indexOf(dateStr);
-        if (idx === -1) return;
-        setGameSeconds(idx * TOTAL_SECONDS); // jump to start of that day
-    };
-
-    const TOTAL_SECONDS = 12 * 60;
-
-    const [gameSeconds, setGameSeconds] = useState(0);
-
-
-    const dayIndex = Math.min(
-        Math.floor(gameSeconds / TOTAL_SECONDS),
-        timelineDates.length - 1
-    );
-    const REAL_SECONDS_PER_DAY = 12 * 60; // 720
-    const GAME_MINUTES_PER_DAY = 24 * 60; // 1440
-
-    const GAME_MINUTES_PER_REAL_SECOND =
-        GAME_MINUTES_PER_DAY / REAL_SECONDS_PER_DAY; // = 2
-
-    const baseDate = timelineDates[dayIndex];
-
-    const inGameMinutesPerSecond = 2;
-
-    const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
-    const inGameMinutes = secondsIntoDay * inGameMinutesPerSecond;
-
-    const [wallet, setWallet] = useState<WalletItem[]>(() => {
-        const isNewGame = localStorage.getItem('newGame') === 'true';
-
-        if (isNewGame) {
-            localStorage.removeItem('newGame'); // consume flag
-
-            const freshWallet = [
-                {
-                    id: 'cash',
-                    label: 'Cash',
-                    units: STARTING_CASH,
-                    unitLabel: '$',
-                    usdValue: STARTING_CASH,
-                },
-            ];
-
-            saveWallet(freshWallet);
-            return freshWallet;
-        }
-
-        const stored = loadWallet();
-        if (stored) return stored;
-
-        return [
-            {
-                id: 'cash',
-                label: 'Cash',
-                units: STARTING_CASH,
-                unitLabel: '$',
-                usdValue: STARTING_CASH,
-            },
-        ];
-    });
-
-
     const [watchlist, setWatchlist] = useState<string[]>([
         'SOL',
         'GOLD',
@@ -102,36 +35,144 @@ export default function MainPage() {
         'NVDA',
         'ADA',
     ]);
-// build full in-game datetime
+
+    const router = useRouter();
+
+    const TOTAL_SECONDS = 12 * 60;
+    const [gameSeconds, setGameSeconds] = useState(0);
+
+    const timelineDates = TIMELINE_DATES.map(d => new Date(d));
+
+    const jumpToDate = (dateStr: string) => {
+        const idx = TIMELINE_DATES.indexOf(dateStr);
+        if (idx === -1) return;
+        setGameSeconds(idx * TOTAL_SECONDS);
+    };
+
+    const dayIndex = Math.min(
+        Math.floor(gameSeconds / TOTAL_SECONDS),
+        timelineDates.length - 1
+    );
+
+    const baseDate = timelineDates[dayIndex];
+    const inGameMinutesPerSecond = 2;
+    const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
+    const inGameMinutes = secondsIntoDay * inGameMinutesPerSecond;
+
     const currentDateTime = new Date(baseDate);
     currentDateTime.setHours(0, 0, 0, 0);
     currentDateTime.setMinutes(inGameMinutes);
 
-// derive hour from the actual in-game time
     const gameHour = currentDateTime.getHours();
-
-
     const secondsLeft = TOTAL_SECONDS - secondsIntoDay;
 
+    const attendedCollegeParty =
+        mounted &&
+        (() => {
+            try {
+                const raw = localStorage.getItem('collegeParty');
+                if (!raw) return false;
+                return JSON.parse(raw).attended === true;
+            } catch {
+                return false;
+            }
+        })();
 
-    const attendedCollegeParty = (() => {
-        try {
-            const raw = localStorage.getItem('collegeParty');
-            if (!raw) return false;
-            return JSON.parse(raw).attended === true;
-        } catch {
-            return false;
+    const acceptedGig =
+        mounted &&
+        (() => {
+            try {
+                const raw = localStorage.getItem('freelanceGig');
+                if (!raw) return false;
+                return JSON.parse(raw).accepted === true;
+            } catch {
+                return false;
+            }
+        })();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+
+        if (nav?.type === 'reload') {
+            localStorage.setItem('newGame', 'true');
+            localStorage.removeItem('gameStarted');
+            window.location.href = '/';
         }
-    })();
-    const acceptedGig = (() => {
-        try {
-            const raw = localStorage.getItem('freelanceGig');
-            if (!raw) return false;
-            return JSON.parse(raw).accepted === true;
-        } catch {
-            return false;
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const isNewGame = localStorage.getItem('newGame') === 'true';
+
+        let finalWallet: WalletItem[];
+
+        if (isNewGame) {
+            localStorage.removeItem('newGame');
+
+            const storedCash = Number(localStorage.getItem('startingCash')) || 7000;
+
+            finalWallet = [
+                {
+                    id: 'cash',
+                    label: 'Cash',
+                    units: storedCash,
+                    unitLabel: '$',
+                    usdValue: storedCash,
+                },
+            ];
+
+            saveWallet(finalWallet);
+        } else {
+            const stored = loadWallet();
+
+            finalWallet = stored && stored.length > 0
+                ? stored
+                : [
+                    {
+                        id: 'cash',
+                        label: 'Cash',
+                        units: 7000,
+                        unitLabel: '$',
+                        usdValue: 7000,
+                    },
+                ];
         }
-    })();
+
+        setWallet(finalWallet);
+        setWalletReady(true);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
+
+        const started = localStorage.getItem('gameStarted');
+        if (!started) {
+            router.replace('/');
+        }
+    }, [router, mounted]);
+
     useEffect(() => {
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
@@ -141,6 +182,8 @@ export default function MainPage() {
     }, []);
 
     useEffect(() => {
+        if (!mounted) return;
+
         const dateStr = currentDateTime.toISOString().split('T')[0];
 
         GAME_EVENTS.forEach(event => {
@@ -155,6 +198,7 @@ export default function MainPage() {
             if (event.id === 'party-consequences' && !attendedCollegeParty) {
                 return;
             }
+
             if (event.id === 'job-opportunity' && !acceptedGig) {
                 return;
             }
@@ -162,40 +206,28 @@ export default function MainPage() {
             setActiveEvent(event.id);
             setTriggeredEvents(prev => [...prev, event.id]);
         });
-    }, [currentDateTime, gameHour, triggeredEvents, attendedCollegeParty]);
+    }, [
+        currentDateTime,
+        gameHour,
+        triggeredEvents,
+        attendedCollegeParty,
+        acceptedGig,
+        mounted,
+    ]);
+
+    useEffect(() => {
+        if (!walletReady || wallet.length === 0) return;
+        saveWallet(wallet);
+    }, [wallet, walletReady]);
 
     const skip30Seconds = () => {
         setGameSeconds(s => s + 30);
     };
 
-    useEffect(() => {
-        saveWallet(wallet);
-    }, [wallet]);
-
-    function getAssetPrice(symbol: string): number {
-
-        return 0;
-    }
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMounted(true);
-    }, []);
-
-    const router = useRouter();
-
-    useEffect(() => {
-        const started = localStorage.getItem('gameStarted');
-        if (!started) {
-            router.replace('/'); // 👈 kick them back
-        }
-    }, [router]);
-
-    if (!mounted) return null;
+    if (!mounted || !walletReady) return null;
 
     return (
         <>
-            {/* GLOBAL EVENT MODAL */}
             {activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal
                     wallet={wallet}
@@ -211,6 +243,7 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'car-insurance' && (
                 <CarInsuranceModal
                     wallet={wallet}
@@ -218,14 +251,15 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'college-results' && (
                 <CollegeResultsModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={() => setActiveEvent(null)}
                 />
-
             )}
+
             {activeEvent === 'college-party-invite' && (
                 <CollegePartyInvite
                     wallet={wallet}
@@ -233,6 +267,7 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'party-consequences' && (
                 <PartyConsequencesModal
                     wallet={wallet}
@@ -240,6 +275,7 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'parents-support' && (
                 <ParentsSupportModal
                     wallet={wallet}
@@ -247,6 +283,7 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'car-crash' && (
                 <CarCrashModal
                     wallet={wallet}
@@ -254,6 +291,7 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'freelance-gig' && (
                 <FreelanceGigModal
                     wallet={wallet}
@@ -261,6 +299,7 @@ export default function MainPage() {
                     onClose={() => setActiveEvent(null)}
                 />
             )}
+
             {activeEvent === 'job-opportunity' && (
                 <JobOpportunityModal
                     wallet={wallet}
@@ -269,13 +308,14 @@ export default function MainPage() {
                 />
             )}
 
-            {/* MAIN PAGE LAYOUT */}
             <div className="flex min-h-screen w-full bg-gray-50">
                 <Sidebar
                     wallet={wallet}
                     watchlist={watchlist}
                     setWatchlist={setWatchlist}
-                />                <div className="flex-1 p-6">
+                />
+
+                <div className="flex-1 p-6">
                     <Timeline
                         timelineDates={TIMELINE_DATES}
                         markers={TIMELINE}
@@ -295,8 +335,6 @@ export default function MainPage() {
                     </div>
                 </div>
             </div>
-
-
         </>
     );
 }

@@ -519,7 +519,6 @@ export default function PreviewPage() {
 
                         <button
                             onClick={() => {
-                                localStorage.setItem('newGame', 'true')
                                 const budgetMap = {
                                     A: 7000,
                                     B: 12000,
@@ -528,7 +527,11 @@ export default function PreviewPage() {
 
                                 const startingCash = budgetMap[characterInfo.id];
 
+                                localStorage.setItem('newGame', 'true');
+                                localStorage.setItem('startingCash', String(startingCash)); // 👈 ADD THIS
+
                                 resetGame(startingCash);
+
                                 router.push('/main');
                             }}
                             className="
