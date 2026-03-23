@@ -145,8 +145,7 @@ export default function MainPage() {
         GAME_EVENTS.forEach(event => {
             if (
                 triggeredEvents.includes(event.id) ||
-                event.date !== dateStr ||
-                event.hour !== gameHour
+                event.date !== dateStr
             ) {
                 return;
             }
@@ -161,7 +160,7 @@ export default function MainPage() {
             setActiveEvent(event.id);
             setTriggeredEvents(prev => [...prev, event.id]);
         });
-    }, [currentDateTime, gameHour, triggeredEvents, attendedCollegeParty]);
+    }, [currentDateTime, triggeredEvents, attendedCollegeParty, acceptedGig]);
 
     const skip30Seconds = () => {
         setGameSeconds(s => s + 30);
