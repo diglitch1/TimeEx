@@ -258,8 +258,10 @@ export default function MainTradePanel({
 
     const [range, setRange] = useState<RangeKey>('1W');
     const [marketSearch, setMarketSearch] = useState('');
+    const [marketBrowserOpen, setMarketBrowserOpen] = useState(true);
 
     const [activeSymbol, setActiveSymbol] = useState<string | null>(null);
+    const marketBrowserPanelId = useId();
 
     const activeAsset = useMemo(() => {
         if (activeSymbol) {
@@ -595,100 +597,122 @@ export default function MainTradePanel({
                         </p>
                     </div>
 
-                    <div className="w-full md:max-w-xs">
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
-                            Search
-                        </label>
-                        <input
-                            type="text"
-                            value={marketSearch}
-                            onChange={event => setMarketSearch(event.target.value)}
-                            placeholder="Search ticker or company"
-                            className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white"
-                        />
+                    <div className="flex flex-col gap-3 md:items-end">
+                        <button
+                            type="button"
+                            onClick={() => setMarketBrowserOpen(open => !open)}
+                            aria-expanded={marketBrowserOpen}
+                            aria-controls={marketBrowserPanelId}
+                            className="inline-flex w-fit items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-600"
+                        >
+                            {marketBrowserOpen ? 'Fold' : 'Unfold'}
+                        </button>
+
+                        {marketBrowserOpen && (
+                            <div className="w-full md:max-w-xs">
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                    Search
+                                </label>
+                                <input
+                                    type="text"
+                                    value={marketSearch}
+                                    onChange={event => setMarketSearch(event.target.value)}
+                                    placeholder="Search ticker or company"
+                                    className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="mt-4 overflow-hidden rounded-[24px] border border-gray-200">
-                    <div className="grid grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-                        <span>Stock</span>
-                        <span>Price</span>
-                        <span>Move</span>
-                        <span>Status</span>
-                    </div>
-
-                    <div className="max-h-[360px] overflow-y-auto">
-                        {filteredAssets.length === 0 ? (
-                            <div className="px-5 py-10 text-center text-sm text-gray-500">
-                                No stocks match that search.
+                <div id={marketBrowserPanelId} className="mt-4">
+                    {marketBrowserOpen ? (
+                        <div className="overflow-hidden rounded-[24px] border border-gray-200">
+                            <div className="grid grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                <span>Stock</span>
+                                <span>Price</span>
+                                <span>Move</span>
+                                <span>Status</span>
                             </div>
-                        ) : (
-                            filteredAssets.map(asset => {
-                                const isActive = activeAsset !== null && asset.symbol === activeAsset.symbol;
-                                const isOwned = ownedSymbols.has(asset.symbol);
 
-                                return (
-                                    <button
-                                        key={`all-${asset.symbol}`}
-                                        type="button"
-                                        onClick={() => handleSelectAsset(asset)}
-                                        disabled={!asset.hasData}
-                                        className={`grid w-full grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 border-t border-gray-100 px-5 py-4 text-left transition ${
-                                            isActive
-                                                ? 'bg-blue-50/80'
-                                                : 'bg-white hover:bg-gray-50'
-                                        } ${!asset.hasData ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                                    >
-                                        <div className="flex min-w-0 items-center gap-3">
-                                            <AssetAvatar
-                                                symbol={asset.symbol}
-                                                name={asset.name}
-                                                size={28}
-                                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
-                                                imageClassName="h-7 w-7 object-contain"
-                                                fallbackTextClassName="text-[10px]"
-                                            />
+                            <div className="max-h-[360px] overflow-y-auto">
+                                {filteredAssets.length === 0 ? (
+                                    <div className="px-5 py-10 text-center text-sm text-gray-500">
+                                        No stocks match that search.
+                                    </div>
+                                ) : (
+                                    filteredAssets.map(asset => {
+                                        const isActive = activeAsset !== null && asset.symbol === activeAsset.symbol;
+                                        const isOwned = ownedSymbols.has(asset.symbol);
 
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-gray-950">
-                                                    {asset.name}
-                                                </p>
-                                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
-                                                    {asset.symbol}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        return (
+                                            <button
+                                                key={`all-${asset.symbol}`}
+                                                type="button"
+                                                onClick={() => handleSelectAsset(asset)}
+                                                disabled={!asset.hasData}
+                                                className={`grid w-full grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 border-t border-gray-100 px-5 py-4 text-left transition ${
+                                                    isActive
+                                                        ? 'bg-blue-50/80'
+                                                        : 'bg-white hover:bg-gray-50'
+                                                } ${!asset.hasData ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                            >
+                                                <div className="flex min-w-0 items-center gap-3">
+                                                    <AssetAvatar
+                                                        symbol={asset.symbol}
+                                                        name={asset.name}
+                                                        size={28}
+                                                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
+                                                        imageClassName="h-7 w-7 object-contain"
+                                                        fallbackTextClassName="text-[10px]"
+                                                    />
 
-                                        <span className="text-sm font-semibold text-gray-950">
-                                            {asset.hasData ? formatCurrency(asset.price) : '—'}
-                                        </span>
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-semibold text-gray-950">
+                                                            {asset.name}
+                                                        </p>
+                                                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+                                                            {asset.symbol}
+                                                        </p>
+                                                    </div>
+                                                </div>
 
-                                        <span className={`text-sm font-semibold ${
-                                            !asset.hasData
-                                                ? 'text-gray-400'
-                                                : asset.positive
-                                                    ? 'text-emerald-700'
-                                                    : 'text-red-700'
-                                        }`}>
-                                            {asset.hasData
-                                                ? `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`
-                                                : 'No data'}
-                                        </span>
+                                                <span className="text-sm font-semibold text-gray-950">
+                                                    {asset.hasData ? formatCurrency(asset.price) : '—'}
+                                                </span>
 
-                                        <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                                            isOwned
-                                                ? 'bg-amber-100 text-amber-700'
-                                                : isActive
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : 'bg-gray-100 text-gray-500'
-                                        }`}>
-                                            {isOwned ? 'Owned' : isActive ? 'Selected' : 'Browse'}
-                                        </span>
-                                    </button>
-                                );
-                            })
-                        )}
-                    </div>
+                                                <span className={`text-sm font-semibold ${
+                                                    !asset.hasData
+                                                        ? 'text-gray-400'
+                                                        : asset.positive
+                                                            ? 'text-emerald-700'
+                                                            : 'text-red-700'
+                                                }`}>
+                                                    {asset.hasData
+                                                        ? `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`
+                                                        : 'No data'}
+                                                </span>
+
+                                                <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    isOwned
+                                                        ? 'bg-amber-100 text-amber-700'
+                                                        : isActive
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'bg-gray-100 text-gray-500'
+                                                }`}>
+                                                    {isOwned ? 'Owned' : isActive ? 'Selected' : 'Browse'}
+                                                </span>
+                                            </button>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="rounded-[24px] border border-dashed border-gray-200 bg-gray-50 px-5 py-4 text-sm text-gray-500">
+                            Market browser folded. Unfold to search all {browseAssets.length} stocks.
+                        </div>
+                    )}
                 </div>
             </div>
             {/* ================= TRADE PANEL ================= */}
