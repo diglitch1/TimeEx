@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function ScenarioCard({
@@ -133,6 +133,14 @@ function ScenarioCard({
 }
 
 export default function ScenarioPage() {
+    return (
+        <Suspense fallback={null}>
+            <ScenarioPageContent />
+        </Suspense>
+    );
+}
+
+function ScenarioPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const character = searchParams.get("character");

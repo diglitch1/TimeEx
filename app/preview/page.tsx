@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { resetGame } from '../main/utils/save';
@@ -145,6 +145,14 @@ const DOTCOM_SOURCES = [
     },
 ];
 export default function PreviewPage() {
+    return (
+        <Suspense fallback={null}>
+            <PreviewPageContent />
+        </Suspense>
+    );
+}
+
+function PreviewPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 

@@ -3,78 +3,32 @@
 import {useState, useEffect, useMemo, useRef, useId} from 'react';
 import Image from 'next/image';
 import { type WalletItem } from '../utils/walletData';
-
-import ERIC from '../data/ERIC.json';
-import IBM from '../data/IBM.json';
-import INTC from '../data/INTC.json';
-import MSFT from '../data/MSFT.json';
-import NOK from '../data/nok.json';
-import ORCL from '../data/ORCL.json';
-
 import { getChartData, type RangeKey } from '../utils/chartSelector';
+import {
+    getAssetsWithMarket,
+    getAssetLogo,
+    toLocalDateStr,
+    type AssetMarket,
+    type AssetWithData,
+} from '../utils/marketData';
+import type { GameNotification } from '../utils/notifications';
+import NotificationCenter from './NotificationCenter';
 
-export type MarketRow = {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    'adj close'?: number;
-    volume: number;
-}; // {"date":"1999-07-20","volume":19946500,"open":26.2119655609,"high":26.2119655609,"low":25.0340595245,"close":25.1192092896,"adj close":13.2619962692}
-
-type AssetBase = {
-    symbol: string;
-    name: string;
-    data: MarketRow[];
-};
-
-type AssetWithoutData = AssetBase & {
-    hasData: false;
-};
-
-type AssetWithData = AssetBase & {
-    hasData: true;
-    price: number;
-    change: number;
-    positive: boolean;
-    spark: number[];
-};
-
-type AssetMarket = AssetWithData | AssetWithoutData;
-
-const ASSET_CATALOG: AssetBase[] = [
-    { symbol: 'ERIC', name: 'Ericsson', data: ERIC as MarketRow[] },
-    { symbol: 'IBM', name: 'IBM', data: IBM as MarketRow[] },
-    { symbol: 'INTC', name: 'Intel', data: INTC as MarketRow[] },
-    { symbol: 'MSFT', name: 'Microsoft', data: MSFT as MarketRow[] },
-    { symbol: 'NOK', name: 'Nokia', data: NOK as MarketRow[] },
-    { symbol: 'ORCL', name: 'Oracle', data: ORCL as MarketRow[] },
-];
-
-
-function findRowAtOrBefore(data: MarketRow[], dateStr: string): MarketRow | null {
-    if (!data || data.length === 0) return null;
-
-    const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
-
-    let last: MarketRow | null = null;
-    for (const row of sorted) {
-        if (row.date > dateStr) break;
-        last = row;
-    }
-    return last;
-}
-
-
-function toLocalDateStr(d: Date) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-}
-
-export default function MainTradePanel({currentDate, secondsLeft, wallet, setWallet, gameHour, onSkip30, onSkipDay,}: {
+export default function MainTradePanel({
+    currentDate,
+    secondsLeft,
+    wallet,
+    setWallet,
+    gameHour,
+    onSkip30,
+    onSkipDay,
+    notifications,
+    activeToastIds,
+    historyOpen,
+    onSetHistoryOpen,
+    onDismissToast,
+    onBuyNotification,
+}: {
     currentDate: Date;
     secondsLeft: number;
     wallet: WalletItem[];
@@ -82,6 +36,18 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
     gameHour: number;
     onSkip30: () => void;
     onSkipDay: () => void;
+    notifications: GameNotification[];
+    activeToastIds: string[];
+    historyOpen: boolean;
+    onSetHistoryOpen: (open: boolean) => void;
+    onDismissToast: (id: string) => void;
+    onBuyNotification: (details: {
+        symbol: string;
+        units: number;
+        totalCost: number;
+        price: number;
+        timestamp: Date;
+    }) => void;
 }) {
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -97,44 +63,10 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
 
     const dateStr = toLocalDateStr(currentDate);
 
-    const assetsWithMarket = useMemo<AssetMarket[]>(() => {
-        return ASSET_CATALOG.map(asset => {
-            const sortedData = [...asset.data].sort(
-                (a, b) => a.date.localeCompare(b.date)
-            );
-
-            const spark = sortedData
-                .filter(d => d.date <= dateStr)
-                .slice(-7)
-                .map(d => d.close)
-
-            const today = findRowAtOrBefore(sortedData, dateStr);
-
-            if (!today) {
-                return {
-                    ...asset,
-                    hasData: false,
-                };
-            }
-
-            const idx = asset.data.findIndex(r => r.date === today.date);
-            const prev = idx > 0 ? asset.data[idx - 1] : null;
-
-            const price = today.close;
-            const change =
-                prev ? ((price - prev.close) / prev.close) * 100 : 0;
-
-
-            return {
-                ...asset,
-                hasData: true,
-                price,
-                change,
-                positive: change >= 0,
-                spark,
-            };
-        });
-    }, [dateStr]);
+    const assetsWithMarket = useMemo<AssetMarket[]>(
+        () => getAssetsWithMarket(dateStr, 12),
+        [dateStr]
+    );
 
     useEffect(() => {
         setWallet(prev =>
@@ -317,6 +249,16 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
             return next.filter(w => w.units > 0);
         });
 
+        if (tradeSide === 'buy') {
+            onBuyNotification({
+                symbol: activeAsset.symbol,
+                units: Number((dollarAmount / price).toFixed(4)),
+                totalCost: dollarAmount,
+                price,
+                timestamp: currentDate,
+            });
+        }
+
         resetTradeDraft();
     };
 
@@ -410,12 +352,13 @@ export default function MainTradePanel({currentDate, secondsLeft, wallet, setWal
                         Next Day
                     </button>
 
-                    <button
-                        className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
-                        title="Notifications"
-                    >
-                        <Image src="/images/bellicon.png" alt="Notifications" width={100} height={100} className="h-10 w-10 object-contain"/>
-                    </button>
+                    <NotificationCenter
+                        notifications={notifications}
+                        activeToastIds={activeToastIds}
+                        historyOpen={historyOpen}
+                        onSetHistoryOpen={onSetHistoryOpen}
+                        onDismissToast={onDismissToast}
+                    />
                 </div>
             </div>
 
@@ -818,13 +761,19 @@ function MiniSparkline({data, positive,}: {
     data: number[];
     positive: boolean;
 }) {
-    const max = Math.max(...data);
-    const min = Math.min(...data);
+    if (data.length === 0) {
+        return <div className="h-12 w-full" />;
+    }
 
-    const points = data
+    const safeData = data.length === 1 ? [data[0], data[0]] : data;
+    const max = Math.max(...safeData);
+    const min = Math.min(...safeData);
+    const span = Math.max(max - min, 1);
+
+    const points = safeData
         .map((v, i) => {
-            const x = (i / (data.length - 1)) * 100;
-            const y = 100 - ((v - min) / (max - min)) * 100;
+            const x = (i / (safeData.length - 1)) * 100;
+            const y = 100 - ((v - min) / span) * 100;
             return `${x},${y}`;
         })
         .join(' ');
@@ -844,10 +793,6 @@ function MiniSparkline({data, positive,}: {
             />
         </svg>
     );
-}
-
-function getAssetLogo(symbol: string) {
-    return `/images/assets/${symbol.toLowerCase()}.png`;
 }
 
 function calculateRangeSummary(rows: { date: string; close: number }[]) {

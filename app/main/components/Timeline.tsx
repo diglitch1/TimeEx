@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { TimelineMarker } from '../utils/timeline';
 
 type Props = {
@@ -19,14 +19,6 @@ function parseDay(dateStr: string) {
     return new Date(dateStr + 'T00:00:00');
 }
 
-function startOfYear(year: number) {
-    return new Date(Date.UTC(year, 0, 1, 0, 0, 0));
-}
-
-function endOfYear(year: number) {
-    return new Date(Date.UTC(year, 11, 31, 23, 59, 59));
-}
-
 function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
 }
@@ -40,6 +32,7 @@ function toLocalDateStr(d: Date) {
 
 
 type Tick = { at: number; label: string; kind: 'year' | 'month' };
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default function TimelineBar({ timelineDates, markers, currentDate, onJumpToDate }: Props) {
     const [hoverDate, setHoverDate] = useState<string | null>(null);
@@ -66,62 +59,137 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
     // show only market items in the hover card
     const hoverItems = (grouped.get(activeHover) ?? []).filter(m => m.kind === 'market');
 
-    // --- Axis range (independent from dots) ---
-    const { axisStart, axisEnd, ticks } = useMemo(() => {
+    const compressedAxis = useMemo(() => {
         if (timelineDates.length === 0) {
-            const now = new Date();
-            const y = now.getFullYear();
             return {
-                axisStart: startOfYear(y),
-                axisEnd: endOfYear(y),
-                ticks: [] as Tick[],
+                firstMs: 0,
+                lastMs: 1,
+                totalWeight: 1,
+                segments: [] as {
+                    startMs: number;
+                    endMs: number;
+                    startWeight: number;
+                    weight: number;
+                }[],
             };
         }
 
+        const anchors = timelineDates.map(dateStr => ({
+            dateStr,
+            ms: parseDay(dateStr).getTime(),
+        }));
+
+        if (anchors.length === 1) {
+            return {
+                firstMs: anchors[0].ms,
+                lastMs: anchors[0].ms,
+                totalWeight: 1,
+                segments: [] as {
+                    startMs: number;
+                    endMs: number;
+                    startWeight: number;
+                    weight: number;
+                }[],
+            };
+        }
+
+        const segments: {
+            startMs: number;
+            endMs: number;
+            startWeight: number;
+            weight: number;
+        }[] = [];
+
+        let totalWeight = 0;
+
+        for (let index = 0; index < anchors.length - 1; index += 1) {
+            const start = anchors[index].ms;
+            const end = anchors[index + 1].ms;
+            const actualDays = Math.max(1, (end - start) / MS_PER_DAY);
+            const compressedWeight = Math.max(6, Math.pow(actualDays, 0.72));
+
+            segments.push({
+                startMs: start,
+                endMs: end,
+                startWeight: totalWeight,
+                weight: compressedWeight,
+            });
+
+            totalWeight += compressedWeight;
+        }
+
+        return {
+            firstMs: anchors[0].ms,
+            lastMs: anchors[anchors.length - 1].ms,
+            totalWeight: Math.max(totalWeight, 1),
+            segments,
+        };
+    }, [timelineDates]);
+
+    const pctForMs = useCallback((ms: number) => {
+        if (timelineDates.length === 0) return 0;
+        if (timelineDates.length === 1) return 50;
+        if (ms <= compressedAxis.firstMs) return 0;
+        if (ms >= compressedAxis.lastMs) return 100;
+
+        const segment = compressedAxis.segments.find(candidate =>
+            ms >= candidate.startMs && ms <= candidate.endMs
+        );
+
+        if (!segment) return 100;
+
+        const segmentSpan = Math.max(1, segment.endMs - segment.startMs);
+        const ratio = (ms - segment.startMs) / segmentSpan;
+        const visualWeight = segment.startWeight + (segment.weight * ratio);
+
+        return clamp((visualWeight / compressedAxis.totalWeight) * 100, 0, 100);
+    }, [compressedAxis, timelineDates.length]);
+
+    const pctForDate = useCallback((dateStr: string) => {
+        return pctForMs(parseDay(dateStr).getTime());
+    }, [pctForMs]);
+
+    const ticks = useMemo(() => {
+        if (timelineDates.length === 0) return [] as Tick[];
+
         const first = parseDay(timelineDates[0]);
         const last = parseDay(timelineDates[timelineDates.length - 1]);
-
+        const startMs = first.getTime();
+        const endMs = last.getTime();
         const y0 = first.getUTCFullYear();
         const y1 = last.getUTCFullYear();
-
-        const start = startOfYear(y0);
-        const end = endOfYear(y1);
-
-        // Build independent calendar ticks:
-        // Years: every Jan 1
-        // Months: Jan/Apr/Jul/Oct (quarterly) so it stays readable
         const out: Tick[] = [];
 
-        for (let y = y0; y <= y1; y++) {
-            const yAt = startOfYear(y).getTime();
-            out.push({ at: yAt, label: String(y), kind: 'year' });
+        for (let year = y0; year <= y1; year += 1) {
+            const firstDateInYear = timelineDates.find(dateStr =>
+                parseDay(dateStr).getUTCFullYear() === year
+            );
 
-            const quarterMonths = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
-            for (const m of quarterMonths) {
-                const d = new Date(Date.UTC(y, m, 1, 0, 0, 0));
-                const label = d.toLocaleDateString('en-US', { month: 'short' });
-                out.push({ at: d.getTime(), label, kind: 'month' });
+            if (firstDateInYear) {
+                out.push({
+                    at: parseDay(firstDateInYear).getTime(),
+                    label: String(year),
+                    kind: 'year',
+                });
+            }
+
+            for (const month of [0, 3, 6, 9]) {
+                const tickDate = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+                const tickMs = tickDate.getTime();
+                if (tickMs < startMs || tickMs > endMs) continue;
+
+                out.push({
+                    at: tickMs,
+                    label: tickDate.toLocaleDateString('en-US', { month: 'short' }),
+                    kind: 'month',
+                });
             }
         }
 
-        return { axisStart: start, axisEnd: end, ticks: out };
+        return out;
     }, [timelineDates]);
 
-    const axisStartMs = axisStart.getTime();
-    const axisEndMs = axisEnd.getTime();
-    const axisSpan = Math.max(1, axisEndMs - axisStartMs);
-
-    // Convert any dateStr to percentage along axis
-    const pctForDate = (dateStr: string) => {
-        const ms = parseDay(dateStr).getTime();
-        const raw = ((ms - axisStartMs) / axisSpan) * 100;
-        return clamp(raw, 0, 100);
-    };
-
     const currentPct = pctForDate(currentStr);
-
-    // This is ONLY for display: "Position X / N"
-    const currentIndex = Math.max(0, timelineDates.indexOf(currentStr));
 // --- label collision handling (labels only, dots untouched) ---
     const LABEL_MIN_GAP_PCT = 3; // how close labels can be before stacking
     const LABEL_LINE_HEIGHT = 17; // px per stacked level
@@ -181,7 +249,7 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                 {ticks
                                     .filter(t => t.kind === 'year')
                                     .map(t => {
-                                        const pct = ((t.at - axisStartMs) / axisSpan) * 100;
+                                        const pct = pctForMs(t.at);
                                         const left = `${clamp(pct, 0, 100)}%`;
                                         return (
                                             <div
@@ -204,7 +272,7 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                 {ticks
                                     .filter(t => t.kind === 'month')
                                     .map(t => {
-                                        const pct = ((t.at - axisStartMs) / axisSpan) * 100;
+                                        const pct = pctForMs(t.at);
                                         const left = `${clamp(pct, 0, 100)}%`;
                                         return (
                                             <div
