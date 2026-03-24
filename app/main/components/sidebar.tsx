@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { WalletItem } from '../utils/walletData';
 import {
     getAssetsWithMarket,
@@ -11,42 +11,16 @@ import {
 } from '../utils/marketData';
 import AssetAvatar from './AssetAvatar';
 
-const ALL_ASSETS = ['ETH', 'BTC', 'EURUSD', 'OIL', 'GOLD', 'NSDQ100', 'AAPL', 'SOL', 'TSLA', 'NVDA', 'ADA'];
-
-const ASSET_LOOKUP: Record<
-    string,
-    { change: number; positive: boolean }
-> = {
-    ETH: { change: 1.8, positive: true },
-    BTC: { change: 0.92, positive: true },
-    EURUSD: { change: -0.14, positive: false },
-    OIL: { change: 2.31, positive: true },
-    GOLD: { change: -2.13, positive: false },
-    NSDQ100: { change: 0.24, positive: true },
-    AAPL: { change: 2.8, positive: true },
-    SOL: { change: -1.86, positive: false },
-    TSLA: { change: 2.34, positive: true },
-    NVDA: { change: 1.3, positive: true },
-    ADA: { change: 0.97, positive: true },
-};
-
 const STARTING_CASH = 7000;
 
 
 export default function Sidebar({
-                                    wallet,
-                                    watchlist,
-                                    setWatchlist,
-                                    currentDate,
-                                }: {
+    wallet,
+    currentDate,
+}: {
     wallet: WalletItem[];
-    watchlist: string[];
-    setWatchlist: React.Dispatch<React.SetStateAction<string[]>>;
     currentDate: Date;
 }) {
-    const [open, setOpen] = useState(false);
-    const [mode, setMode] = useState<'add' | 'remove'>('add');
-
     const totalValue = wallet.reduce(
         (sum, item) => sum + item.usdValue,
         0
@@ -172,110 +146,6 @@ export default function Sidebar({
                 </div>
 
                 <div>
-                    <div className="mb-3 flex items-center justify-between">
-                        <p className={sectionLabelClass}>Watchlist</p>
-                        <button
-                            onClick={() => setOpen(o => !o)}
-                            className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-gray-600 transition hover:border-blue-200 hover:text-blue-600"
-                        >
-                            Manage
-                        </button>
-                    </div>
-
-                    {open && (
-                        <div className="mb-3 rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                            <div className="mb-3 flex gap-2">
-                                <button
-                                    onClick={() => setMode('add')}
-                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${
-                                        mode === 'add'
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-600'
-                                    }`}
-                                >
-                                    Add
-                                </button>
-
-                                <button
-                                    onClick={() => setMode('remove')}
-                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${
-                                        mode === 'remove'
-                                            ? 'bg-red-600 text-white'
-                                            : 'bg-gray-100 text-gray-600'
-                                    }`}
-                                >
-                                    Remove
-                                </button>
-                            </div>
-
-                            <div className="space-y-1">
-                                {(mode === 'add'
-                                        ? ALL_ASSETS.filter(a => !watchlist.includes(a))
-                                        : watchlist
-                                ).map(symbol => (
-                                    <button
-                                        key={symbol}
-                                        onClick={() => {
-                                            setWatchlist(prev =>
-                                                mode === 'add'
-                                                    ? [...prev, symbol]
-                                                    : prev.filter(s => s !== symbol)
-                                            );
-                                        }}
-                                        className="block w-full rounded-[14px] px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                                    >
-                                        {symbol}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={panelClass}>
-                        <div className="space-y-3">
-                            {watchlist.map(symbol => {
-                                const asset = ASSET_LOOKUP[symbol];
-
-                                if (!asset) return null;
-
-                                return (
-                                    <WatchItem
-                                        key={symbol}
-                                        name={symbol}
-                                        change={`${asset.positive ? '+' : ''}${asset.change}%`}
-                                        positive={asset.positive}
-                                    />
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <p className={sectionLabelClass}>News Feed</p>
-                    <div className={panelClass}>
-                        <div className="space-y-4">
-                            <NewsItem
-                                img="/images/news/news1.png"
-                                text="Goldman Sachs unveils its 10-year playbook and AI is at the heart of it"
-                            />
-
-                            <NewsItem
-                                img="/images/news/news2.png"
-                                text="Earnings playbook: Nvidia and retailers headline the tail end of the season"
-                            />
-
-                            <NewsItem
-                                img="/images/news/news3.png"
-                                text="Ed Yardeni says gold is the best safe-haven play and the new bitcoin"
-                            />
-                        </div>
-
-                        <ReadMoreButton />
-                    </div>
-                </div>
-
-                <div>
                     <p className={sectionLabelClass}>Market Mover</p>
                     <div className={panelClass}>
                         {marketMover ? (
@@ -364,6 +234,30 @@ export default function Sidebar({
                 </div>
 
                 <div>
+                    <p className={sectionLabelClass}>News Feed</p>
+                    <div className={panelClass}>
+                        <div className="space-y-4">
+                            <NewsItem
+                                img="/images/news/news1.png"
+                                text="Goldman Sachs unveils its 10-year playbook and AI is at the heart of it"
+                            />
+
+                            <NewsItem
+                                img="/images/news/news2.png"
+                                text="Earnings playbook: Nvidia and retailers headline the tail end of the season"
+                            />
+
+                            <NewsItem
+                                img="/images/news/news3.png"
+                                text="Ed Yardeni says gold is the best safe-haven play and the new bitcoin"
+                            />
+                        </div>
+
+                        <ReadMoreButton />
+                    </div>
+                </div>
+
+                <div>
                     <p className={sectionLabelClass}>Tickets</p>
                     <div className="rounded-[28px] border border-yellow-100 bg-gradient-to-br from-yellow-50 via-white to-orange-50 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                         <div className="space-y-3">
@@ -387,30 +281,6 @@ export default function Sidebar({
                 </div>
             </div>
         </aside>
-    );
-}
-
-function WatchItem({
-                       name,
-                       change,
-                       positive,
-                   }: {
-    name: string;
-    change: string;
-    positive: boolean;
-}) {
-    return (
-        <div className="flex items-center justify-between rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-3">
-            <div>
-                <p className="text-sm font-semibold text-gray-950">{name}</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-gray-400">
-                    Live Watch
-                </p>
-            </div>
-            <span className={`text-sm font-semibold ${positive ? 'text-emerald-700' : 'text-red-700'}`}>
-                {change}
-            </span>
-        </div>
     );
 }
 

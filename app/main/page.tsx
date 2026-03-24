@@ -130,7 +130,6 @@ const DAY_START_MINUTES = 2 * 60;
 const DAY_END_MINUTES = (24 * 60) - 1;
 const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 const STARTING_CASH = 7000;
-const DEFAULT_WATCHLIST = ['SOL', 'GOLD', 'TSLA', 'NVDA', 'ADA'];
 const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
 
 function readStoredDecision(key: string, property: string) {
@@ -201,8 +200,6 @@ export default function MainPage() {
 
         return createStartingWallet(STARTING_CASH);
     });
-    const [watchlist, setWatchlist] = useState<string[]>(DEFAULT_WATCHLIST);
-
     const currentDateTime = new Date(baseDate);
     currentDateTime.setHours(0, 0, 0, 0);
     currentDateTime.setMinutes(inGameMinutes);
@@ -471,8 +468,6 @@ export default function MainPage() {
             <div className="flex min-h-screen w-full bg-[#f8fafc]">
                 <Sidebar
                     wallet={wallet}
-                    watchlist={watchlist}
-                    setWatchlist={setWatchlist}
                     currentDate={currentDateTime}
                 />
                 <div className="flex-1 p-6">
