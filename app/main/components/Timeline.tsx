@@ -19,6 +19,21 @@ function parseDay(dateStr: string) {
     return new Date(dateStr + 'T00:00:00');
 }
 
+function monthKey(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+}
+
+function parseMonthKey(key: string) {
+    const [year, month] = key.split('-').map(Number);
+    return new Date(year, month - 1, 1);
+}
+
+function addOneMonth(date: Date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 1);
+}
+
 function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
 }
@@ -31,8 +46,12 @@ function toLocalDateStr(d: Date) {
 }
 
 
-type Tick = { at: number; label: string; kind: 'year' | 'month' };
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+type Tick = {
+    pct: number;
+    label: string;
+    kind: 'year' | 'month';
+    compact?: boolean;
+};
 
 export default function TimelineBar({ timelineDates, markers, currentDate, onJumpToDate }: Props) {
     const [hoverDate, setHoverDate] = useState<string | null>(null);
@@ -59,170 +78,123 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
     // show only market items in the hover card
     const hoverItems = (grouped.get(activeHover) ?? []).filter(m => m.kind === 'market');
 
-    const compressedAxis = useMemo(() => {
+    const { ticks, datePctMap } = useMemo(() => {
         if (timelineDates.length === 0) {
             return {
-                firstMs: 0,
-                lastMs: 1,
-                totalWeight: 1,
-                segments: [] as {
-                    startMs: number;
-                    endMs: number;
-                    startWeight: number;
-                    weight: number;
-                }[],
+                ticks: [] as Tick[],
+                datePctMap: new Map<string, number>(),
             };
         }
 
-        const anchors = timelineDates.map(dateStr => ({
-            dateStr,
-            ms: parseDay(dateStr).getTime(),
+        const datesByMonth = new Map<string, string[]>();
+        for (const dateStr of timelineDates) {
+            const key = monthKey(parseDay(dateStr));
+            if (!datesByMonth.has(key)) datesByMonth.set(key, []);
+            datesByMonth.get(key)!.push(dateStr);
+        }
+
+        type MonthLayout = {
+            key: string;
+            year: number;
+            month: number;
+            dates: string[];
+            hasDots: boolean;
+            weight: number;
+        };
+
+        const firstMonth = parseMonthKey(monthKey(parseDay(timelineDates[0])));
+        const lastMonth = parseMonthKey(monthKey(parseDay(timelineDates[timelineDates.length - 1])));
+
+        const months: MonthLayout[] = [];
+        for (let cursor = new Date(firstMonth); cursor <= lastMonth; cursor = addOneMonth(cursor)) {
+            const key = monthKey(cursor);
+            const dates = datesByMonth.get(key) ?? [];
+            const hasDots = dates.length > 0;
+            const weight = hasDots
+                ? 2.9 + Math.max(0, dates.length - 1) * 1.6
+                : 0.7;
+
+            months.push({
+                key,
+                year: cursor.getFullYear(),
+                month: cursor.getMonth(),
+                dates,
+                hasDots,
+                weight,
+            });
+        }
+
+        const totalWeight = Math.max(
+            months.reduce((sum, month) => sum + month.weight, 0),
+            1
+        );
+
+        let consumedWeight = 0;
+        const laidOutMonths = months.map(month => {
+            const startPct = (consumedWeight / totalWeight) * 100;
+            consumedWeight += month.weight;
+            const endPct = (consumedWeight / totalWeight) * 100;
+
+            return {
+                ...month,
+                startPct,
+                endPct,
+                centerPct: (startPct + endPct) / 2,
+            };
+        });
+
+        const nextDatePctMap = new Map<string, number>();
+
+        for (const month of laidOutMonths) {
+            const sortedDates = [...month.dates].sort();
+            const count = sortedDates.length;
+
+            sortedDates.forEach((dateStr, index) => {
+                const localFraction =
+                    count === 1
+                        ? 0.5
+                        : 0.22 + (index / (count - 1)) * 0.56;
+                const pct =
+                    month.startPct + ((month.endPct - month.startPct) * localFraction);
+
+                nextDatePctMap.set(dateStr, pct);
+            });
+        }
+
+        const yearGroups = new Map<number, typeof laidOutMonths>();
+        for (const month of laidOutMonths) {
+            const group = yearGroups.get(month.year) ?? [];
+            group.push(month);
+            yearGroups.set(month.year, group);
+        }
+
+        const yearTicks: Tick[] = Array.from(yearGroups.entries()).map(([year, monthsInYear]) => ({
+            kind: 'year',
+            label: String(year),
+            pct: (monthsInYear[0].startPct + monthsInYear[monthsInYear.length - 1].endPct) / 2,
         }));
 
-        if (anchors.length === 1) {
-            return {
-                firstMs: anchors[0].ms,
-                lastMs: anchors[0].ms,
-                totalWeight: 1,
-                segments: [] as {
-                    startMs: number;
-                    endMs: number;
-                    startWeight: number;
-                    weight: number;
-                }[],
-            };
-        }
-
-        const segments: {
-            startMs: number;
-            endMs: number;
-            startWeight: number;
-            weight: number;
-        }[] = [];
-
-        let totalWeight = 0;
-
-        for (let index = 0; index < anchors.length - 1; index += 1) {
-            const start = anchors[index].ms;
-            const end = anchors[index + 1].ms;
-            const actualDays = Math.max(1, (end - start) / MS_PER_DAY);
-            const compressedWeight = Math.max(6, Math.pow(actualDays, 0.72));
-
-            segments.push({
-                startMs: start,
-                endMs: end,
-                startWeight: totalWeight,
-                weight: compressedWeight,
-            });
-
-            totalWeight += compressedWeight;
-        }
+        const monthTicks: Tick[] = laidOutMonths
+            .filter(month => month.month % 3 === 0)
+            .map(month => ({
+                kind: 'month',
+                label: new Date(month.year, month.month, 1).toLocaleDateString('en-US', { month: 'short' }),
+                pct: month.centerPct,
+                compact: !month.hasDots,
+            }));
 
         return {
-            firstMs: anchors[0].ms,
-            lastMs: anchors[anchors.length - 1].ms,
-            totalWeight: Math.max(totalWeight, 1),
-            segments,
+            ticks: [...yearTicks, ...monthTicks],
+            datePctMap: nextDatePctMap,
         };
     }, [timelineDates]);
 
-    const pctForMs = useCallback((ms: number) => {
-        if (timelineDates.length === 0) return 0;
-        if (timelineDates.length === 1) return 50;
-        if (ms <= compressedAxis.firstMs) return 0;
-        if (ms >= compressedAxis.lastMs) return 100;
-
-        const segment = compressedAxis.segments.find(candidate =>
-            ms >= candidate.startMs && ms <= candidate.endMs
-        );
-
-        if (!segment) return 100;
-
-        const segmentSpan = Math.max(1, segment.endMs - segment.startMs);
-        const ratio = (ms - segment.startMs) / segmentSpan;
-        const visualWeight = segment.startWeight + (segment.weight * ratio);
-
-        return clamp((visualWeight / compressedAxis.totalWeight) * 100, 0, 100);
-    }, [compressedAxis, timelineDates.length]);
-
-    const pctForDate = useCallback((dateStr: string) => {
-        return pctForMs(parseDay(dateStr).getTime());
-    }, [pctForMs]);
-
-    const ticks = useMemo(() => {
-        if (timelineDates.length === 0) return [] as Tick[];
-
-        const first = parseDay(timelineDates[0]);
-        const last = parseDay(timelineDates[timelineDates.length - 1]);
-        const startMs = first.getTime();
-        const endMs = last.getTime();
-        const y0 = first.getUTCFullYear();
-        const y1 = last.getUTCFullYear();
-        const out: Tick[] = [];
-
-        for (let year = y0; year <= y1; year += 1) {
-            const firstDateInYear = timelineDates.find(dateStr =>
-                parseDay(dateStr).getUTCFullYear() === year
-            );
-
-            if (firstDateInYear) {
-                out.push({
-                    at: parseDay(firstDateInYear).getTime(),
-                    label: String(year),
-                    kind: 'year',
-                });
-            }
-
-            for (const month of [0, 3, 6, 9]) {
-                const tickDate = new Date(Date.UTC(year, month, 1, 0, 0, 0));
-                const tickMs = tickDate.getTime();
-                if (tickMs < startMs || tickMs > endMs) continue;
-
-                out.push({
-                    at: tickMs,
-                    label: tickDate.toLocaleDateString('en-US', { month: 'short' }),
-                    kind: 'month',
-                });
-            }
-        }
-
-        return out;
-    }, [timelineDates]);
+    const pctForDate = useCallback(
+        (dateStr: string) => datePctMap.get(dateStr) ?? 0,
+        [datePctMap]
+    );
 
     const currentPct = pctForDate(currentStr);
-// --- label collision handling (labels only, dots untouched) ---
-    const LABEL_MIN_GAP_PCT = 3; // how close labels can be before stacking
-    const LABEL_LINE_HEIGHT = 17; // px per stacked level
-
-    type LabelLayout = {
-        offsetY: number;
-        showLine: boolean;
-    };
-
-    const labelLayouts = useMemo(() => {
-        const layouts = new Map<string, LabelLayout>();
-        let lastPct: number | null = null;
-        let stackLevel = 0;
-
-        for (const dateStr of timelineDates) {
-            const pct = pctForDate(dateStr);
-
-            if (lastPct !== null && Math.abs(pct - lastPct) < LABEL_MIN_GAP_PCT) {
-                stackLevel += 1;
-            } else {
-                stackLevel = 0;
-            }
-
-            layouts.set(dateStr, {
-                offsetY: stackLevel * LABEL_LINE_HEIGHT,
-                showLine: stackLevel > 0,
-            });
-
-            lastPct = pct;
-        }
-
-        return layouts;
-    }, [timelineDates, pctForDate]);
 
     return (
         <div className="w-full">
@@ -249,11 +221,10 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                 {ticks
                                     .filter(t => t.kind === 'year')
                                     .map(t => {
-                                        const pct = pctForMs(t.at);
-                                        const left = `${clamp(pct, 0, 100)}%`;
+                                        const left = `${clamp(t.pct, 0, 100)}%`;
                                         return (
                                             <div
-                                                key={`year-${t.label}-${t.at}`}
+                                                key={`year-${t.label}-${t.pct}`}
                                                 className="absolute -translate-x-1/2"
                                                 style={{ left }}
                                             >
@@ -272,15 +243,17 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                 {ticks
                                     .filter(t => t.kind === 'month')
                                     .map(t => {
-                                        const pct = pctForMs(t.at);
-                                        const left = `${clamp(pct, 0, 100)}%`;
+                                        const left = `${clamp(t.pct, 0, 100)}%`;
                                         return (
                                             <div
-                                                key={`month-${t.label}-${t.at}`}
+                                                key={`month-${t.label}-${t.pct}`}
                                                 className="absolute -translate-x-1/2"
                                                 style={{ left }}
                                             >
-                        <span className="text-[11px] font-medium text-gray-700">
+                        <span className={t.compact
+                            ? 'text-[10px] font-medium text-gray-400'
+                            : 'text-[11px] font-medium text-gray-700'
+                        }>
                           {t.label}
                         </span>
                                             </div>
@@ -339,32 +312,16 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
 
                                         <span className={`${base} ${dotColor} ${isCurrent ? 'scale-125' : 'hover:scale-110'}`} />
 
-                                        {/* Date label (collision-aware) */}
-                                        {(() => {
-                                            const layout = labelLayouts.get(dateStr)!;
-                                            const labelTop = 24 + layout.offsetY;
-
-                                            return (
-                                                <>
-                                                    {layout.showLine && (
-                                                        <span
-                                                            className="absolute w-px bg-gray-300"
-                                                            style={{
-                                                                top: '12px',
-                                                                height: `${labelTop - 12}px`,
-                                                            }}
-                                                        />
-                                                    )}
-
-                                                    <span
-                                                        className="absolute text-[11px] font-medium text-gray-900 whitespace-nowrap"
-                                                        style={{ top: `${labelTop}px` }}
-                                                    >
-                {new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
-            </span>
-                                                </>
-                                            );
-                                        })()}
+                                        <span
+                                            className="absolute whitespace-nowrap text-[10px] font-medium text-gray-900"
+                                            style={{
+                                                top: '24px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                            }}
+                                        >
+                                            {new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
+                                        </span>
 
                                     </button>
                                 );
