@@ -6,10 +6,10 @@ import { useMemo, useState } from 'react';
 import { WalletItem } from '../utils/walletData';
 import {
     getAssetsWithMarket,
-    getAssetLogo,
     toLocalDateStr,
     type AssetWithData,
 } from '../utils/marketData';
+import AssetAvatar from './AssetAvatar';
 
 const ALL_ASSETS = ['ETH', 'BTC', 'EURUSD', 'OIL', 'GOLD', 'NSDQ100', 'AAPL', 'SOL', 'TSLA', 'NVDA', 'ADA'];
 
@@ -30,6 +30,8 @@ const ASSET_LOOKUP: Record<
     ADA: { change: 0.97, positive: true },
 };
 
+const STARTING_CASH = 7000;
+
 
 export default function Sidebar({
                                     wallet,
@@ -45,8 +47,6 @@ export default function Sidebar({
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<'add' | 'remove'>('add');
 
-    const STARTING_CASH = 7000;
-
     const totalValue = wallet.reduce(
         (sum, item) => sum + item.usdValue,
         0
@@ -54,17 +54,15 @@ export default function Sidebar({
 
     const dateStr = useMemo(() => toLocalDateStr(currentDate), [currentDate]);
     const assetsWithMarket = useMemo(() => getAssetsWithMarket(dateStr, 18), [dateStr]);
-    const marketMover = useMemo(() => {
-        const candidates = assetsWithMarket.filter(
-            (asset): asset is AssetWithData => asset.hasData && asset.previous !== null
-        );
-
-        if (candidates.length === 0) return null;
-
-        return [...candidates].sort(
-            (left, right) => Math.abs(right.change) - Math.abs(left.change)
-        )[0];
-    }, [assetsWithMarket]);
+    const marketMover = useMemo(
+        () =>
+            assetsWithMarket.reduce<AssetWithData | null>((best, asset) => {
+                if (!asset.hasData || asset.previous === null) return best;
+                if (!best) return asset;
+                return Math.abs(asset.change) > Math.abs(best.change) ? asset : best;
+            }, null),
+        [assetsWithMarket]
+    );
 
     const gainLoss = totalValue - STARTING_CASH;
     const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
@@ -283,19 +281,18 @@ export default function Sidebar({
                         {marketMover ? (
                             <>
                                 <div className="flex items-start gap-4">
-                                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border ${
-                                        marketMover.positive
-                                            ? 'border-emerald-200 bg-emerald-50'
-                                            : 'border-red-200 bg-red-50'
-                                    }`}>
-                                        <Image
-                                            src={getAssetLogo(marketMover.symbol)}
-                                            alt={`${marketMover.name} logo`}
-                                            width={40}
-                                            height={40}
-                                            className="h-10 w-10 object-contain"
-                                        />
-                                    </div>
+                                    <AssetAvatar
+                                        symbol={marketMover.symbol}
+                                        name={marketMover.name}
+                                        size={40}
+                                        className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border ${
+                                            marketMover.positive
+                                                ? 'border-emerald-200 bg-emerald-50'
+                                                : 'border-red-200 bg-red-50'
+                                        }`}
+                                        imageClassName="h-10 w-10 object-contain"
+                                        fallbackTextClassName="text-sm"
+                                    />
 
                                     <div className="min-w-0 flex-1">
                                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
@@ -446,18 +443,14 @@ function WalletIcon({ label }: { label: string }) {
         );
     }
 
-    const iconPath = `/images/assets/${label.toLowerCase()}.png`;
-
     return (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]">
-            <Image
-                src={iconPath}
-                alt={`${label} logo`}
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
-            />
-        </div>
+        <AssetAvatar
+            symbol={label}
+            size={32}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
+            imageClassName="h-8 w-8 object-contain"
+            fallbackTextClassName="text-[10px]"
+        />
     );
 }
 

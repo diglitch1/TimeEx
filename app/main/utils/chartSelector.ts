@@ -1,3 +1,5 @@
+import { findIndexAtOrBeforeDate } from './findIndexAtOrBeforeDate';
+
 export type RangeKey = '1W' | '1M' | '6M' | '1Y';
 
 export type MarketRow = {
@@ -20,8 +22,12 @@ export function getChartData(
         '1Y': 365,
     };
 
-    return data
-        .filter(d => d.date <= dateStr)
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-RANGE_DAYS[range]);
+    const endIndex = findIndexAtOrBeforeDate(data, dateStr);
+
+    if (endIndex < 0) return [];
+
+    const length = RANGE_DAYS[range];
+    const startIndex = Math.max(0, endIndex - length + 1);
+
+    return data.slice(startIndex, endIndex + 1);
 }

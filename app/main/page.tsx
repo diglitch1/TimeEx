@@ -9,16 +9,16 @@ import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
 import { GAME_EVENTS } from './utils/events';
 import FamilyHelpModal from './components/familyHelp';
-import ApplyForCollegeModal from "@/app/main/components/ApplyForCollege";
-import CarInsuranceModal from "@/app/main/components/CarInsurance";
-import CollegeResultsModal from "@/app/main/components/CollegeResults";
-import CollegePartyInvite from "@/app/main/components/CollegePartyInvite";
-import PartyConsequencesModal from "@/app/main/components/CollegePartyConsequences";
-import ParentsSupportModal from "@/app/main/components/ParentsSupport";
-import CarCrashModal from "@/app/main/components/CarCrash";
-import FreelanceGigModal from "@/app/main/components/FreelanceGig";
-import JobOpportunityModal from "@/app/main/components/JobOpportunity";
-import Timeline from "@/app/main/components/Timeline";
+import ApplyForCollegeModal from './components/ApplyForCollege';
+import CarInsuranceModal from './components/CarInsurance';
+import CollegeResultsModal from './components/CollegeResults';
+import CollegePartyInvite from './components/CollegePartyInvite';
+import PartyConsequencesModal from './components/CollegePartyConsequences';
+import ParentsSupportModal from './components/ParentsSupport';
+import CarCrashModal from './components/CarCrash';
+import FreelanceGigModal from './components/FreelanceGig';
+import JobOpportunityModal from './components/JobOpportunity';
+import Timeline from './components/Timeline';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 import {
     getAssetsWithMarket,
@@ -66,17 +66,27 @@ function canTriggerEvent(
     return true;
 }
 
-function buildBuyNotification(
-    symbol: string,
-    units: number,
-    totalCost: number,
-    price: number,
-    timestampLabel: string
-): NotificationDraft {
+function buildTradeNotification({
+    titleVerb,
+    messageVerb,
+    symbol,
+    units,
+    totalValue,
+    price,
+    timestampLabel,
+}: {
+    titleVerb: 'Bought' | 'Sold';
+    messageVerb: 'purchased' | 'sold';
+    symbol: string;
+    units: number;
+    totalValue: number;
+    price: number;
+    timestampLabel: string;
+}): NotificationDraft {
     return {
         tone: 'info',
-        title: `Bought ${symbol}`,
-        message: `${units.toFixed(4)} shares purchased for ${formatNotificationCurrency(totalCost)} at ${formatNotificationCurrency(price)}.`,
+        title: `${titleVerb} ${symbol}`,
+        message: `${units.toFixed(4)} shares ${messageVerb} for ${formatNotificationCurrency(totalValue)} at ${formatNotificationCurrency(price)}.`,
         timestampLabel,
     };
 }
@@ -115,14 +125,29 @@ function createStartingWallet(startingCash: number): WalletItem[] {
     ];
 }
 
+const DAY_DURATION_SECONDS = 6 * 60;
+const DAY_START_MINUTES = 2 * 60;
+const DAY_END_MINUTES = (24 * 60) - 1;
+const TOTAL_SECONDS = DAY_DURATION_SECONDS;
+const STARTING_CASH = 7000;
+const DEFAULT_WATCHLIST = ['SOL', 'GOLD', 'TSLA', 'NVDA', 'ADA'];
+const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
+
+function readStoredDecision(key: string, property: string) {
+    if (typeof window === 'undefined') return false;
+
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
+        return parsed[property] === true;
+    } catch {
+        return false;
+    }
+}
+
 export default function MainPage() {
-    const DAY_DURATION_SECONDS = 6 * 60;
-    const DAY_START_MINUTES = 2 * 60;
-    const DAY_END_MINUTES = (24 * 60) - 1;
-
     const [mounted, setMounted] = useState(false);
-
-    const STARTING_CASH = 7000;
 
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>([]);
     const [notifications, setNotifications] = useState<GameNotification[]>([]);
@@ -133,24 +158,20 @@ export default function MainPage() {
     const historyOpenRef = useRef(false);
     const walletRef = useRef<WalletItem[]>([]);
 
-
-    const timelineDates = TIMELINE_DATES.map(d => new Date(d));
     const jumpToDate = (dateStr: string) => {
         const idx = TIMELINE_DATES.indexOf(dateStr);
         if (idx === -1) return;
         setGameSeconds(idx * TOTAL_SECONDS); // jump to start of that day
     };
 
-    const TOTAL_SECONDS = DAY_DURATION_SECONDS;
-
     const [gameSeconds, setGameSeconds] = useState(0);
 
 
     const dayIndex = Math.min(
         Math.floor(gameSeconds / TOTAL_SECONDS),
-        timelineDates.length - 1
+        TIMELINE_DATE_OBJECTS.length - 1
     );
-    const baseDate = timelineDates[dayIndex];
+    const baseDate = TIMELINE_DATE_OBJECTS[dayIndex];
 
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
     const playableMinutes = DAY_END_MINUTES - DAY_START_MINUTES;
@@ -180,52 +201,22 @@ export default function MainPage() {
 
         return createStartingWallet(STARTING_CASH);
     });
+    const [watchlist, setWatchlist] = useState<string[]>(DEFAULT_WATCHLIST);
 
-
-    const [watchlist, setWatchlist] = useState<string[]>([
-        'SOL',
-        'GOLD',
-        'TSLA',
-        'NVDA',
-        'ADA',
-    ]);
-// build full in-game datetime
     const currentDateTime = new Date(baseDate);
     currentDateTime.setHours(0, 0, 0, 0);
     currentDateTime.setMinutes(inGameMinutes);
 
-// derive hour from the actual in-game time
     const gameHour = currentDateTime.getHours();
     const currentDateKey = toLocalDateStr(currentDateTime);
     const dayStartTime = new Date(baseDate);
     dayStartTime.setHours(0, 0, 0, 0);
     dayStartTime.setMinutes(DAY_START_MINUTES);
     const dayStartTimestampLabel = formatNotificationTimestamp(dayStartTime);
-
-
     const secondsLeft = TOTAL_SECONDS - secondsIntoDay;
 
-
-    const attendedCollegeParty = (() => {
-        if (typeof window === 'undefined') return false;
-        try {
-            const raw = localStorage.getItem('collegeParty');
-            if (!raw) return false;
-            return JSON.parse(raw).attended === true;
-        } catch {
-            return false;
-        }
-    })();
-    const acceptedGig = (() => {
-        if (typeof window === 'undefined') return false;
-        try {
-            const raw = localStorage.getItem('freelanceGig');
-            if (!raw) return false;
-            return JSON.parse(raw).accepted === true;
-        } catch {
-            return false;
-        }
-    })();
+    const attendedCollegeParty = readStoredDecision('collegeParty', 'attended');
+    const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
         if (draft.sourceKey && notificationsRef.current.some(notification => notification.sourceKey === draft.sourceKey)) {
@@ -272,13 +263,35 @@ export default function MainPage() {
         timestamp: Date;
     }) => {
         pushNotification(
-            buildBuyNotification(
-                details.symbol,
-                details.units,
-                details.totalCost,
-                details.price,
-                formatNotificationTimestamp(details.timestamp)
-            )
+            buildTradeNotification({
+                titleVerb: 'Bought',
+                messageVerb: 'purchased',
+                symbol: details.symbol,
+                units: details.units,
+                totalValue: details.totalCost,
+                price: details.price,
+                timestampLabel: formatNotificationTimestamp(details.timestamp),
+            })
+        );
+    }, [pushNotification]);
+
+    const handleSellNotification = useCallback((details: {
+        symbol: string;
+        units: number;
+        totalReceived: number;
+        price: number;
+        timestamp: Date;
+    }) => {
+        pushNotification(
+            buildTradeNotification({
+                titleVerb: 'Sold',
+                messageVerb: 'sold',
+                symbol: details.symbol,
+                units: details.units,
+                totalValue: details.totalReceived,
+                price: details.price,
+                timestampLabel: formatNotificationTimestamp(details.timestamp),
+            })
         );
     }, [pushNotification]);
 
@@ -353,7 +366,7 @@ export default function MainPage() {
     const skipToNextDay = () => {
         setGameSeconds(current => {
             const nextDayStart = (Math.floor(current / TOTAL_SECONDS) + 1) * TOTAL_SECONDS;
-            const lastDayStart = (timelineDates.length - 1) * TOTAL_SECONDS;
+            const lastDayStart = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
             return Math.min(nextDayStart, lastDayStart);
         });
     };
@@ -486,6 +499,7 @@ export default function MainPage() {
                                 onSetHistoryOpen={handleSetHistoryOpen}
                                 onDismissToast={handleDismissToast}
                                 onBuyNotification={handleBuyNotification}
+                                onSellNotification={handleSellNotification}
                             />
                         </div>
                     </div>

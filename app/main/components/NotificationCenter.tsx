@@ -33,6 +33,9 @@ const TONE_STYLES = {
     },
 } as const;
 
+const TOAST_VISIBLE_MS = 3000;
+const TOAST_FADE_MS = 180;
+
 export default function NotificationCenter({
     notifications,
     activeToastIds,
@@ -154,12 +157,15 @@ function ToastCard({
 
     useEffect(() => {
         const showTimer = window.setTimeout(() => setVisible(true), 16);
-        const hideTimer = window.setTimeout(() => setVisible(false), 6800);
+        const hideTimer = window.setTimeout(
+            () => setVisible(false),
+            TOAST_VISIBLE_MS - TOAST_FADE_MS
+        );
         const removeTimer = window.setTimeout(() => {
             if (dismissedRef.current) return;
             dismissedRef.current = true;
             onDismiss(notification.id);
-        }, 7060);
+        }, TOAST_VISIBLE_MS);
 
         return () => {
             window.clearTimeout(showTimer);
@@ -172,7 +178,7 @@ function ToastCard({
         if (dismissedRef.current) return;
         dismissedRef.current = true;
         setVisible(false);
-        window.setTimeout(() => onDismiss(notification.id), 180);
+        window.setTimeout(() => onDismiss(notification.id), TOAST_FADE_MS);
     };
 
     const tone = TONE_STYLES[notification.tone];

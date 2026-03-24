@@ -1,18 +1,146 @@
 'use client';
 
 import {useState, useEffect, useMemo, useRef, useId} from 'react';
-import Image from 'next/image';
 import { type WalletItem } from '../utils/walletData';
 import { getChartData, type RangeKey } from '../utils/chartSelector';
 import {
+    BROWSE_ASSET_CATALOG,
+    FEATURED_ASSET_CATALOG,
     getAssetsWithMarket,
-    getAssetLogo,
     toLocalDateStr,
     type AssetMarket,
-    type AssetWithData,
 } from '../utils/marketData';
 import type { GameNotification } from '../utils/notifications';
 import NotificationCenter from './NotificationCenter';
+import AssetAvatar from './AssetAvatar';
+
+function resolveCatalogAssets(
+    catalog: Array<{ symbol: string }>,
+    assetBySymbol: Map<string, AssetMarket>
+) {
+    return catalog
+        .map(asset => assetBySymbol.get(asset.symbol))
+        .filter((asset): asset is AssetMarket => asset !== undefined);
+}
+
+type TradeRequest = {
+    wallet: WalletItem[];
+    symbol: string;
+    price: number;
+    side: 'buy' | 'sell';
+    dollarAmount: number;
+    unitAmount: number;
+};
+
+type TradeOutcome =
+    | {
+        nextWallet: WalletItem[];
+        units: number;
+        totalValue: number;
+    }
+    | {
+        error: string;
+    };
+
+function executeTrade({
+    wallet,
+    symbol,
+    price,
+    side,
+    dollarAmount,
+    unitAmount,
+}: TradeRequest): TradeOutcome {
+    const cash = wallet.find(item => item.label === 'Cash');
+    if (!cash) {
+        return { error: 'Cash balance unavailable' };
+    }
+
+    const position = wallet.find(item => item.label === symbol);
+
+    if (side === 'buy') {
+        if (cash.units < dollarAmount) {
+            return { error: 'Not enough cash' };
+        }
+
+        const boughtUnits = dollarAmount / price;
+        let hasPosition = false;
+
+        const nextWallet = wallet.map(item => {
+            if (item.label === 'Cash') {
+                const nextCashUnits = item.units - dollarAmount;
+                return {
+                    ...item,
+                    units: nextCashUnits,
+                    usdValue: nextCashUnits,
+                };
+            }
+
+            if (item.label === symbol) {
+                hasPosition = true;
+                const nextUnits = item.units + boughtUnits;
+                return {
+                    ...item,
+                    units: nextUnits,
+                    usdValue: nextUnits * price,
+                };
+            }
+
+            return item;
+        });
+
+        if (!hasPosition) {
+            nextWallet.push({
+                id: crypto.randomUUID(),
+                label: symbol,
+                units: boughtUnits,
+                unitLabel: symbol,
+                usdValue: boughtUnits * price,
+            });
+        }
+
+        return {
+            nextWallet,
+            units: boughtUnits,
+            totalValue: dollarAmount,
+        };
+    }
+
+    if (!position || position.units < unitAmount) {
+        return { error: 'Not enough asset' };
+    }
+
+    const cashReceived = unitAmount * price;
+
+    const nextWallet = wallet
+        .map(item => {
+            if (item.label === 'Cash') {
+                const nextCashUnits = item.units + cashReceived;
+                return {
+                    ...item,
+                    units: nextCashUnits,
+                    usdValue: nextCashUnits,
+                };
+            }
+
+            if (item.label === symbol) {
+                const nextUnits = item.units - unitAmount;
+                return {
+                    ...item,
+                    units: nextUnits,
+                    usdValue: nextUnits * price,
+                };
+            }
+
+            return item;
+        })
+        .filter(item => item.units > 0);
+
+    return {
+        nextWallet,
+        units: unitAmount,
+        totalValue: cashReceived,
+    };
+}
 
 export default function MainTradePanel({
     currentDate,
@@ -28,6 +156,7 @@ export default function MainTradePanel({
     onSetHistoryOpen,
     onDismissToast,
     onBuyNotification,
+    onSellNotification,
 }: {
     currentDate: Date;
     secondsLeft: number;
@@ -48,6 +177,13 @@ export default function MainTradePanel({
         price: number;
         timestamp: Date;
     }) => void;
+    onSellNotification: (details: {
+        symbol: string;
+        units: number;
+        totalReceived: number;
+        price: number;
+        timestamp: Date;
+    }) => void;
 }) {
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -63,9 +199,39 @@ export default function MainTradePanel({
 
     const dateStr = toLocalDateStr(currentDate);
 
-    const assetsWithMarket = useMemo<AssetMarket[]>(
+    const allAssetsWithMarket = useMemo<AssetMarket[]>(
         () => getAssetsWithMarket(dateStr, 12),
         [dateStr]
+    );
+
+    const assetBySymbol = useMemo(
+        () => new Map(allAssetsWithMarket.map(asset => [asset.symbol, asset])),
+        [allAssetsWithMarket]
+    );
+
+    const walletByLabel = useMemo(
+        () => new Map(wallet.map(item => [item.label, item])),
+        [wallet]
+    );
+
+    const ownedSymbols = useMemo(
+        () =>
+            new Set(
+                wallet
+                    .filter(item => item.id !== 'cash' && item.units > 0)
+                    .map(item => item.label)
+            ),
+        [wallet]
+    );
+
+    const featuredAssets = useMemo<AssetMarket[]>(
+        () => resolveCatalogAssets(FEATURED_ASSET_CATALOG, assetBySymbol),
+        [assetBySymbol]
+    );
+
+    const browseAssets = useMemo<AssetMarket[]>(
+        () => resolveCatalogAssets(BROWSE_ASSET_CATALOG, assetBySymbol),
+        [assetBySymbol]
     );
 
     useEffect(() => {
@@ -77,12 +243,9 @@ export default function MainTradePanel({
                         usdValue: item.units,
                     };
                 }
-                const asset = assetsWithMarket.find(
-                    (a): a is AssetWithData =>
-                        a.hasData && a.symbol === item.label
-                );
+                const asset = assetBySymbol.get(item.label);
 
-                if (!asset) return item;
+                if (!asset?.hasData) return item;
 
                 return {
                     ...item,
@@ -90,19 +253,20 @@ export default function MainTradePanel({
                 };
             })
         );
-    }, [assetsWithMarket, dateStr, setWallet]);
+    }, [assetBySymbol, setWallet]);
 
 
     const [range, setRange] = useState<RangeKey>('1W');
+    const [marketSearch, setMarketSearch] = useState('');
 
     const [activeSymbol, setActiveSymbol] = useState<string | null>(null);
 
     const activeAsset = useMemo(() => {
         if (activeSymbol) {
-            return assetsWithMarket.find(a => a.symbol === activeSymbol) ?? null;
+            return assetBySymbol.get(activeSymbol) ?? null;
         }
-        return assetsWithMarket.find(a => a.hasData) ?? null;
-    }, [activeSymbol, assetsWithMarket]);
+        return allAssetsWithMarket.find(a => a.hasData) ?? null;
+    }, [activeSymbol, allAssetsWithMarket, assetBySymbol]);
 
     const chartData = useMemo(() => {
         if (!activeAsset || !activeAsset.hasData) return [];
@@ -126,14 +290,31 @@ export default function MainTradePanel({
 
     const lastEdited = useRef<'amount' | 'units' | null>(null);
 
-    const cashBalance = useMemo(() => {
-        return wallet.find(item => item.label === 'Cash')?.units ?? 0;
-    }, [wallet]);
+    const cashBalance = walletByLabel.get('Cash')?.units ?? 0;
+
+    const filteredAssets = useMemo(() => {
+        const query = marketSearch.trim().toLowerCase();
+        if (!query) return browseAssets;
+
+        return browseAssets.filter(asset =>
+            asset.symbol.toLowerCase().includes(query) ||
+            asset.name.toLowerCase().includes(query)
+        );
+    }, [browseAssets, marketSearch]);
 
     const resetTradeDraft = () => {
         setAmount('');
         setUnits('');
         lastEdited.current = null;
+    };
+
+    const handleSelectAsset = (asset: AssetMarket) => {
+        if (!asset.hasData) return;
+        resetTradeDraft();
+        setActiveSymbol(asset.symbol);
+        if (!ownedSymbols.has(asset.symbol)) {
+            setSide('buy');
+        }
     };
 
     const handleAmountChange = (val: string) => {
@@ -197,63 +378,35 @@ export default function MainTradePanel({
             return;
         }
 
-        setWallet(prev => {
-            const next = [...prev];
-            const cash = next.find(w => w.label === 'Cash');
-            const asset = next.find(w => w.label === activeAsset.symbol);
-
-            if (!cash) return prev;
-
-            /* ===== BUY ===== */
-            if (tradeSide === 'buy') {
-                if (cash.units < dollarAmount) {
-                    alert('Not enough cash');
-                    return prev;
-                }
-
-                const boughtUnits = dollarAmount / price;
-
-                cash.units -= dollarAmount;
-                cash.usdValue = cash.units;
-
-                if (asset) {
-                    asset.units += boughtUnits;
-                    asset.usdValue = asset.units * price;
-                } else {
-                    next.push({
-                        id: crypto.randomUUID(),
-                        label: activeAsset.symbol,
-                        units: boughtUnits,
-                        unitLabel: activeAsset.symbol,
-                        usdValue: boughtUnits * price,
-                    });
-                }
-            }
-
-            /* ===== SELL ===== */
-            if (tradeSide === 'sell') {
-                if (!asset || asset.units < unitAmount) {
-                    alert('Not enough asset');
-                    return prev;
-                }
-
-                const cashReceived = unitAmount * price;
-
-                asset.units -= unitAmount;
-                asset.usdValue = asset.units * price;
-
-                cash.units += cashReceived;
-                cash.usdValue = cash.units;
-            }
-
-            return next.filter(w => w.units > 0);
+        const trade = executeTrade({
+            wallet,
+            symbol: activeAsset.symbol,
+            price,
+            side: tradeSide,
+            dollarAmount,
+            unitAmount,
         });
+
+        if ('error' in trade) {
+            alert(trade.error);
+            return;
+        }
+
+        setWallet(trade.nextWallet);
 
         if (tradeSide === 'buy') {
             onBuyNotification({
                 symbol: activeAsset.symbol,
-                units: Number((dollarAmount / price).toFixed(4)),
-                totalCost: dollarAmount,
+                units: Number(trade.units.toFixed(4)),
+                totalCost: trade.totalValue,
+                price,
+                timestamp: currentDate,
+            });
+        } else {
+            onSellNotification({
+                symbol: activeAsset.symbol,
+                units: Number(trade.units.toFixed(4)),
+                totalReceived: trade.totalValue,
                 price,
                 timestamp: currentDate,
             });
@@ -283,8 +436,8 @@ export default function MainTradePanel({
 
     const ownedAsset = useMemo(() => {
         if (!activeAsset) return null;
-        return wallet.find(w => w.label === activeAsset.symbol) ?? null;
-    }, [wallet, activeAsset]);
+        return walletByLabel.get(activeAsset.symbol) ?? null;
+    }, [activeAsset, walletByLabel]);
 
     const ownedUnits = ownedAsset?.units ?? 0;
     const ownedValue = ownedUnits * price;
@@ -365,21 +518,28 @@ export default function MainTradePanel({
             {/* ASSET CAROUSEL */}
             <div className="w-full">
                 <div className="relative rounded-[28px] border border-gray-200 bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                    <div className="mb-4 flex items-center justify-between gap-4 px-1">
+                        <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                Featured Stocks
+                            </p>
+                            <p className="mt-1 text-lg font-semibold text-gray-950">
+                                Quick picks for the active market
+                            </p>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                            {browseAssets.length} names in market browser
+                        </p>
+                    </div>
+
                     <div className="flex gap-5 overflow-x-auto px-1 pb-1">
-                        {assetsWithMarket.map(asset => {
+                        {featuredAssets.map(asset => {
                             const isActive = activeAsset !== null && asset.symbol === activeAsset.symbol;
 
                             return (
                                 <div
                                     key={asset.symbol}
-                                    onClick={() => {
-                                        if (!asset.hasData) return;
-                                        resetTradeDraft();
-                                        setActiveSymbol(asset.symbol);
-                                        if (!wallet.some(item => item.label === asset.symbol && item.units > 0)) {
-                                            setSide('buy');
-                                        }
-                                    }}
+                                    onClick={() => handleSelectAsset(asset)}
 
                                     className={`min-w-[300px] cursor-pointer rounded-[24px] border px-6 py-5 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
                     ${isActive
@@ -423,6 +583,114 @@ export default function MainTradePanel({
                     </div>
                 </div>
             </div>
+
+            <div className="mt-6 rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                            All Stocks
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-gray-950">
+                            Browse the full market list
+                        </p>
+                    </div>
+
+                    <div className="w-full md:max-w-xs">
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                            Search
+                        </label>
+                        <input
+                            type="text"
+                            value={marketSearch}
+                            onChange={event => setMarketSearch(event.target.value)}
+                            placeholder="Search ticker or company"
+                            className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-[24px] border border-gray-200">
+                    <div className="grid grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                        <span>Stock</span>
+                        <span>Price</span>
+                        <span>Move</span>
+                        <span>Status</span>
+                    </div>
+
+                    <div className="max-h-[360px] overflow-y-auto">
+                        {filteredAssets.length === 0 ? (
+                            <div className="px-5 py-10 text-center text-sm text-gray-500">
+                                No stocks match that search.
+                            </div>
+                        ) : (
+                            filteredAssets.map(asset => {
+                                const isActive = activeAsset !== null && asset.symbol === activeAsset.symbol;
+                                const isOwned = ownedSymbols.has(asset.symbol);
+
+                                return (
+                                    <button
+                                        key={`all-${asset.symbol}`}
+                                        type="button"
+                                        onClick={() => handleSelectAsset(asset)}
+                                        disabled={!asset.hasData}
+                                        className={`grid w-full grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 border-t border-gray-100 px-5 py-4 text-left transition ${
+                                            isActive
+                                                ? 'bg-blue-50/80'
+                                                : 'bg-white hover:bg-gray-50'
+                                        } ${!asset.hasData ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                    >
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <AssetAvatar
+                                                symbol={asset.symbol}
+                                                name={asset.name}
+                                                size={28}
+                                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
+                                                imageClassName="h-7 w-7 object-contain"
+                                                fallbackTextClassName="text-[10px]"
+                                            />
+
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-semibold text-gray-950">
+                                                    {asset.name}
+                                                </p>
+                                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-gray-400">
+                                                    {asset.symbol}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <span className="text-sm font-semibold text-gray-950">
+                                            {asset.hasData ? formatCurrency(asset.price) : '—'}
+                                        </span>
+
+                                        <span className={`text-sm font-semibold ${
+                                            !asset.hasData
+                                                ? 'text-gray-400'
+                                                : asset.positive
+                                                    ? 'text-emerald-700'
+                                                    : 'text-red-700'
+                                        }`}>
+                                            {asset.hasData
+                                                ? `${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%`
+                                                : 'No data'}
+                                        </span>
+
+                                        <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                            isOwned
+                                                ? 'bg-amber-100 text-amber-700'
+                                                : isActive
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : 'bg-gray-100 text-gray-500'
+                                        }`}>
+                                            {isOwned ? 'Owned' : isActive ? 'Selected' : 'Browse'}
+                                        </span>
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            </div>
             {/* ================= TRADE PANEL ================= */}
 
             <div className="mt-10 grid grid-cols-[minmax(0,1fr)_360px] items-start gap-8">
@@ -435,12 +703,13 @@ export default function MainTradePanel({
                     <div className="mb-5 border-b border-gray-200 pb-5">
                         {hasActiveData && (
                             <div className="mb-4 flex items-center gap-4">
-                                <Image
-                                    src={getAssetLogo(activeAsset.symbol)}
-                                    alt={`${activeAsset.symbol} logo`}
-                                    width={56}
-                                    height={56}
-                                    className="h-14 w-14 rounded-2xl border border-gray-200 bg-white p-2 object-contain"
+                                <AssetAvatar
+                                    symbol={activeAsset.symbol}
+                                    name={activeAsset.name}
+                                    size={36}
+                                    className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-white p-2"
+                                    imageClassName="h-9 w-9 object-contain"
+                                    fallbackTextClassName="text-xs"
                                 />
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">
