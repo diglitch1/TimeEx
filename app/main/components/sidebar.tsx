@@ -1,409 +1,326 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { WalletItem } from '../utils/walletData';
+import {
+    getAssetsWithMarket,
+    toLocalDateStr,
+    type AssetWithData,
+} from '../utils/marketData';
+import AssetAvatar from './AssetAvatar';
 
-const aaplData = {
-    symbol: 'AAPL',
-    name: 'Apple',
-    change: 2.8,
-    prices: [
-        221.4, 221.1, 223.3, 223.0, 221.6,
-        222.0, 222.4, 222.1, 222.6, 223.0,
-        223.4, 222.1, 224.6, 224.2, 224.9,
-        225.3, 224.1, 225.8, 226.5, 226.0,
-        225.22,
-    ],
-    sell: 226.81,
-    buy: 227.22,
-};
-
-const ALL_ASSETS = ['ETH', 'BTC', 'EURUSD', 'OIL', 'GOLD', 'NSDQ100', 'AAPL', 'SOL', 'TSLA', 'NVDA', 'ADA'];
-
-const ASSET_LOOKUP: Record<
-    string,
-    { change: number; positive: boolean }
-> = {
-    ETH: { change: 1.8, positive: true },
-    BTC: { change: 0.92, positive: true },
-    EURUSD: { change: -0.14, positive: false },
-    OIL: { change: 2.31, positive: true },
-    GOLD: { change: -2.13, positive: false },
-    NSDQ100: { change: 0.24, positive: true },
-    AAPL: { change: 2.8, positive: true },
-    SOL: { change: -1.86, positive: false },
-    TSLA: { change: 2.34, positive: true },
-    NVDA: { change: 1.3, positive: true },
-    ADA: { change: 0.97, positive: true },
-};
+const STARTING_CASH = 7000;
 
 
 export default function Sidebar({
-                                    wallet,
-                                    watchlist,
-                                    setWatchlist,
-                                }: {
+    wallet,
+    currentDate,
+}: {
     wallet: WalletItem[];
-    watchlist: string[];
-    setWatchlist: React.Dispatch<React.SetStateAction<string[]>>;
+    currentDate: Date;
 }) {
-    const [open, setOpen] = useState(false);
-    const [mode, setMode] = useState<'add' | 'remove'>('add');
-
-    const STARTING_CASH = 7000;
-
     const totalValue = wallet.reduce(
         (sum, item) => sum + item.usdValue,
         0
     );
 
+    const dateStr = useMemo(() => toLocalDateStr(currentDate), [currentDate]);
+    const assetsWithMarket = useMemo(() => getAssetsWithMarket(dateStr, 18), [dateStr]);
+    const marketMover = useMemo(
+        () =>
+            assetsWithMarket.reduce<AssetWithData | null>((best, asset) => {
+                if (!asset.hasData || asset.previous === null) return best;
+                if (!best) return asset;
+                return Math.abs(asset.change) > Math.abs(best.change) ? asset : best;
+            }, null),
+        [assetsWithMarket]
+    );
+
     const gainLoss = totalValue - STARTING_CASH;
+    const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
+    const sectionLabelClass = 'mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-gray-400';
 
     return (
-        <aside className="w-[380px] bg-[#f3f4f6] border-r border-gray-300 px-6 py-6 flex flex-col gap-4 text-base">
-
-            {/* Logo */}
-            <div className="flex items-center gap-3 pb-4 border-b border-gray-300">
-                <Image
-                    src="/logo.png"
-                    alt="TimeEx logo"
-                    width={36}
-                    height={36}
-                />
-                <span className="text-2xl font-bold text-blue-600">
-                    TimeEx
-                </span>
-            </div>
-
-            {/* Profile */}
-            <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-400"/>
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Profile
-                </h2>
-            </div>
-
-            {/* Wallet window */}
-            <h3 className="text-xl font-semibold text-gray-900 " style={{marginBottom: -8}}>
-                Wallet
-            </h3>
-
-            <div className="rounded-xl bg-white border border-gray-300 p-4">
-
-                {/* Scrollable assets */}
-                <div className="wallet-scroll max-h-[180px] overflow-y-auto pr-3 space-y-2 text-gray-800">
-                    {wallet.map(item => (
-                        <p key={item.id}>
-                            {item.label}:{' '}
-                            <span className="font-medium">{item.units.toFixed(3)} {item.unitLabel}</span>
-                            <span className="text-gray-500"> (~${item.usdValue.toFixed(2)})</span>
-                        </p>
-
-                    ))}
-                </div>
-
-                <div className="my-4 border-t border-gray-200"/>
-
-                {/*  im not sure how exactly are gains/losses calculated, so leaving this out for now
-                  <div
-                    className={`font-semibold text-lg ${
-                        gainLoss >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    Gain/Loss: {gainLoss >= 0 ? '+' : ''}
-                    {gainLoss.toFixed(2)} $
-                </div> */}
-
-                <div className="mt-1 font-semibold text-gray-900 text-lg">
-                    Cash Out Value: {totalValue.toFixed(2)} $
-                </div>
-
-            </div>
-
-            {/* Watchlist */}
-            {/* Watchlist */}
-            <div>
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                        My watchlist
-                    </h3>
-
-                    <button
-                        onClick={() => setOpen(o => !o)}
-                        className="text-sm px-3 py-1 rounded-full border border-gray-900 bg-blue-600 hover:bg-gray-900"
-                    >
-                        manage
-                    </button>
-                </div>
-
-                {open && (
-                    <div className="mb-3 rounded-lg border border-gray-300 bg-white p-3">
-                        <div className="flex gap-2 mb-2">
-                            <button
-                                onClick={() => setMode('add')}
-                                className={`px-3 py-1 rounded-full text-sm ${
-                                    mode === 'add' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-                                }`}
-                            >
-                                add
-                            </button>
-
-                            <button
-                                onClick={() => setMode('remove')}
-                                className={`px-3 py-1 rounded-full text-sm ${
-                                    mode === 'remove' ? 'bg-red-500 text-white' : 'bg-gray-200'
-                                }`}
-                            >
-                                remove
-                            </button>
-                        </div>
-
-                        {(mode === 'add'
-                                ? ALL_ASSETS.filter(a => !watchlist.includes(a))
-                                : watchlist
-                        ).map(symbol => (
-                            <button
-                                key={symbol}
-                                onClick={() => {
-                                    setWatchlist(prev =>
-                                        mode === 'add'
-                                            ? [...prev, symbol]
-                                            : prev.filter(s => s !== symbol)
-                                    );
-                                }}
-                                className="block w-full text-left px-2 py-1 rounded hover:bg-gray-900 text-sm text-gray-600"
-                            >
-                                {symbol}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-3">
-                    {watchlist.map(symbol => {
-                        const asset = ASSET_LOOKUP[symbol];
-
-                        if (!asset) return null;
-
-                        return (
-                            <WatchItem
-                                key={symbol}
-                                name={symbol}
-                                change={`${asset.positive ? '+' : ''}${asset.change}%`}
-                                positive={asset.positive}
+        <aside className="w-[416px] shrink-0 border-r border-gray-200 bg-[#f8fafc] px-5 py-6 text-base">
+            <div className="flex h-full flex-col gap-5">
+                <div className={panelClass}>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-gray-200 bg-white">
+                            <Image
+                                src="/images/logo.png"
+                                alt="TimeEx logo"
+                                width={28}
+                                height={28}
                             />
-                        );
-                    })}
-                </div>
-            </div>
-
-
-            {/* News Feed */}
-            <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    News Feed
-                </h3>
-
-                <div className="rounded-xl bg-white border border-gray-300 p-4 space-y-4">
-
-                    <NewsItem
-                        img="/news/news1.png"
-                        text="Goldman Sachs unveils its 10-year playbook — and AI is at the heart of it"
-                    />
-
-                    <NewsItem
-                        img="/news/news2.png"
-                        text="Earnings playbook: Nvidia, retailers headline the tail end of the season"
-                    />
-
-                    <NewsItem
-                        img="/news/news3.png"
-                        text="Ed Yardeni says gold is the best safe-haven play and ‘the new bitcoin’"
-                    />
-
-                    <ReadMoreButton />
-
-                </div>
-            </div>
-
-            {/* Current Market Mover */}
-            <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                    Current Marketmover
-                </h3>
-
-                <div className="rounded-xl bg-white border border-gray-300 p-4">
-
-                    {/* Header */}
-                    <div className="flex items-center gap-3 mb-2">
-                        <img
-                            src="/assets/apple.png"
-                            className="w-16 h-16 rounded-md object-cover"/>
-
-                        <div>
-                            <p className="font-semibold text-gray-900">AAPL</p>
-                            <p className="text-sm text-gray-500">Apple</p>
                         </div>
-
-                        <div className="ml-auto text-green-500 font-semibold">
-                            +2.80%
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                Portfolio Terminal
+                            </p>
+                            <p className="text-2xl font-semibold tracking-tight text-gray-950">
+                                TimeEx
+                            </p>
                         </div>
                     </div>
 
-                    {/* Chart */}
-                    <div className="h-[90px] bg-blue-50 rounded-lg mb-2 p-3 overflow-hidden">
-                        <FakeChart data={aaplData.prices}/>
-                    </div>
+                    <div className="mt-5 rounded-[24px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                    Net Worth
+                                </p>
+                                <p className="mt-1 text-[2.6rem] font-semibold tracking-tight text-gray-950">
+                                    {formatSidebarCurrency(totalValue)}
+                                </p>
+                            </div>
+                            <div className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                                gainLoss >= 0
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-red-100 text-red-700'
+                            }`}>
+                                {gainLoss >= 0 ? '+' : '-'}
+                                {formatSidebarCurrency(Math.abs(gainLoss))}
+                            </div>
+                        </div>
 
-
-                    {/* Buy / Sell */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <button className="rounded-md bg-gray-400 text-white py-2 font-semibold">
-                            sell<br/>226.81
-                        </button>
-
-                        <button className="rounded-md bg-gray-600 text-white py-2 font-semibold">
-                            buy<br/>227.22
-                        </button>
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    Starting Cash
+                                </p>
+                                <p className="mt-1 text-xl font-semibold text-gray-950">
+                                    {formatSidebarCurrency(STARTING_CASH)}
+                                </p>
+                            </div>
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                                    Holdings
+                                </p>
+                                <p className="mt-1 text-xl font-semibold text-gray-950">
+                                    {wallet.length}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Lottery Tickets */}
-            <div>
-                <h3
-                    style={{
-                        color: '#E39B00',
-                        padding: '8px 16px',
-                        borderRadius: '10px',
-                        fontWeight: 700,
-                        fontSize: '20px',
-                        marginBottom: '0px',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                    }}
-                    className="mb-3 flex items-center gap-2 w-fit"
-                >
-                    Lottery Tickets
-
-                </h3>
-
-                <div
-                    className="rounded-xl p-4 space-y-4"
-                    style={{
-                        backgroundImage: 'url(/lottery.png)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                    }}>
-                    {/* Ticket 1 */}
-                    <div
-                        className="rounded-xl px-6 py-3 flex items-center justify-between"
-                        style={{
-                            backgroundColor: '#FF7FA3',
-                            border: '2px solid white',
-                        }}>
-                        <div style={{color: 'white'}}>
-                            <div style={{fontSize: '18px', fontWeight: 700}}>
-                                Budget Banger
-                            </div>
-                            <div style={{fontSize: '16px'}}>
-                                Price: $5.00
-                            </div>
+                <div>
+                    <p className={sectionLabelClass}>Wallet</p>
+                    <div className={panelClass}>
+                        <div className="wallet-scroll max-h-[260px] space-y-3 overflow-y-auto pr-2">
+                            {wallet.map(item => (
+                                <div
+                                    key={item.id}
+                                    className="flex items-center gap-4 rounded-[22px] border border-gray-200 bg-gradient-to-r from-gray-50 to-white px-4 py-4"
+                                >
+                                    <WalletIcon label={item.label} />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="truncate text-base font-semibold text-gray-950">
+                                                {item.label}
+                                            </p>
+                                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                                                {item.id === 'cash' ? 'Cash' : item.id === 'car' ? 'Asset' : 'Stock'}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {item.id === 'cash'
+                                                ? `${formatSidebarCurrency(item.units)} available`
+                                                : `${item.units.toFixed(4)} ${item.unitLabel}`}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-base font-semibold text-gray-950">
+                                            {formatSidebarCurrency(item.usdValue)}
+                                        </p>
+                                        <p className="mt-1 text-xs font-medium text-gray-400">
+                                            {totalValue > 0 ? `${((item.usdValue / totalValue) * 100).toFixed(1)}% of wallet` : '0.0% of wallet'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-
-                        <button
-                            className="cursor-pointer hover:opacity-90 transition"
-                            style={{
-                                backgroundColor: 'white',
-                                color: '#FF4F82',
-                                fontWeight: 700,
-                                padding: '6px 18px',
-                                borderRadius: '999px',
-                            }}
-                        >
-                            buy
-                        </button>
                     </div>
+                </div>
 
-                    {/* Ticket 2 */}
-                    <div
-                        className="rounded-xl px-6 py-3 flex items-center justify-between"
-                        style={{
-                            backgroundColor: '#4BE36A',
-                            border: '2px solid white',
-                        }}>
-                        <div style={{color: 'white'}}>
-                            <div style={{fontSize: '18px', fontWeight: 700}}>
-                                Mediocre Fortune
-                            </div>
-                            <div style={{fontSize: '16px'}}>
-                                Price: $15.00
-                            </div>
-                        </div>
+                <div>
+                    <p className={sectionLabelClass}>Market Mover</p>
+                    <div className={panelClass}>
+                        {marketMover ? (
+                            <>
+                                <div className="flex items-start gap-4">
+                                    <AssetAvatar
+                                        symbol={marketMover.symbol}
+                                        name={marketMover.name}
+                                        size={40}
+                                        className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border ${
+                                            marketMover.positive
+                                                ? 'border-emerald-200 bg-emerald-50'
+                                                : 'border-red-200 bg-red-50'
+                                        }`}
+                                        imageClassName="h-10 w-10 object-contain"
+                                        fallbackTextClassName="text-sm"
+                                    />
 
-                        <button
-                            className="cursor-pointer hover:opacity-90 transition"                            style={{
-                                backgroundColor: 'white',
-                                color: '#22B856',
-                                fontWeight: 700,
-                                padding: '6px 18px',
-                                borderRadius: '999px',
-                            }}
-                        >
-                            buy
-                        </button>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
+                                            Featured Stock
+                                        </p>
+                                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                                            <p className="truncate text-xl font-semibold tracking-tight text-gray-950">
+                                                {marketMover.name}
+                                            </p>
+                                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                                {marketMover.symbol}
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                                            <p className="text-3xl font-semibold tracking-tight text-gray-950">
+                                                {formatSidebarCurrency(marketMover.price)}
+                                            </p>
+                                            <span className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                                                marketMover.positive
+                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                    : 'bg-red-100 text-red-700'
+                                            }`}>
+                                                {marketMover.change >= 0 ? '+' : ''}
+                                                {marketMover.change.toFixed(2)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className={`mt-5 rounded-[24px] border p-3 ${
+                                    marketMover.positive
+                                        ? 'border-emerald-100 bg-gradient-to-b from-emerald-50 via-white to-white'
+                                        : 'border-red-100 bg-gradient-to-b from-red-50 via-white to-white'
+                                }`}>
+                                    <div className="h-[160px] overflow-hidden rounded-[20px] bg-white px-3 py-3">
+                                        <MarketMoverChart
+                                            data={marketMover.spark}
+                                            positive={marketMover.positive}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 grid grid-cols-2 gap-3">
+                                    <StatTile
+                                        label="Previous Close"
+                                        value={formatSidebarCurrency(marketMover.previous?.close ?? marketMover.price)}
+                                    />
+                                    <StatTile
+                                        label="Day Range"
+                                        value={`${formatSidebarCurrency(marketMover.today.low)} - ${formatSidebarCurrency(marketMover.today.high)}`}
+                                    />
+                                    <StatTile
+                                        label="Move"
+                                        value={`${marketMover.change >= 0 ? '+' : ''}${marketMover.change.toFixed(2)}%`}
+                                        positive={marketMover.positive}
+                                    />
+                                    <StatTile
+                                        label="Volume"
+                                        value={formatVolume(marketMover.today.volume)}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <div className="rounded-[22px] border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
+                                No market mover data is available for this day yet.
+                            </div>
+                        )}
                     </div>
+                </div>
 
-                    {/* Ticket 3 */}
-                    <div
-                        className="rounded-xl px-6 py-3 flex items-center justify-between"
-                        style={{
-                            backgroundColor: '#FFF176',
-                            border: '2px solid white',
-                        }}>
-                        <div style={{color: '#D39B00'}}>
-                            <div style={{fontSize: '18px', fontWeight: 700}}>
-                                Eternal Riches… Maybe
-                            </div>
-                            <div style={{fontSize: '16px'}}>
-                                Price: $30.00
-                            </div>
+                <div>
+                    <p className={sectionLabelClass}>News Feed</p>
+                    <div className={panelClass}>
+                        <div className="space-y-4">
+                            <NewsItem
+                                img="/images/news/news1.png"
+                                text="Goldman Sachs unveils its 10-year playbook and AI is at the heart of it"
+                            />
+
+                            <NewsItem
+                                img="/images/news/news2.png"
+                                text="Earnings playbook: Nvidia and retailers headline the tail end of the season"
+                            />
+
+                            <NewsItem
+                                img="/images/news/news3.png"
+                                text="Ed Yardeni says gold is the best safe-haven play and the new bitcoin"
+                            />
                         </div>
 
-                        <button
-                            className="cursor-pointer hover:opacity-90 transition"
-                            style={{
-                                backgroundColor: 'white',
-                                color: '#D39B00',
-                                fontWeight: 700,
-                                padding: '6px 18px',
-                                borderRadius: '999px',
-                            }}
-                        >
-                            buy
-                        </button>
+                        <ReadMoreButton />
+                    </div>
+                </div>
+
+                <div>
+                    <p className={sectionLabelClass}>Tickets</p>
+                    <div className="rounded-[28px] border border-yellow-100 bg-gradient-to-br from-yellow-50 via-white to-orange-50 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                        <div className="space-y-3">
+                            <LotteryTicket
+                                title="Budget Banger"
+                                price="$5.00"
+                                tone="pink"
+                            />
+                            <LotteryTicket
+                                title="Mediocre Fortune"
+                                price="$15.00"
+                                tone="green"
+                            />
+                            <LotteryTicket
+                                title="Eternal Riches Maybe"
+                                price="$30.00"
+                                tone="gold"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-
         </aside>
     );
 }
 
-function WatchItem({
-                       name,
-                       change,
-                       positive,
-                   }: {
-    name: string;
-    change: string;
-    positive: boolean;
-}) {
+function WalletIcon({ label }: { label: string }) {
+    if (label === 'Cash') {
+        return (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-emerald-200 bg-gradient-to-br from-emerald-100 via-white to-emerald-50 p-2 shadow-[0_6px_16px_rgba(16,185,129,0.18)]">
+                <Image
+                    src="/images/money.png"
+                    alt="Cash icon"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-contain"
+                />
+            </div>
+        );
+    }
+
+    if (label === 'Car') {
+        return (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-slate-50 p-2 shadow-[0_6px_16px_rgba(59,130,246,0.12)]">
+                <Image
+                    src="/images/events/car.png"
+                    alt="Car asset"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-contain"
+                />
+            </div>
+        );
+    }
+
     return (
-        <div className="flex justify-between font-medium text-lg">
-            <span className="text-gray-900">{name}</span>
-            <span className={positive ? 'text-green-500' : 'text-red-500'}>
-        {change}
-      </span>
-        </div>
+        <AssetAvatar
+            symbol={label}
+            size={32}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
+            imageClassName="h-8 w-8 object-contain"
+            fallbackTextClassName="text-[10px]"
+        />
     );
 }
 
@@ -413,21 +330,25 @@ function NewsItem({img, text,}: {
     text: string;
 }) {
     return (
-        <div className="flex gap-4 items-start">
-            <img
+        <div className="flex items-start gap-4">
+            <Image
                 src={img}
                 alt=""
-                className="w-16 h-16 rounded-md object-cover"
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-[18px] object-cover"
             />
-            <p className="text-sm text-gray-900 leading-snug">
-                {text}
-            </p>
+            <div className="min-w-0">
+                <p className="text-sm font-medium leading-snug text-gray-900">
+                    {text}
+                </p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                    Market News
+                </p>
+            </div>
         </div>
     );
 }
-
-import { useRouter } from 'next/navigation';
-import {useState} from "react";
 
 function ReadMoreButton() {
     const router = useRouter();
@@ -435,46 +356,198 @@ function ReadMoreButton() {
     return (
         <button
             onClick={() => router.push('/news')}
-            className="w-full mt-3 rounded-full bg-blue-500 text-white font-semibold py-2
-                       hover:bg-blue-400 cursor-pointer transition"
+            className="mt-5 w-full rounded-full border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-600"
         >
-            read more
+            Read More
         </button>
     );
 }
 
 
-function FakeChart({ data }: { data: number[] }) {
-    const max = Math.max(...data);
-    const min = Math.min(...data);
+function StatTile({
+    label,
+    value,
+    positive,
+}: {
+    label: string;
+    value: string;
+    positive?: boolean;
+}) {
+    return (
+        <div className="rounded-[18px] border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                {label}
+            </p>
+            <p className={`mt-1 text-sm font-semibold ${
+                positive === undefined
+                    ? 'text-gray-950'
+                    : positive
+                        ? 'text-emerald-700'
+                        : 'text-red-700'
+            }`}>
+                {value}
+            </p>
+        </div>
+    );
+}
 
-    const points = data
-        .map((value, index) => {
-            const x = (index / (data.length - 1)) * 100;
-            const y = 100 - ((value - min) / (max - min)) * 100;
-            return `${x},${y}`;
-        })
+function MarketMoverChart({
+    data,
+    positive,
+}: {
+    data: number[];
+    positive: boolean;
+}) {
+    if (data.length === 0) {
+        return <div className="h-full w-full" />;
+    }
+
+    const safeData = data.length === 1 ? [data[0], data[0]] : data;
+    const viewWidth = 320;
+    const viewHeight = 150;
+    const chartLeft = 8;
+    const chartRight = 312;
+    const chartTop = 12;
+    const chartBottom = 126;
+    const lineColor = positive ? '#16a34a' : '#dc2626';
+    const gradientId = positive ? 'market-mover-fill-positive' : 'market-mover-fill-negative';
+
+    const max = Math.max(...safeData);
+    const min = Math.min(...safeData);
+    const span = Math.max(max - min, 1);
+    const paddedMax = max + span * 0.18;
+    const paddedMin = min - span * 0.18;
+
+    const points = safeData.map((value, index) => {
+        const x = chartLeft + (index / (safeData.length - 1)) * (chartRight - chartLeft);
+        const y =
+            chartBottom - ((value - paddedMin) / (paddedMax - paddedMin)) * (chartBottom - chartTop);
+        return { x, y };
+    });
+
+    const linePath = points
+        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
         .join(' ');
+    const areaPath = [
+        `M ${points[0].x} ${chartBottom}`,
+        ...points.map(point => `L ${point.x} ${point.y}`),
+        `L ${points[points.length - 1].x} ${chartBottom}`,
+        'Z',
+    ].join(' ');
+    const activePoint = points[points.length - 1];
 
     return (
         <svg
-            viewBox="0 0 100 100"
+            viewBox={`0 0 ${viewWidth} ${viewHeight}`}
             preserveAspectRatio="none"
-            style={{
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
-                display: 'block',
-            }}>
-            <polyline
-                points={points}
+            className="h-full w-full"
+        >
+            <defs>
+                <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor={lineColor} stopOpacity="0.24" />
+                    <stop offset="65%" stopColor={lineColor} stopOpacity="0.08" />
+                    <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
+                </linearGradient>
+            </defs>
+
+            {Array.from({ length: 4 }, (_, index) => {
+                const y = chartTop + (index / 3) * (chartBottom - chartTop);
+                return (
+                    <line
+                        key={y}
+                        x1={chartLeft}
+                        x2={chartRight}
+                        y1={y}
+                        y2={y}
+                        stroke="#e2e8f0"
+                        strokeWidth="1"
+                        vectorEffect="non-scaling-stroke"
+                    />
+                );
+            })}
+
+            <path d={areaPath} fill={`url(#${gradientId})`} />
+            <path
+                d={linePath}
                 fill="none"
-                stroke="#3B82F6"
-                strokeWidth="0.7"
+                stroke={lineColor}
+                strokeWidth="2.25"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+            />
+
+            <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r={5.5}
+                fill="#ffffff"
+                stroke={lineColor}
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+            />
+            <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r={2.25}
+                fill={lineColor}
             />
         </svg>
     );
 }
 
+function LotteryTicket({
+    title,
+    price,
+    tone,
+}: {
+    title: string;
+    price: string;
+    tone: 'pink' | 'green' | 'gold';
+}) {
+    const styles = {
+        pink: {
+            card: 'border-pink-200 bg-pink-50',
+            button: 'bg-pink-600 text-white hover:bg-pink-500',
+            price: 'text-pink-700',
+        },
+        green: {
+            card: 'border-emerald-200 bg-emerald-50',
+            button: 'bg-emerald-600 text-white hover:bg-emerald-500',
+            price: 'text-emerald-700',
+        },
+        gold: {
+            card: 'border-amber-200 bg-amber-50',
+            button: 'bg-amber-500 text-white hover:bg-amber-400',
+            price: 'text-amber-700',
+        },
+    }[tone];
+
+    return (
+        <div className={`flex items-center justify-between rounded-[22px] border px-4 py-4 ${styles.card}`}>
+            <div>
+                <p className="text-sm font-semibold text-gray-950">{title}</p>
+                <p className={`mt-1 text-sm font-semibold ${styles.price}`}>{price}</p>
+            </div>
+            <button className={`rounded-full px-4 py-2 text-sm font-semibold transition ${styles.button}`}>
+                Buy
+            </button>
+        </div>
+    );
+}
+
+function formatSidebarCurrency(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
+}
+
+function formatVolume(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(value);
+}

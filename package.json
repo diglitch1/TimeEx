@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@remotion/player": "4.0.422",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"

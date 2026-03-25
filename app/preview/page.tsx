@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { resetGame } from '../main/utils/save';
@@ -50,7 +50,7 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         risk: "Low-Medium",
         experience: "None",
         budget: "$7,000",
-        image: "/CharacterA.png",
+        image: "/images/CharacterA.png",
     },
 
     B: {
@@ -63,7 +63,7 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         risk: "Medium",
         experience: "Beginner",
         budget: "$12,000",
-        image: "/CharacterA.png",
+        image: "/images/CharacterA.png",
 
     },
     C: {
@@ -76,7 +76,7 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         risk: "Medium-low",
         experience: "Low",
         budget: "$9,000",
-        image: "/CharacterA.png",
+        image: "/images/CharacterA.png",
 
     },
 };
@@ -86,7 +86,7 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
         id: "dotcom",
         title: "Dot-com Bubble",
         period: "Late 1990s – early 2000s",
-        image: "/dotcom.jpeg",
+        image: "/images/dotcom.jpeg",
         description:
             "The dot-com bubble was a period when internet-related companies grew very fast and investors poured money into them based\n" +
             "on future hopes instead of solid profits. Between the mid-1990s and around 2000, stock prices of many internet businesses\n" +
@@ -99,7 +99,7 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
         id: "housing",
         title: "Global Financial Crisis",
         period: "2007 – 2009",
-        image: "/dotcom.jpeg",
+        image: "/images/dotcom.jpeg",
         description:
             "The Global Financial Crisis was caused by risky mortgages and excessive lending\n" +
             " in the housing market. These loans were turned into complex financial products and\n" +
@@ -112,7 +112,7 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
         id: "pandemic",
         title: "Pandemic Market Shock",
         period: "2020",
-        image: "/dotcom.jpeg",
+        image: "/images/dotcom.jpeg",
 
         description:
             "The Pandemic Market Shock was triggered by a global health crisis that caused sudden\n" +
@@ -145,6 +145,14 @@ const DOTCOM_SOURCES = [
     },
 ];
 export default function PreviewPage() {
+    return (
+        <Suspense fallback={null}>
+            <PreviewPageContent />
+        </Suspense>
+    );
+}
+
+function PreviewPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -232,28 +240,28 @@ export default function PreviewPage() {
 
                                     <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
                                         <MetricIconCard
-                                            icon="/arrowU.png"
+                                            icon="/images/arrowU.png"
                                             title="Market peak"
                                             value="5,048"
                                             note="Highest tech market level before the crash (Mar 2000)."
                                         />
 
                                         <MetricIconCard
-                                            icon="/arrowD.png"
+                                            icon="/images/arrowD.png"
                                             title="Market low"
                                             value="1,114"
                                             note="Lowest point after confidence collapsed (Oct 2002)."
                                         />
 
                                         <MetricIconCard
-                                            icon="/loss.png"
+                                            icon="/images/loss.png"
                                             title="Total loss"
                                             value="≈ 78%"
                                             note="Share of market value wiped out in the downturn."
                                         />
 
                                         <MetricIconCard
-                                            icon="/warning.png"
+                                            icon="/images/warning.png"
                                             title="Warning sign"
                                             value="Irrational exuberance"
                                             note="Term warning prices had detached from reality (1996)."
@@ -320,7 +328,7 @@ export default function PreviewPage() {
 
                                             <div className="rounded-xl border border-[#CFE3F8] bg-white p-4">
                                                 <Image
-                                                    src="/chart2.png"
+                                                    src="/images/chart2.png"
                                                     alt="NASDAQ rise and fall during the dot-com bubble"
                                                     width={1100}
                                                     height={550}

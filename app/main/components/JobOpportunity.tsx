@@ -287,7 +287,7 @@ export default function JobOpportunityModal({ wallet, setWallet, onClose }: Prop
                 {/* TOP BAR / BRAND */}
                 <div className="flex items-center gap-3 mb-6">
                     <img
-                        src="/events/company_logo.png"
+                        src="/images/events/company_logo.png"
                         alt="Company logo"
                         className="h-10 w-10 object-contain"
                         draggable={false}

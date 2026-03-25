@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { TimelineMarker } from '../utils/timeline';
 
 type Props = {
@@ -19,12 +19,19 @@ function parseDay(dateStr: string) {
     return new Date(dateStr + 'T00:00:00');
 }
 
-function startOfYear(year: number) {
-    return new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+function monthKey(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
 }
 
-function endOfYear(year: number) {
-    return new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+function parseMonthKey(key: string) {
+    const [year, month] = key.split('-').map(Number);
+    return new Date(year, month - 1, 1);
+}
+
+function addOneMonth(date: Date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 1);
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -39,7 +46,12 @@ function toLocalDateStr(d: Date) {
 }
 
 
-type Tick = { at: number; label: string; kind: 'year' | 'month' };
+type Tick = {
+    pct: number;
+    label: string;
+    kind: 'year' | 'month';
+    compact?: boolean;
+};
 
 export default function TimelineBar({ timelineDates, markers, currentDate, onJumpToDate }: Props) {
     const [hoverDate, setHoverDate] = useState<string | null>(null);
@@ -66,100 +78,128 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
     // show only market items in the hover card
     const hoverItems = (grouped.get(activeHover) ?? []).filter(m => m.kind === 'market');
 
-    // --- Axis range (independent from dots) ---
-    const { axisStart, axisEnd, ticks } = useMemo(() => {
+    const { ticks, datePctMap } = useMemo(() => {
         if (timelineDates.length === 0) {
-            const now = new Date();
-            const y = now.getFullYear();
             return {
-                axisStart: startOfYear(y),
-                axisEnd: endOfYear(y),
                 ticks: [] as Tick[],
+                datePctMap: new Map<string, number>(),
             };
         }
 
-        const first = parseDay(timelineDates[0]);
-        const last = parseDay(timelineDates[timelineDates.length - 1]);
-
-        const y0 = first.getUTCFullYear();
-        const y1 = last.getUTCFullYear();
-
-        const start = startOfYear(y0);
-        const end = endOfYear(y1);
-
-        // Build independent calendar ticks:
-        // Years: every Jan 1
-        // Months: Jan/Apr/Jul/Oct (quarterly) so it stays readable
-        const out: Tick[] = [];
-
-        for (let y = y0; y <= y1; y++) {
-            const yAt = startOfYear(y).getTime();
-            out.push({ at: yAt, label: String(y), kind: 'year' });
-
-            const quarterMonths = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
-            for (const m of quarterMonths) {
-                const d = new Date(Date.UTC(y, m, 1, 0, 0, 0));
-                const label = d.toLocaleDateString('en-US', { month: 'short' });
-                out.push({ at: d.getTime(), label, kind: 'month' });
-            }
+        const datesByMonth = new Map<string, string[]>();
+        for (const dateStr of timelineDates) {
+            const key = monthKey(parseDay(dateStr));
+            if (!datesByMonth.has(key)) datesByMonth.set(key, []);
+            datesByMonth.get(key)!.push(dateStr);
         }
 
-        return { axisStart: start, axisEnd: end, ticks: out };
+        type MonthLayout = {
+            key: string;
+            year: number;
+            month: number;
+            dates: string[];
+            hasDots: boolean;
+            weight: number;
+        };
+
+        const firstMonth = parseMonthKey(monthKey(parseDay(timelineDates[0])));
+        const lastMonth = parseMonthKey(monthKey(parseDay(timelineDates[timelineDates.length - 1])));
+
+        const months: MonthLayout[] = [];
+        for (let cursor = new Date(firstMonth); cursor <= lastMonth; cursor = addOneMonth(cursor)) {
+            const key = monthKey(cursor);
+            const dates = datesByMonth.get(key) ?? [];
+            const hasDots = dates.length > 0;
+            const weight = hasDots
+                ? 2.9 + Math.max(0, dates.length - 1) * 1.6
+                : 0.7;
+
+            months.push({
+                key,
+                year: cursor.getFullYear(),
+                month: cursor.getMonth(),
+                dates,
+                hasDots,
+                weight,
+            });
+        }
+
+        const totalWeight = Math.max(
+            months.reduce((sum, month) => sum + month.weight, 0),
+            1
+        );
+
+        let consumedWeight = 0;
+        const laidOutMonths = months.map(month => {
+            const startPct = (consumedWeight / totalWeight) * 100;
+            consumedWeight += month.weight;
+            const endPct = (consumedWeight / totalWeight) * 100;
+
+            return {
+                ...month,
+                startPct,
+                endPct,
+                centerPct: (startPct + endPct) / 2,
+            };
+        });
+
+        const nextDatePctMap = new Map<string, number>();
+
+        for (const month of laidOutMonths) {
+            const sortedDates = [...month.dates].sort();
+            const count = sortedDates.length;
+
+            sortedDates.forEach((dateStr, index) => {
+                const localFraction =
+                    count === 1
+                        ? 0.5
+                        : 0.22 + (index / (count - 1)) * 0.56;
+                const pct =
+                    month.startPct + ((month.endPct - month.startPct) * localFraction);
+
+                nextDatePctMap.set(dateStr, pct);
+            });
+        }
+
+        const yearGroups = new Map<number, typeof laidOutMonths>();
+        for (const month of laidOutMonths) {
+            const group = yearGroups.get(month.year) ?? [];
+            group.push(month);
+            yearGroups.set(month.year, group);
+        }
+
+        const yearTicks: Tick[] = Array.from(yearGroups.entries()).map(([year, monthsInYear]) => ({
+            kind: 'year',
+            label: String(year),
+            pct: (monthsInYear[0].startPct + monthsInYear[monthsInYear.length - 1].endPct) / 2,
+        }));
+
+        const monthTicks: Tick[] = laidOutMonths
+            .filter(month => month.month % 3 === 0)
+            .map(month => ({
+                kind: 'month',
+                label: new Date(month.year, month.month, 1).toLocaleDateString('en-US', { month: 'short' }),
+                pct: month.centerPct,
+                compact: !month.hasDots,
+            }));
+
+        return {
+            ticks: [...yearTicks, ...monthTicks],
+            datePctMap: nextDatePctMap,
+        };
     }, [timelineDates]);
 
-    const axisStartMs = axisStart.getTime();
-    const axisEndMs = axisEnd.getTime();
-    const axisSpan = Math.max(1, axisEndMs - axisStartMs);
-
-    // Convert any dateStr to percentage along axis
-    const pctForDate = (dateStr: string) => {
-        const ms = parseDay(dateStr).getTime();
-        const raw = ((ms - axisStartMs) / axisSpan) * 100;
-        return clamp(raw, 0, 100);
-    };
+    const pctForDate = useCallback(
+        (dateStr: string) => datePctMap.get(dateStr) ?? 0,
+        [datePctMap]
+    );
 
     const currentPct = pctForDate(currentStr);
-
-    // This is ONLY for display: "Position X / N"
-    const currentIndex = Math.max(0, timelineDates.indexOf(currentStr));
-// --- label collision handling (labels only, dots untouched) ---
-    const LABEL_MIN_GAP_PCT = 3; // how close labels can be before stacking
-    const LABEL_LINE_HEIGHT = 17; // px per stacked level
-
-    type LabelLayout = {
-        offsetY: number;
-        showLine: boolean;
-    };
-
-    const labelLayouts = useMemo(() => {
-        const layouts = new Map<string, LabelLayout>();
-        let lastPct: number | null = null;
-        let stackLevel = 0;
-
-        for (const dateStr of timelineDates) {
-            const pct = pctForDate(dateStr);
-
-            if (lastPct !== null && Math.abs(pct - lastPct) < LABEL_MIN_GAP_PCT) {
-                stackLevel += 1;
-            } else {
-                stackLevel = 0;
-            }
-
-            layouts.set(dateStr, {
-                offsetY: stackLevel * LABEL_LINE_HEIGHT,
-                showLine: stackLevel > 0,
-            });
-
-            lastPct = pct;
-        }
-
-        return layouts;
-    }, [timelineDates, pctForDate]);
 
     return (
         <div className="w-full">
             {/* outer padding / size controls */}
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4">
                     <div>
@@ -181,11 +221,10 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                 {ticks
                                     .filter(t => t.kind === 'year')
                                     .map(t => {
-                                        const pct = ((t.at - axisStartMs) / axisSpan) * 100;
-                                        const left = `${clamp(pct, 0, 100)}%`;
+                                        const left = `${clamp(t.pct, 0, 100)}%`;
                                         return (
                                             <div
-                                                key={`year-${t.label}-${t.at}`}
+                                                key={`year-${t.label}-${t.pct}`}
                                                 className="absolute -translate-x-1/2"
                                                 style={{ left }}
                                             >
@@ -204,15 +243,17 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                 {ticks
                                     .filter(t => t.kind === 'month')
                                     .map(t => {
-                                        const pct = ((t.at - axisStartMs) / axisSpan) * 100;
-                                        const left = `${clamp(pct, 0, 100)}%`;
+                                        const left = `${clamp(t.pct, 0, 100)}%`;
                                         return (
                                             <div
-                                                key={`month-${t.label}-${t.at}`}
+                                                key={`month-${t.label}-${t.pct}`}
                                                 className="absolute -translate-x-1/2"
                                                 style={{ left }}
                                             >
-                        <span className="text-[11px] font-medium text-gray-700">
+                        <span className={t.compact
+                            ? 'text-[10px] font-medium text-gray-400'
+                            : 'text-[11px] font-medium text-gray-700'
+                        }>
                           {t.label}
                         </span>
                                             </div>
@@ -221,11 +262,11 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                             </div>
 
                             {/* LINE (starts before first dot & ends after last dot because axis is bigger) */}
-                            <div className="absolute left-0 right-0 top-[62px] -translate-y-1/2 h-[6px] rounded-full bg-gray-300" />
+                            <div className="absolute left-0 right-0 top-[62px] -translate-y-1/2 h-[6px] rounded-full bg-gray-200" />
 
                             {/* PROGRESS LINE */}
                             <div
-                                className="absolute left-0 top-[62px] -translate-y-1/2 h-[6px] rounded-full bg-blue-700 transition-all duration-500"
+                                className="absolute left-0 top-[62px] -translate-y-1/2 h-[6px] rounded-full bg-blue-600 transition-all duration-500"
                                 style={{ width: `${currentPct}%` }}
                             />
 
@@ -271,32 +312,16 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
 
                                         <span className={`${base} ${dotColor} ${isCurrent ? 'scale-125' : 'hover:scale-110'}`} />
 
-                                        {/* Date label (collision-aware) */}
-                                        {(() => {
-                                            const layout = labelLayouts.get(dateStr)!;
-                                            const labelTop = 24 + layout.offsetY;
-
-                                            return (
-                                                <>
-                                                    {layout.showLine && (
-                                                        <span
-                                                            className="absolute w-px bg-gray-300"
-                                                            style={{
-                                                                top: '12px',
-                                                                height: `${labelTop - 12}px`,
-                                                            }}
-                                                        />
-                                                    )}
-
-                                                    <span
-                                                        className="absolute text-[11px] font-medium text-gray-900 whitespace-nowrap"
-                                                        style={{ top: `${labelTop}px` }}
-                                                    >
-                {new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
-            </span>
-                                                </>
-                                            );
-                                        })()}
+                                        <span
+                                            className="absolute whitespace-nowrap text-[10px] font-medium text-gray-900"
+                                            style={{
+                                                top: '24px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                            }}
+                                        >
+                                            {new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
+                                        </span>
 
                                     </button>
                                 );
@@ -305,7 +330,7 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                     </div>
 
                     {/* Hover card */}
-                    <div className="mt-14 rounded-lg border border-gray-200 bg-white/60 px-4 py-3">
+                    <div className="mt-14 rounded-[20px] border border-gray-200 bg-gray-50/80 px-4 py-3">
                         <p className="text-xs font-medium text-gray-500 mb-2">
                             {hoverDate ? 'Market context' : "Today's market context"}
                         </p>

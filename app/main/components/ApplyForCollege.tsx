@@ -26,7 +26,7 @@ const ELITE_SCHOOLS: School[] = [
             'Prestigious institution with strong alumni networks and elite research facilities.',
         price: 300,
         majors: ['Economics', 'Computer Science', 'Law', 'Political Science'],
-        logo: '/logos/ivy.png',
+        logo: '/images/logos/ivy.png',
     },
     {
         id: 'northbridge',
@@ -35,7 +35,7 @@ const ELITE_SCHOOLS: School[] = [
             'Globally respected college with a strong focus on science and leadership.',
         price: 280,
         majors: ['Engineering', 'Finance', 'Medicine', 'Mathematics'],
-        logo: '/logos/north.svg',
+        logo: '/images/logos/north.svg',
     },
     {
         id: 'atlas',
@@ -44,7 +44,7 @@ const ELITE_SCHOOLS: School[] = [
             'Private elite school emphasizing innovation and entrepreneurship.',
         price: 310,
         majors: ['Business', 'Design', 'Artificial Intelligence', 'Entrepreneurship'],
-        logo: '/logos/atlas.png',
+        logo: '/images/logos/atlas.png',
     },
 ];
 
@@ -57,7 +57,7 @@ const REGULAR_SCHOOLS: School[] = [
             'Affordable public university with broad academic coverage.',
         price: 120,
         majors: ['Education', 'Biology', 'History', 'Sociology'],
-        logo: '/logos/state.png',
+        logo: '/images/logos/state.png',
     },
     {
         id: 'city-college',
@@ -66,7 +66,7 @@ const REGULAR_SCHOOLS: School[] = [
             'Solid education with strong local industry ties.',
         price: 95,
         majors: ['Information Technology', 'Marketing', 'Architecture', 'Media Studies'],
-        logo: '/logos/city.png',
+        logo: '/images/logos/city.png',
     },
     {
         id: 'community-college',
@@ -75,7 +75,7 @@ const REGULAR_SCHOOLS: School[] = [
             'Low-cost option with flexible programs and transfer opportunities.',
         price: 75,
         majors: ['General Studies', 'Nursing', 'Accounting', 'Business Basics'],
-        logo: '/logos/community.png',
+        logo: '/images/logos/community.png',
     },
 ];
 

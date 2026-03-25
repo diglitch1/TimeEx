@@ -14,7 +14,6 @@ export function resetGame(startingCash: number) {
 
     localStorage.removeItem('timeline');
     localStorage.removeItem('events');
-    localStorage.removeItem('watchlist');
     localStorage.removeItem('triggeredEvents');
     localStorage.setItem('gameStarted', 'true');
 }
