@@ -11,14 +11,6 @@
   <strong>TimeEx</strong> is an interactive financial-history game where you step into different market eras, trade through uncertainty, and balance portfolio decisions with personal life events.
 </p>
 
-<p align="center">
-  <a href="#overview">Overview</a> •
-  <a href="#highlights">Highlights</a> •
-  <a href="#run-locally">Run Locally</a> •
-  <a href="#project-structure">Project Structure</a> •
-  <a href="#roadmap">Roadmap</a>
-</p>
-
 ## Overview
 
 TimeEx turns financial history into a playable experience. Each run begins by choosing a character and stepping into a historical market scenario, combining investing, narrative choices, and timed events in one game loop.
