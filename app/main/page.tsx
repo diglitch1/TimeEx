@@ -1,9 +1,9 @@
 'use client';
-
+import DotComRealityCheckModal from './components/DotComRealityCheckModal';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WalletItem } from './utils/walletData';
 import { loadWallet, saveWallet } from './utils/walletStorage';
-
+import DotComFrenzyModal from './components/DotComFrenzyModal';
 import { useRouter } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -391,6 +391,11 @@ export default function MainPage() {
     return (
         <>
             {/* GLOBAL EVENT MODAL */}
+            {activeEvent === 'dot-com-frenzy' && (
+                <DotComFrenzyModal
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
             {activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal
                     wallet={wallet}
@@ -398,7 +403,11 @@ export default function MainPage() {
                     onClose={handleCloseActiveEvent}
                 />
             )}
-
+            {activeEvent === 'dot-com-reality-check' && (
+                <DotComRealityCheckModal
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
             {activeEvent === 'family-help' && (
                 <FamilyHelpModal
                     wallet={wallet}
