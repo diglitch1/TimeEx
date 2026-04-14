@@ -46,6 +46,12 @@ export const TIMELINE: TimelineMarker[] = [
     {
         date: '2000-04-14',
         kind: 'event',
+        title: 'Dot-Com Reality Check',
+        eventId: 'dot-com-reality-check',
+    },
+    {
+        date: '2000-04-14',
+        kind: 'event',
         title: 'Family help',
         eventId: 'family-help',
     },
