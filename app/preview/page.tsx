@@ -182,10 +182,10 @@ function PreviewPageContent() {
             <div className="px-8 pt-12 pb-10 bg-gradient-to-b from-[#EAF4FF] to-[#F7FAFC] border-b border-[#CFE3F8]">
                 <header className="max-w-[1300px] mx-auto">
                     <button
-                        onClick={() => router.push("/scenario")}
+                        onClick={() => router.push("/character")}
                         className="mb-6 inline-flex items-center gap-2 text-blue-700 font-medium hover:underline"
                     >
-                        <span aria-hidden>←</span> Back to scenario selection
+                        <span aria-hidden>←</span> Back to selection
                     </button>
 
                     <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
