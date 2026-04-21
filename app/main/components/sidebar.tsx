@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { WalletItem } from '../utils/walletData';
 import {
@@ -10,6 +9,7 @@ import {
     type AssetWithData,
 } from '../utils/marketData';
 import AssetAvatar from './AssetAvatar';
+import DailyNewsFeed from './DailyNewsFeed';
 
 const STARTING_CASH = 7000;
 
@@ -17,9 +17,11 @@ const STARTING_CASH = 7000;
 export default function Sidebar({
     wallet,
     currentDate,
+    scenarioId,
 }: {
     wallet: WalletItem[];
     currentDate: Date;
+    scenarioId: string;
 }) {
     const totalValue = wallet.reduce(
         (sum, item) => sum + item.usdValue,
@@ -236,24 +238,7 @@ export default function Sidebar({
                 <div>
                     <p className={sectionLabelClass}>News Feed</p>
                     <div className={panelClass}>
-                        <div className="space-y-4">
-                            <NewsItem
-                                img="/images/news/news1.png"
-                                text="Goldman Sachs unveils its 10-year playbook and AI is at the heart of it"
-                            />
-
-                            <NewsItem
-                                img="/images/news/news2.png"
-                                text="Earnings playbook: Nvidia and retailers headline the tail end of the season"
-                            />
-
-                            <NewsItem
-                                img="/images/news/news3.png"
-                                text="Ed Yardeni says gold is the best safe-haven play and the new bitcoin"
-                            />
-                        </div>
-
-                        <ReadMoreButton />
+                        <DailyNewsFeed dateStr={dateStr} scenarioId={scenarioId} />
                     </div>
                 </div>
 
@@ -321,45 +306,6 @@ function WalletIcon({ label }: { label: string }) {
             imageClassName="h-8 w-8 object-contain"
             fallbackTextClassName="text-[10px]"
         />
-    );
-}
-
-
-function NewsItem({img, text,}: {
-    img: string;
-    text: string;
-}) {
-    return (
-        <div className="flex items-start gap-4">
-            <Image
-                src={img}
-                alt=""
-                width={64}
-                height={64}
-                className="h-16 w-16 rounded-[18px] object-cover"
-            />
-            <div className="min-w-0">
-                <p className="text-sm font-medium leading-snug text-gray-900">
-                    {text}
-                </p>
-                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
-                    Market News
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function ReadMoreButton() {
-    const router = useRouter();
-
-    return (
-        <button
-            onClick={() => router.push('/news')}
-            className="mt-5 w-full rounded-full border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-600"
-        >
-            Read More
-        </button>
     );
 }
 

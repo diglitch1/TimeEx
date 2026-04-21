@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WalletItem } from './utils/walletData';
 import { loadWallet, saveWallet } from './utils/walletStorage';
 import DotComFrenzyModal from './components/DotComFrenzyModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
 import { GAME_EVENTS } from './utils/events';
@@ -25,6 +25,7 @@ import {
     toLocalDateStr,
     type AssetWithData,
 } from './utils/marketData';
+import { normalizeScenarioId } from '@/app/lib/news-shared';
 import type {
     GameNotification,
     NotificationDraft,
@@ -131,6 +132,8 @@ const DAY_END_MINUTES = (24 * 60) - 1;
 const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 const STARTING_CASH = 7000;
 const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
+const TIMELINE_STORAGE_KEY = 'timeline';
+const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
 
 function readStoredDecision(key: string, property: string) {
     if (typeof window === 'undefined') return false;
@@ -145,10 +148,44 @@ function readStoredDecision(key: string, property: string) {
     }
 }
 
+function readStoredGameSeconds() {
+    if (typeof window === 'undefined') return 0;
+
+    try {
+        const raw = localStorage.getItem(TIMELINE_STORAGE_KEY);
+        if (!raw) return 0;
+
+        const parsed = Number.parseInt(raw, 10);
+        if (!Number.isFinite(parsed) || parsed < 0) return 0;
+
+        const lastDayStart = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
+        return Math.min(parsed, lastDayStart);
+    } catch {
+        return 0;
+    }
+}
+
+function readStoredTriggeredEvents() {
+    if (typeof window === 'undefined') return [];
+
+    try {
+        const raw = localStorage.getItem(TRIGGERED_EVENTS_STORAGE_KEY);
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed)
+            ? parsed.filter((item): item is string => typeof item === 'string')
+            : [];
+    } catch {
+        return [];
+    }
+}
+
 export default function MainPage() {
     const [mounted, setMounted] = useState(false);
+    const searchParams = useSearchParams();
 
-    const [triggeredEvents, setTriggeredEvents] = useState<string[]>([]);
+    const [triggeredEvents, setTriggeredEvents] = useState<string[]>(readStoredTriggeredEvents);
     const [notifications, setNotifications] = useState<GameNotification[]>([]);
     const [activeToastIds, setActiveToastIds] = useState<string[]>([]);
     const [historyOpen, setHistoryOpen] = useState(false);
@@ -163,7 +200,7 @@ export default function MainPage() {
         setGameSeconds(idx * TOTAL_SECONDS); // jump to start of that day
     };
 
-    const [gameSeconds, setGameSeconds] = useState(0);
+    const [gameSeconds, setGameSeconds] = useState(readStoredGameSeconds);
 
 
     const dayIndex = Math.min(
@@ -373,11 +410,23 @@ export default function MainPage() {
     }, [wallet]);
 
     useEffect(() => {
+        localStorage.setItem(TIMELINE_STORAGE_KEY, String(gameSeconds));
+    }, [gameSeconds]);
+
+    useEffect(() => {
+        localStorage.setItem(
+            TRIGGERED_EVENTS_STORAGE_KEY,
+            JSON.stringify(triggeredEvents)
+        );
+    }, [triggeredEvents]);
+
+    useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
     }, []);
 
     const router = useRouter();
+    const scenarioId = normalizeScenarioId(searchParams.get('scenario'));
 
     useEffect(() => {
         const started = localStorage.getItem('gameStarted');
@@ -478,6 +527,7 @@ export default function MainPage() {
                 <Sidebar
                     wallet={wallet}
                     currentDate={currentDateTime}
+                    scenarioId={scenarioId}
                 />
                 <div className="flex-1 p-6">
                     <div className="mx-auto w-full max-w-[1420px]">
