@@ -3,11 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getGuardianArticleById } from '@/app/lib/guardian';
 import {
+    GENERIC_NEWS_ERROR_MESSAGE,
     DEFAULT_NEWS_DATE,
     buildNewsListHref,
+    coerceNewsDate,
     formatNewsTimestamp,
     normalizeScenarioId,
 } from '@/app/lib/news-shared';
+
+export const dynamic = 'force-dynamic';
 
 type NewsArticlePageProps = {
     params: Promise<{
@@ -32,7 +36,7 @@ export default async function NewsArticlePage({
     }
 
     const articleId = slug.map(segment => decodeURIComponent(segment)).join('/');
-    const date = resolvedSearchParams.date ?? DEFAULT_NEWS_DATE;
+    const date = coerceNewsDate(resolvedSearchParams.date ?? DEFAULT_NEWS_DATE);
     const scenario = normalizeScenarioId(resolvedSearchParams.scenario);
 
     let errorMessage: string | null = null;
@@ -40,9 +44,8 @@ export default async function NewsArticlePage({
 
     try {
         article = await getGuardianArticleById(articleId);
-    } catch (error) {
-        errorMessage =
-            error instanceof Error ? error.message : 'Unable to load this Guardian article.';
+    } catch {
+        errorMessage = GENERIC_NEWS_ERROR_MESSAGE;
     }
 
     return (
@@ -88,17 +91,19 @@ export default async function NewsArticlePage({
                                 ) : null}
                             </div>
 
-                            {article.standfirstHtml ? (
-                                <div
-                                    className="mt-6 text-lg leading-relaxed text-[#23496C]"
-                                    dangerouslySetInnerHTML={{ __html: article.standfirstHtml }}
-                                />
+                            {article.standfirstText ? (
+                                <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-[#23496C]">
+                                    {article.standfirstText}
+                                </p>
                             ) : null}
 
-                            <div
-                                className="guardian-article mt-8"
-                                dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
-                            />
+                            <div className="guardian-article mt-8">
+                                {article.bodyBlocks.map((block, index) => (
+                                    <p key={`${article.id}-block-${index}`} className="whitespace-pre-line">
+                                        {block}
+                                    </p>
+                                ))}
+                            </div>
 
                             <div className="mt-8 border-t border-[#E4EEF8] pt-5 text-sm text-[#456887]">
                                 <a

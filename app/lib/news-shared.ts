@@ -1,3 +1,5 @@
+import { TIMELINE_DATES } from '@/app/main/utils/timeline';
+
 export type ScenarioId = 'dotcom' | 'housing' | 'pandemic';
 
 export type ScenarioExplainer = {
@@ -30,6 +32,9 @@ export type NewsFeedItem = {
 
 export const DEFAULT_SCENARIO_ID: ScenarioId = 'dotcom';
 export const DEFAULT_NEWS_DATE = '1999-08-19';
+export const GENERIC_NEWS_ERROR_MESSAGE = 'Unable to load news right now.';
+export const SUPPORTED_NEWS_DATES = TIMELINE_DATES;
+const supportedNewsDateSet = new Set(SUPPORTED_NEWS_DATES);
 
 export const SCENARIO_NEWS_CONFIG: Record<ScenarioId, ScenarioNewsConfig> = {
     dotcom: {
@@ -147,6 +152,22 @@ export function normalizeScenarioId(value?: string | null): ScenarioId {
     return DEFAULT_SCENARIO_ID;
 }
 
+export function coerceNewsDate(value?: string | null) {
+    if (value && supportedNewsDateSet.has(value)) {
+        return value;
+    }
+
+    return DEFAULT_NEWS_DATE;
+}
+
+export function clampNewsLimit(value: number, fallback = 3, maxLimit = 6) {
+    if (!Number.isFinite(value)) {
+        return fallback;
+    }
+
+    return Math.min(Math.max(Math.trunc(value), 1), maxLimit);
+}
+
 export function formatNewsDateLabel(dateStr: string) {
     return new Intl.DateTimeFormat('en-US', {
         month: 'long',
@@ -165,7 +186,7 @@ export function formatNewsTimestamp(isoDate: string) {
 
 export function buildNewsListHref(dateStr = DEFAULT_NEWS_DATE, scenario?: string | null) {
     const searchParams = new URLSearchParams();
-    searchParams.set('date', dateStr);
+    searchParams.set('date', coerceNewsDate(dateStr));
     searchParams.set('scenario', normalizeScenarioId(scenario));
 
     return `/news?${searchParams.toString()}`;
@@ -181,7 +202,7 @@ export function buildNewsArticleHref(
     const searchParams = new URLSearchParams();
 
     if (options?.date) {
-        searchParams.set('date', options.date);
+        searchParams.set('date', coerceNewsDate(options.date));
     }
 
     if (options?.scenario) {

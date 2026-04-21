@@ -7,9 +7,6 @@ import { resetGame } from '../main/utils/save';
 
 import Image from "next/image";
 import type React from "react";
-import { Work_Sans } from "next/font/google";
-
-const workSans = Work_Sans({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
 type CharacterId = "A" | "B" | "C";
 type ScenarioId = "dotcom" | "housing" | "pandemic";
@@ -142,6 +139,12 @@ const DOTCOM_SOURCES = [
     },
 ];
 
+const CHARACTER_STARTING_CASH: Record<CharacterId, number> = {
+    A: 7000,
+    B: 12000,
+    C: 9000,
+};
+
 export default function PreviewPage() {
     return (
         <Suspense fallback={null}>
@@ -173,7 +176,7 @@ function PreviewPageContent() {
 
     return (
         <main suppressHydrationWarning
-            className={`${workSans.className} min-h-screen bg-[#F7FAFC] text-[#0A355B]`}
+            className="min-h-screen bg-[#F7FAFC] text-[#0A355B]"
         >
             {/* HERO */}
             <div className="px-8 pt-12 pb-10 bg-gradient-to-b from-[#EAF4FF] to-[#F7FAFC] border-b border-[#CFE3F8]">
@@ -471,15 +474,7 @@ function PreviewPageContent() {
 
                         <button
                             onClick={() => {
-                                localStorage.setItem('newGame', 'true')
-                                const budgetMap = {
-                                    A: 7000,
-                                    B: 12000,
-                                    C: 9000,
-                                };
-
-                                const startingCash = budgetMap[characterInfo.id];
-
+                                const startingCash = CHARACTER_STARTING_CASH[characterInfo.id];
                                 resetGame(startingCash);
                                 router.push(`/main?character=${characterInfo.id}&scenario=${scenarioInfo.id}`);
                             }}

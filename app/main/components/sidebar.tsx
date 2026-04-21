@@ -11,17 +11,16 @@ import {
 import AssetAvatar from './AssetAvatar';
 import DailyNewsFeed from './DailyNewsFeed';
 
-const STARTING_CASH = 7000;
-
-
 export default function Sidebar({
     wallet,
     currentDate,
     scenarioId,
+    startingCash,
 }: {
     wallet: WalletItem[];
     currentDate: Date;
     scenarioId: string;
+    startingCash: number;
 }) {
     const totalValue = wallet.reduce(
         (sum, item) => sum + item.usdValue,
@@ -40,7 +39,7 @@ export default function Sidebar({
         [assetsWithMarket]
     );
 
-    const gainLoss = totalValue - STARTING_CASH;
+    const gainLoss = totalValue - startingCash;
     const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
     const sectionLabelClass = 'mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-gray-400';
 
@@ -93,7 +92,7 @@ export default function Sidebar({
                                     Starting Cash
                                 </p>
                                 <p className="mt-1 text-xl font-semibold text-gray-950">
-                                    {formatSidebarCurrency(STARTING_CASH)}
+                                    {formatSidebarCurrency(startingCash)}
                                 </p>
                             </div>
                             <div className="rounded-[18px] border border-gray-200 bg-white p-4">

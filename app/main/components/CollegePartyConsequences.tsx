@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onGameOver: (reason: string) => void;
 };
 
 const BAIL_COST = 600;
@@ -15,6 +16,7 @@ export default function PartyConsequencesModal({
                                                    wallet,
                                                    setWallet,
                                                    onClose,
+                                                   onGameOver,
                                                }: Props) {
 
     /* ---------- READ FLAGS (NO EARLY RETURN YET) ---------- */
@@ -106,15 +108,7 @@ export default function PartyConsequencesModal({
             }
 
             // ❌ cannot afford → GAME OVER
-            localStorage.setItem(
-                'gameOver',
-                JSON.stringify({
-                    reason: 'Could not afford bail',
-                    date: new Date().toISOString(),
-                })
-            );
-
-            window.location.reload();
+            onGameOver('Could not afford bail.');
             return;
         }
     };

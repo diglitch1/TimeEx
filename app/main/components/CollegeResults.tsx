@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { WalletItem } from '../utils/walletData';
+import { readStoredJson } from '../utils/walletStorage';
 
 type Props = {
     wallet: WalletItem[];
@@ -64,22 +65,15 @@ const IMG_ACCEPTED_BLUE = '/images/events/accepted_blue.png';
 const IMG_DECLINED_RED = '/images/events/declined_red.png';
 
 export default function CollegeResultsModal({ wallet, setWallet, onClose }: Props) {
-    let application: {
+    const application = readStoredJson<{
         schoolName: string;
         type: 'elite' | 'regular';
         logo?: string;
-    } | null = null;
+    }>('collegeApplication');
 
-    try {
-        const raw =
-            typeof window !== 'undefined'
-                ? localStorage.getItem('collegeApplication')
-                : null;
-
-        application = raw ? JSON.parse(raw) : null;
-    } catch {
-        application = null;
-    }
+    const storedCollegeResult = readStoredJson<{
+        fallback?: string | null;
+    }>('collegeResult');
 
     const schoolName = application?.schoolName ?? 'University';
     const isElite = application?.type === 'elite';
@@ -489,8 +483,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
                                         <br />
                                         However, you received an offer from{' '}
                                         <strong>
-                                            {JSON.parse(localStorage.getItem('collegeResult') || '{}')
-                                                .fallback}
+                                            {storedCollegeResult?.fallback ?? FALLBACK_SCHOOL}
                                         </strong>.
                                     </p>
                                 </>

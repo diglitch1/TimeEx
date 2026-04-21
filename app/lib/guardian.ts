@@ -48,8 +48,8 @@ export type GuardianArticle = {
     webUrl: string;
     thumbnailUrl: string | null;
     trailText: string | null;
-    standfirstHtml: string | null;
-    bodyHtml: string;
+    standfirstText: string | null;
+    bodyBlocks: string[];
     byline: string | null;
     publication: string | null;
     shortUrl: string | null;
@@ -63,7 +63,15 @@ function decodeHtmlEntities(value: string) {
         .replace(/&#39;/g, "'")
         .replace(/&nbsp;/g, ' ')
         .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>');
+        .replace(/&gt;/g, '>')
+        .replace(/&#(\d+);/g, (_, code: string) => {
+            const parsed = Number.parseInt(code, 10);
+            return Number.isFinite(parsed) ? String.fromCodePoint(parsed) : _;
+        })
+        .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => {
+            const parsed = Number.parseInt(code, 16);
+            return Number.isFinite(parsed) ? String.fromCodePoint(parsed) : _;
+        });
 }
 
 function stripHtml(value?: string | null) {
@@ -72,14 +80,28 @@ function stripHtml(value?: string | null) {
     return decodeHtmlEntities(value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
 }
 
-function sanitizeGuardianHtml(html?: string | null) {
-    if (!html) return '';
+function htmlToTextBlocks(html?: string | null) {
+    if (!html) return [];
 
-    return html
+    const normalized = html
         .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
-        .replace(/\son\w+="[^"]*"/gi, '')
-        .replace(/\son\w+='[^']*'/gi, '');
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<(li)\b[^>]*>/gi, '• ')
+        .replace(/<\/li>/gi, '\n')
+        .replace(/<\/(p|div|section|article|blockquote|figure|figcaption|h1|h2|h3|h4|h5|h6|ul|ol)>/gi, '\n\n')
+        .replace(/<[^>]+>/g, '');
+
+    const decoded = decodeHtmlEntities(normalized)
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n[ \t]+/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+    return decoded
+        .split(/\n{2,}/)
+        .map(block => block.trim())
+        .filter(Boolean);
 }
 
 function normalizeDotEnvValue(rawValue: string) {
@@ -370,7 +392,8 @@ export async function getGuardianArticleById(articleId: string) {
         throw new Error(`Guardian article not found for id "${articleId}".`);
     }
 
-    const bodyHtml = sanitizeGuardianHtml(content.fields?.body);
+    const standfirstBlocks = htmlToTextBlocks(content.fields?.standfirst);
+    const bodyBlocks = htmlToTextBlocks(content.fields?.body);
 
     return {
         id: content.id,
@@ -380,8 +403,8 @@ export async function getGuardianArticleById(articleId: string) {
         webUrl: content.webUrl,
         thumbnailUrl: content.fields?.thumbnail ?? null,
         trailText: stripHtml(content.fields?.trailText ?? content.fields?.standfirst),
-        standfirstHtml: sanitizeGuardianHtml(content.fields?.standfirst),
-        bodyHtml,
+        standfirstText: standfirstBlocks.join('\n\n') || null,
+        bodyBlocks,
         byline: stripHtml(content.fields?.byline),
         publication: stripHtml(content.fields?.publication),
         shortUrl: content.fields?.shortUrl ?? null,

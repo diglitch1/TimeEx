@@ -3,12 +3,16 @@ import Link from 'next/link';
 import { getNewsForDate } from '@/app/lib/guardian';
 import {
     DEFAULT_NEWS_DATE,
+    GENERIC_NEWS_ERROR_MESSAGE,
     SCENARIO_NEWS_CONFIG,
     buildNewsArticleHref,
+    coerceNewsDate,
     formatNewsDateLabel,
     formatNewsTimestamp,
     normalizeScenarioId,
 } from '@/app/lib/news-shared';
+
+export const dynamic = 'force-dynamic';
 
 type NewsPageProps = {
     searchParams: Promise<{
@@ -19,7 +23,7 @@ type NewsPageProps = {
 
 export default async function NewsPage({ searchParams }: NewsPageProps) {
     const resolvedSearchParams = await searchParams;
-    const date = resolvedSearchParams.date ?? DEFAULT_NEWS_DATE;
+    const date = coerceNewsDate(resolvedSearchParams.date ?? DEFAULT_NEWS_DATE);
     const scenario = normalizeScenarioId(resolvedSearchParams.scenario);
     const scenarioConfig = SCENARIO_NEWS_CONFIG[scenario];
 
@@ -28,9 +32,8 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
 
     try {
         articles = await getNewsForDate(date, scenario, 6);
-    } catch (error) {
-        errorMessage =
-            error instanceof Error ? error.message : 'Unable to load the news archive for this date.';
+    } catch {
+        errorMessage = GENERIC_NEWS_ERROR_MESSAGE;
     }
 
     return (

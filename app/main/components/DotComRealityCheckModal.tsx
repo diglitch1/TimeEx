@@ -25,10 +25,10 @@ const DIALOGUE_DELAY_MS = 3000;
 export default function DotComRealityCheckModal({ onClose }: Props) {
     const [lineIndex, setLineIndex] = useState(0);
     const [visibleText, setVisibleText] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
     const [showDialogue, setShowDialogue] = useState(false);
 
     const currentLine = useMemo(() => DIALOGUE_LINES[lineIndex] ?? '', [lineIndex]);
+    const isTyping = showDialogue && visibleText !== currentLine;
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -39,35 +39,25 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
     }, []);
 
     useEffect(() => {
-        if (!showDialogue) return;
+        if (!showDialogue || visibleText === currentLine) return;
 
-        setVisibleText('');
-        setIsTyping(true);
-
-        let i = 0;
-        const interval = setInterval(() => {
-            i += 1;
-            setVisibleText(currentLine.slice(0, i));
-
-            if (i >= currentLine.length) {
-                clearInterval(interval);
-                setIsTyping(false);
-            }
+        const timeout = setTimeout(() => {
+            setVisibleText(currentLine.slice(0, visibleText.length + 1));
         }, TYPE_SPEED);
 
-        return () => clearInterval(interval);
-    }, [currentLine, showDialogue]);
+        return () => clearTimeout(timeout);
+    }, [currentLine, showDialogue, visibleText]);
 
     const handleDialogueAdvance = () => {
         if (!showDialogue) return;
 
         if (isTyping) {
             setVisibleText(currentLine);
-            setIsTyping(false);
             return;
         }
 
         if (lineIndex < DIALOGUE_LINES.length - 1) {
+            setVisibleText('');
             setLineIndex(prev => prev + 1);
         }
     };

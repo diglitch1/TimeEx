@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import type { WalletItem } from '../utils/walletData';
 
 type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onGameOver: (reason: string) => void;
 };
 
 const INSURED_COST = 200;
@@ -16,6 +16,7 @@ export default function CarCrashModal({
                                           wallet,
                                           setWallet,
                                           onClose,
+                                          onGameOver,
                                       }: Props) {
 
     /* ---------- READ FLAGS ---------- */
@@ -41,10 +42,6 @@ export default function CarCrashModal({
             return false;
         }
     })();
-
-    /* ---------- HOOKS ---------- */
-
-    const [choice] = useState<'pay'>('pay');
 
     /* ---------- DERIVED ---------- */
 
@@ -82,15 +79,7 @@ export default function CarCrashModal({
             return;
         }
 
-        localStorage.setItem(
-            'gameOver',
-            JSON.stringify({
-                reason: 'Could not afford car repair',
-                date: new Date().toISOString(),
-            })
-        );
-
-        window.location.reload();
+        onGameOver('Could not afford car repair.');
     };
 
     /* ---------- UI ---------- */

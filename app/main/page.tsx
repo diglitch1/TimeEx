@@ -2,7 +2,16 @@
 import DotComRealityCheckModal from './components/DotComRealityCheckModal';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WalletItem } from './utils/walletData';
-import { loadWallet, saveWallet } from './utils/walletStorage';
+import {
+    DEFAULT_STARTING_CASH,
+    clearGameOver,
+    loadGameOver,
+    loadStartingCash,
+    loadWallet,
+    readStoredJson,
+    saveGameOver,
+    saveWallet,
+} from './utils/walletStorage';
 import DotComFrenzyModal from './components/DotComFrenzyModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
@@ -18,6 +27,7 @@ import ParentsSupportModal from './components/ParentsSupport';
 import CarCrashModal from './components/CarCrash';
 import FreelanceGigModal from './components/FreelanceGig';
 import JobOpportunityModal from './components/JobOpportunity';
+import GameOverModal from './components/GameOverModal';
 import Timeline from './components/Timeline';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 import {
@@ -130,22 +140,13 @@ const DAY_DURATION_SECONDS = 6 * 60;
 const DAY_START_MINUTES = 2 * 60;
 const DAY_END_MINUTES = (24 * 60) - 1;
 const TOTAL_SECONDS = DAY_DURATION_SECONDS;
-const STARTING_CASH = 7000;
 const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
 const TIMELINE_STORAGE_KEY = 'timeline';
 const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
 
 function readStoredDecision(key: string, property: string) {
-    if (typeof window === 'undefined') return false;
-
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return false;
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        return parsed[property] === true;
-    } catch {
-        return false;
-    }
+    const parsed = readStoredJson<Record<string, unknown>>(key);
+    return parsed?.[property] === true;
 }
 
 function readStoredGameSeconds() {
@@ -184,8 +185,10 @@ function readStoredTriggeredEvents() {
 export default function MainPage() {
     const [mounted, setMounted] = useState(false);
     const searchParams = useSearchParams();
+    const [startingCash] = useState(() => loadStartingCash(DEFAULT_STARTING_CASH));
 
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>(readStoredTriggeredEvents);
+    const [gameOver, setGameOver] = useState(loadGameOver);
     const [notifications, setNotifications] = useState<GameNotification[]>([]);
     const [activeToastIds, setActiveToastIds] = useState<string[]>([]);
     const [historyOpen, setHistoryOpen] = useState(false);
@@ -218,24 +221,13 @@ export default function MainPage() {
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
         if (typeof window === 'undefined') {
-            return createStartingWallet(STARTING_CASH);
-        }
-
-        const isNewGame = localStorage.getItem('newGame') === 'true';
-
-        if (isNewGame) {
-            localStorage.removeItem('newGame'); // consume flag
-
-            const freshWallet = createStartingWallet(STARTING_CASH);
-
-            saveWallet(freshWallet);
-            return freshWallet;
+            return createStartingWallet(DEFAULT_STARTING_CASH);
         }
 
         const stored = loadWallet();
         if (stored) return stored;
 
-        return createStartingWallet(STARTING_CASH);
+        return createStartingWallet(loadStartingCash(DEFAULT_STARTING_CASH));
     });
     const currentDateTime = new Date(baseDate);
     currentDateTime.setHours(0, 0, 0, 0);
@@ -329,7 +321,7 @@ export default function MainPage() {
         );
     }, [pushNotification]);
 
-    const activeEvent = GAME_EVENTS.find(event => {
+    const activeEvent = gameOver ? null : GAME_EVENTS.find(event => {
         if (event.date !== currentDateKey) return false;
         if (triggeredEvents.includes(event.id)) return false;
         return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig);
@@ -343,13 +335,25 @@ export default function MainPage() {
         );
     }, [activeEvent]);
 
+    const handleGameOver = useCallback((reason: string) => {
+        if (activeEvent) {
+            setTriggeredEvents(prev =>
+                prev.includes(activeEvent) ? prev : [...prev, activeEvent]
+            );
+        }
+
+        setGameOver(saveGameOver(reason));
+    }, [activeEvent]);
+
     useEffect(() => {
+        if (gameOver) return;
+
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
         }, 1000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [gameOver]);
 
     useEffect(() => {
         notificationsRef.current = notifications;
@@ -370,7 +374,7 @@ export default function MainPage() {
             item.units > 0
         );
 
-        if (ownedStocks.length === 0) return;
+        if (ownedStocks.length === 0 || gameOver) return;
 
         const marketBySymbol = new Map(
             getAssetsWithMarket(currentDateKey, 4)
@@ -391,7 +395,7 @@ export default function MainPage() {
                 )
             );
         });
-    }, [currentDateKey, dayStartTimestampLabel, pushNotification]);
+    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
 
     const skip30Seconds = () => {
         setGameSeconds(s => s + 30);
@@ -427,6 +431,12 @@ export default function MainPage() {
 
     const router = useRouter();
     const scenarioId = normalizeScenarioId(searchParams.get('scenario'));
+
+    const handleReturnHome = useCallback(() => {
+        clearGameOver();
+        localStorage.removeItem('gameStarted');
+        router.replace('/');
+    }, [router]);
 
     useEffect(() => {
         const started = localStorage.getItem('gameStarted');
@@ -491,6 +501,7 @@ export default function MainPage() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onGameOver={handleGameOver}
                 />
             )}
             {activeEvent === 'parents-support' && (
@@ -505,6 +516,7 @@ export default function MainPage() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onGameOver={handleGameOver}
                 />
             )}
             {activeEvent === 'freelance-gig' && (
@@ -528,6 +540,7 @@ export default function MainPage() {
                     wallet={wallet}
                     currentDate={currentDateTime}
                     scenarioId={scenarioId}
+                    startingCash={startingCash}
                 />
                 <div className="flex-1 p-6">
                     <div className="mx-auto w-full max-w-[1420px]">
@@ -559,6 +572,12 @@ export default function MainPage() {
                     </div>
                 </div>
             </div>
+            {gameOver ? (
+                <GameOverModal
+                    reason={gameOver.reason}
+                    onReturnHome={handleReturnHome}
+                />
+            ) : null}
 
 
         </>
