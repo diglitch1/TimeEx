@@ -8,7 +8,7 @@ type Props = {
 };
 
 const pixelFont = localFont({
-    src: '../../fonts/PixelifySans-VariableFont_wght.ttf',
+    src: '../../../fonts/PixelifySans-VariableFont_wght.ttf',
 });
 
 const DIALOGUE_LINES = [

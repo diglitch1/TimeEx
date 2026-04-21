@@ -7,7 +7,7 @@ type Props = {
     onClose: () => void;
 };
 const pixelFont = localFont({
-    src: '../../fonts/PixelifySans-VariableFont_wght.ttf'
+    src: '../../../fonts/PixelifySans-VariableFont_wght.ttf'
 })
 const DIALOGUE_LINES = [
     'Welcome to Market News.',
