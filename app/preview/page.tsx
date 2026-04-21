@@ -1,18 +1,15 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { resetGame } from '../main/utils/save';
 
 import Image from "next/image";
 import type React from "react";
-import { Work_Sans, Merriweather } from "next/font/google";
+import { Work_Sans } from "next/font/google";
 
 const workSans = Work_Sans({ subsets: ["latin"], weight: ["400", "600", "700"] });
-const merriweather = Merriweather({ subsets: ["latin"], weight: ["400", "700"] });
-
-type TocItem = { id: string; label: string };
 
 type CharacterId = "A" | "B" | "C";
 type ScenarioId = "dotcom" | "housing" | "pandemic";
@@ -124,26 +121,27 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
     },
 };
 
-// Dot-com sources (keep exactly as you had them)
 const DOTCOM_SOURCES = [
     {
-        label: "NASDAQ Composite peak close (5,048.62 on Mar 10, 2000) – Yahoo Finance",
-        href: "https://finance.yahoo.com/news/wall-street-open-lower-weak-131728303.html",
+        label: "NASDAQ Composite historical prices (Yahoo Finance)",
+        href: "https://finance.yahoo.com/quote/%5EIXIC/history/?period1=757382400&period2=1104537600",
+        description:
+            "Daily index levels showing the rise and fall of tech stocks during the dot-com period.",
     },
     {
-        label:
-            "NASDAQ Composite historical data incl. Oct 9, 2002 close (1,114.11) – Yahoo Finance",
-        href: "https://finance.yahoo.com/quote/%5EIXIC/history?filter=history&frequency=1d&includeAdjustedClose=true&interval=1d&period1=946512000&period2=1034208000",
+        label: "Dot-com bubble explained (Investopedia)",
+        href: "https://www.investopedia.com/terms/d/dotcom-bubble.asp",
+        description:
+            "A clear, beginner-friendly explanation of what caused the bubble and why it collapsed.",
     },
     {
-        label: "Oct 9, 2002 low cited in market coverage – CBS News",
-        href: "https://www.cbsnews.com/news/nasdaq-cracks-2000/",
-    },
-    {
-        label: "Greenspan “irrational exuberance” (Dec 5, 1996) – background summary",
+        label: "“Irrational exuberance” – background and context",
         href: "https://en.wikipedia.org/wiki/Irrational_exuberance",
+        description:
+            "The origin and meaning of the phrase often linked to the dot-com bubble.",
     },
 ];
+
 export default function PreviewPage() {
     return (
         <Suspense fallback={null}>
@@ -158,19 +156,6 @@ function PreviewPageContent() {
 
     const character = searchParams.get("character") as CharacterId | null;
     const scenario = searchParams.get("scenario") as ScenarioId | null;
-
-    // hooks must come before any return
-    const toc: TocItem[] = useMemo(
-        () => [
-            { id: "context", label: "Context & Setup" },
-            { id: "timeline", label: "Timeline & Phases" },
-            { id: "charts", label: "Charts & Signals" },
-            { id: "mechanics", label: "What this teaches" },
-            { id: "playbook", label: "Your playbook" },
-            { id: "sources", label: "Sources" },
-        ],
-        []
-    );
 
     if (!character || !scenario) {
         router.replace("/");
@@ -362,7 +347,6 @@ function PreviewPageContent() {
                                     </div>
                                 </article>
 
-                                {/* Further reading */}
                                 <article id="sources" className="scroll-mt-24">
                                     <SectionHeader
                                         title="Further reading"
@@ -371,65 +355,25 @@ function PreviewPageContent() {
 
                                     <Card>
                                         <div className="space-y-8 text-sm text-[#0A355B]">
-                                            {/* Market data */}
-                                            <div>
-                                                <ul className="space-y-2">
-                                                    <li>
-                                                        <a
-                                                            href="https://finance.yahoo.com/quote/%5EIXIC/history/?period1=757382400&period2=1104537600"
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-blue-700 hover:underline"
-                                                        >
-                                                            NASDAQ Composite historical prices (Yahoo Finance)
-                                                        </a>
-                                                        <p className="text-xs">
-                                                            Daily index levels showing the rise and fall of
-                                                            tech stocks during the dot-com period.
-                                                        </p>
-                                                    </li>
-                                                </ul>
-                                            </div>
-
-                                            {/* Background explanations */}
-                                            <div>
-                                                <ul className="space-y-2">
-                                                    <li>
-                                                        <a
-                                                            href="https://www.investopedia.com/terms/d/dotcom-bubble.asp"
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-blue-700 hover:underline"
-                                                        >
-                                                            Dot-com bubble explained (Investopedia)
-                                                        </a>
-                                                        <p className="text-xs">
-                                                            A clear, beginner-friendly explanation of what
-                                                            caused the bubble and why it collapsed.
-                                                        </p>
-                                                    </li>
-                                                </ul>
-                                            </div>
-
-                                            {/* Key idea */}
-                                            <div>
-                                                <ul className="space-y-2">
-                                                    <li>
-                                                        <a
-                                                            href="https://en.wikipedia.org/wiki/Irrational_exuberance"
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-blue-700 hover:underline"
-                                                        >
-                                                            “Irrational exuberance” – background and context
-                                                        </a>
-                                                        <p className="text-xs">
-                                                            The origin and meaning of the phrase often linked
-                                                            to the dot-com bubble.
-                                                        </p>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                            {DOTCOM_SOURCES.map(source => (
+                                                <div key={source.href}>
+                                                    <ul className="space-y-2">
+                                                        <li>
+                                                            <a
+                                                                href={source.href}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="text-blue-700 hover:underline"
+                                                            >
+                                                                {source.label}
+                                                            </a>
+                                                            <p className="text-xs">
+                                                                {source.description}
+                                                            </p>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            ))}
                                         </div>
                                     </Card>
                                 </article>
@@ -537,7 +481,7 @@ function PreviewPageContent() {
                                 const startingCash = budgetMap[characterInfo.id];
 
                                 resetGame(startingCash);
-                                router.push('/main');
+                                router.push(`/main?character=${characterInfo.id}&scenario=${scenarioInfo.id}`);
                             }}
                             className="
                                 w-full py-4 rounded-2xl
@@ -604,23 +548,6 @@ function Card({
     );
 }
 
-function MetricCard({
-                        title,
-                        value,
-                        note,
-                    }: {
-    title: string;
-    value: string;
-    note: string;
-}) {
-    return (
-        <div className="rounded-2xl border border-[#CFE3F8] bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-blue-700">{title}</p>
-            <p className="mt-2 text-xl font-extrabold text-[#0A355B]">{value}</p>
-            <p className="mt-2 text-sm text-[#0A355B]">{note}</p>
-        </div>
-    );
-}
 function MetricIconCard({
                             icon,
                             title,
