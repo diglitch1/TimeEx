@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { getAssetLogo, hasAssetLogo } from '../utils/marketData';
+import { getAssetLogo, hasAssetLogo } from '../../utils/marketData';
 
 export default function AssetAvatar({
     symbol,

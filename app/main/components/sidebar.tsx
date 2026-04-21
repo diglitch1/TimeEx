@@ -8,7 +8,7 @@ import {
     toLocalDateStr,
     type AssetWithData,
 } from '../utils/marketData';
-import AssetAvatar from './AssetAvatar';
+import AssetAvatar from './characterA/AssetAvatar';
 import DailyNewsFeed from './DailyNewsFeed';
 
 const STARTING_CASH = 7000;

@@ -1,28 +1,26 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import localFont from 'next/font/local';
+import localFont from 'next/font/local'
 
 type Props = {
     onClose: () => void;
 };
-
 const pixelFont = localFont({
-    src: '../../fonts/PixelifySans-VariableFont_wght.ttf',
-});
-
+    src: '../../fonts/PixelifySans-VariableFont_wght.ttf'
+})
 const DIALOGUE_LINES = [
-    'Welcome back to Market News.',
-    'Today, technology stocks are falling after months of rapid gains.',
-    'Several analysts are warning that many internet companies still have weak profits or none at all.',
-    'Investors are starting to question whether prices have risen too far, too fast.',
-    'For the first time in a while, confidence is beginning to crack.',
+    'Welcome to Market News.',
+    'Today, technology stocks are surging as investor excitement keeps building.',
+    'New internet companies are going public almost every week, and prices are jumping fast.',
+    'Analysts are starting to warn that valuations may be drifting away from reality.',
+    'Still, for many investors, the message feels simple: this is the future.',
 ];
 
 const TYPE_SPEED = 42;
 const DIALOGUE_DELAY_MS = 3000;
 
-export default function DotComRealityCheckModal({ onClose }: Props) {
+export default function DotComFrenzyModal({ onClose }: Props) {
     const [lineIndex, setLineIndex] = useState(0);
     const [visibleText, setVisibleText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -41,8 +39,10 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
     useEffect(() => {
         if (!showDialogue) return;
 
-        setVisibleText('');
-        setIsTyping(true);
+        const resetTimer = window.setTimeout(() => {
+            setVisibleText('');
+            setIsTyping(true);
+        }, 0);
 
         let i = 0;
         const interval = setInterval(() => {
@@ -55,7 +55,10 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
             }
         }, TYPE_SPEED);
 
-        return () => clearInterval(interval);
+        return () => {
+            window.clearTimeout(resetTimer);
+            clearInterval(interval);
+        };
     }, [currentLine, showDialogue]);
 
     const handleDialogueAdvance = () => {
@@ -72,16 +75,11 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
         }
     };
 
-    const dialogueFinished =
-        showDialogue &&
-        lineIndex === DIALOGUE_LINES.length - 1 &&
-        !isTyping;
-
     const handleConfirm = () => {
         if (!dialogueFinished) return;
 
         localStorage.setItem(
-            'dotComRealityCheck',
+            'dotComFrenzy',
             JSON.stringify({
                 seen: true,
                 date: new Date().toISOString(),
@@ -91,17 +89,23 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
         onClose();
     };
 
+    const dialogueFinished =
+        showDialogue &&
+        lineIndex === DIALOGUE_LINES.length - 1 &&
+        !isTyping;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white w-[980px] rounded-2xl p-12 text-gray-900 shadow-xl animate-event-in">
                 <h2 className="text-2xl font-bold text-red-600 mb-4">
-                    ! Dot-Com Selloff Begins !
+                    ! Dot-Com Frenzy !
                 </h2>
 
                 <div className="mb-6">
                     <p className="text-lg leading-relaxed mb-4">
-                        The market suddenly feels less certain. Technology stocks that had been rising
-                        almost nonstop are now showing sharp swings, and confidence is starting to weaken.
+                        The internet is exploding in popularity. New companies are going public almost
+                        every week, and their stock prices skyrocket within days, even if they barely
+                        make any profit.
                     </p>
 
                     <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-blue-700">
@@ -111,11 +115,11 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
                         </span>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative ">
                         <div className="flex justify-center">
                             <img
-                                src="/images/scenario-events/news-live2.png"
-                                alt="Live market news broadcast showing a tech selloff"
+                                src="/images/scenario-events/news-live1.jpeg"
+                                alt="Live market news broadcast"
                                 className="w-full h-auto rounded-xl"
                             />
                         </div>
@@ -164,6 +168,8 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
                                     </span>
                                 </button>
                             </div>
+
+
                         </div>
                     </div>
                 </div>
@@ -173,7 +179,7 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
                         What do you want to do?
                     </label>
                     <div className="border border-gray-300 rounded-xl p-4 bg-white text-gray-800">
-                        The market is no longer moving in one direction. Will you stay confident, or start questioning the trend?
+                        Will you follow the market hype, stay cautious, or wait and observe how the frenzy develops?
                     </div>
                 </div>
 

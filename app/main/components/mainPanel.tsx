@@ -12,7 +12,7 @@ import {
 } from '../utils/marketData';
 import type { GameNotification } from '../utils/notifications';
 import NotificationCenter from './NotificationCenter';
-import AssetAvatar from './AssetAvatar';
+import AssetAvatar from './characterA/AssetAvatar';
 
 function resolveCatalogAssets(
     catalog: Array<{ symbol: string }>,
@@ -157,6 +157,7 @@ export default function MainTradePanel({
     onDismissToast,
     onBuyNotification,
     onSellNotification,
+    disabled = false,
 }: {
     currentDate: Date;
     secondsLeft: number;
@@ -184,6 +185,7 @@ export default function MainTradePanel({
         price: number;
         timestamp: Date;
     }) => void;
+    disabled?: boolean;
 }) {
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -493,7 +495,12 @@ export default function MainTradePanel({
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onSkip30}
-                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 cursor-pointer"
+                        disabled={disabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            disabled
+                                ? 'cursor-not-allowed bg-blue-300'
+                                : 'cursor-pointer bg-blue-600 hover:bg-blue-500'
+                        }`}
                         title="Skip 30 seconds"
                     >
                         +30s
@@ -501,7 +508,12 @@ export default function MainTradePanel({
 
                     <button
                         onClick={onSkipDay}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 cursor-pointer"
+                        disabled={disabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            disabled
+                                ? 'cursor-not-allowed bg-slate-400'
+                                : 'cursor-pointer bg-slate-900 hover:bg-slate-800'
+                        }`}
                         title="Skip to next day"
                     >
                         Next Day
@@ -541,12 +553,16 @@ export default function MainTradePanel({
                             return (
                                 <div
                                     key={asset.symbol}
-                                    onClick={() => handleSelectAsset(asset)}
+                                    onClick={() => {
+                                        if (disabled) return;
+                                        handleSelectAsset(asset);
+                                    }}
 
-                                    className={`min-w-[300px] cursor-pointer rounded-[24px] border px-6 py-5 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
+                                    className={`min-w-[300px] rounded-[24px] border px-6 py-5 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
                     ${isActive
                                         ? 'border-blue-500 bg-blue-50/80'
                                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70'}
+                    ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}
                   `}
                                 >
                                     <div className="flex items-start justify-between gap-6">
@@ -600,10 +616,18 @@ export default function MainTradePanel({
                     <div className="flex flex-col gap-3 md:items-end">
                         <button
                             type="button"
-                            onClick={() => setMarketBrowserOpen(open => !open)}
+                            onClick={() => {
+                                if (disabled) return;
+                                setMarketBrowserOpen(open => !open);
+                            }}
                             aria-expanded={marketBrowserOpen}
                             aria-controls={marketBrowserPanelId}
-                            className="inline-flex w-fit items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-600"
+                            disabled={disabled}
+                            className={`inline-flex w-fit items-center rounded-full border bg-white px-4 py-2 text-sm font-semibold transition ${
+                                disabled
+                                    ? 'cursor-not-allowed border-gray-200 text-gray-400'
+                                    : 'border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-600'
+                            }`}
                         >
                             {marketBrowserOpen ? 'Fold' : 'Unfold'}
                         </button>
@@ -617,6 +641,7 @@ export default function MainTradePanel({
                                     type="text"
                                     value={marketSearch}
                                     onChange={event => setMarketSearch(event.target.value)}
+                                    disabled={disabled}
                                     placeholder="Search ticker or company"
                                     className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white"
                                 />
@@ -649,13 +674,16 @@ export default function MainTradePanel({
                                             <button
                                                 key={`all-${asset.symbol}`}
                                                 type="button"
-                                                onClick={() => handleSelectAsset(asset)}
-                                                disabled={!asset.hasData}
+                                                onClick={() => {
+                                                    if (disabled) return;
+                                                    handleSelectAsset(asset);
+                                                }}
+                                                disabled={disabled || !asset.hasData}
                                                 className={`grid w-full grid-cols-[minmax(0,1.5fr)_120px_120px_110px] gap-3 border-t border-gray-100 px-5 py-4 text-left transition ${
                                                     isActive
                                                         ? 'bg-blue-50/80'
                                                         : 'bg-white hover:bg-gray-50'
-                                                } ${!asset.hasData ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                                } ${disabled || !asset.hasData ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                                             >
                                                 <div className="flex min-w-0 items-center gap-3">
                                                     <AssetAvatar
@@ -784,7 +812,11 @@ export default function MainTradePanel({
                         {(['1W', '1M', '6M', '1Y'] as const).map(r => (
                             <button
                                 key={r}
-                                onClick={() => setRange(r)}
+                                onClick={() => {
+                                    if (disabled) return;
+                                    setRange(r);
+                                }}
+                                disabled={disabled}
                                 className={`rounded-full px-3 py-1.5 font-semibold transition ${
                                     range === r
                                         ? 'bg-blue-600 text-white shadow-sm'
@@ -869,10 +901,11 @@ export default function MainTradePanel({
                             <div className="flex h-[52px] w-full rounded-full border border-gray-200 bg-white p-1">
                             <button
                                 onClick={() => {
-                                    if (tradeSide === 'buy') return;
+                                    if (disabled || tradeSide === 'buy') return;
                                     resetTradeDraft();
                                     setSide('buy');
                                 }}
+                                disabled={disabled}
                                 className={`flex-1 rounded-full font-semibold text-lg transition
                                     ${tradeSide === 'buy'
                                     ? 'bg-emerald-500 text-white shadow-sm'
@@ -883,14 +916,14 @@ export default function MainTradePanel({
 
                             <button
                                 onClick={() => {
-                                    if (ownedUnits === 0 || tradeSide === 'sell') return;
+                                    if (disabled || ownedUnits === 0 || tradeSide === 'sell') return;
                                     resetTradeDraft();
                                     setSide('sell');
                                 }}
-                                disabled={ownedUnits === 0}
+                                disabled={disabled || ownedUnits === 0}
                                 className={`flex-1 py-2 rounded-full text-lg font-semibold transition ${tradeSide === 'sell'
                                     ? 'bg-red-500 text-white shadow-sm'
-                                    : ownedUnits === 0
+                                    : disabled || ownedUnits === 0
                                         ? 'text-gray-400 cursor-not-allowed'
                                         : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                                 }`}
@@ -920,8 +953,11 @@ export default function MainTradePanel({
                             <button
                                 key={preset.key}
                                 type="button"
-                                disabled={preset.disabled}
-                                onClick={preset.action}
+                                disabled={disabled || preset.disabled}
+                                onClick={() => {
+                                    if (disabled) return;
+                                    preset.action();
+                                }}
                                 className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:text-gray-300"
                             >
                                 {preset.label}
@@ -956,6 +992,7 @@ export default function MainTradePanel({
                             type="number"
                             value={amount}
                             onChange={(e) => handleAmountChange(e.target.value)}
+                            disabled={disabled}
                             className="w-full bg-transparent text-2xl font-semibold text-black outline-none"
                             placeholder="0.00"
                         />
@@ -984,6 +1021,7 @@ export default function MainTradePanel({
                                 const val = e.target.value;
                                 handleUnitsChange(val);
                             }}
+                            disabled={disabled}
                             className="w-full bg-transparent text-2xl font-semibold text-black outline-none"
                             placeholder="0.0000"
                         />
@@ -1028,9 +1066,9 @@ export default function MainTradePanel({
 
                     <button
                         onClick={handleConfirmTrade}
-                        disabled={!isTradeReady}
+                        disabled={disabled || !isTradeReady}
                         className={`mt-6 w-full rounded-full py-4 text-lg font-semibold transition ${
-                            isTradeReady
+                            !disabled && isTradeReady
                                 ? tradeSide === 'buy'
                                     ? 'bg-emerald-500 text-white hover:bg-emerald-400 cursor-pointer'
                                     : 'bg-red-500 text-white hover:bg-red-400 cursor-pointer'

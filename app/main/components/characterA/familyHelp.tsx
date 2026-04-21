@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { WalletItem } from '../utils/walletData';
+import { WalletItem } from '../../utils/walletData';
 
 type Props = {
     wallet: WalletItem[];

@@ -8,6 +8,7 @@ type Props = {
     markers: TimelineMarker[]; // market + event
     currentDate: Date;
     onJumpToDate: (dateStr: string) => void;
+    disabled?: boolean;
 };
 
 function fmt(dateStr: string) {
@@ -53,7 +54,13 @@ type Tick = {
     compact?: boolean;
 };
 
-export default function TimelineBar({ timelineDates, markers, currentDate, onJumpToDate }: Props) {
+export default function TimelineBar({
+    timelineDates,
+    markers,
+    currentDate,
+    onJumpToDate,
+    disabled = false,
+}: Props) {
     const [hoverDate, setHoverDate] = useState<string | null>(null);
 
     const currentStr = useMemo(
@@ -292,16 +299,16 @@ export default function TimelineBar({ timelineDates, markers, currentDate, onJum
                                     <button
                                         key={dateStr}
                                         type="button"
-                                        disabled={future}
+                                        disabled={future || disabled}
                                         onMouseEnter={() => {
-                                            if (!future) setHoverDate(dateStr);
+                                            if (!future && !disabled) setHoverDate(dateStr);
                                         }}
                                         onMouseLeave={() => setHoverDate(null)}
                                         onClick={() => {
-                                            if (!future) onJumpToDate(dateStr);
+                                            if (!future && !disabled) onJumpToDate(dateStr);
                                         }}
                                         className={`absolute top-[62px] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center ${
-                                            future ? 'cursor-not-allowed opacity-60' : ''
+                                            future || disabled ? 'cursor-not-allowed opacity-60' : ''
                                         }`}
                                         style={{ left: `${pct}%` }}
                                         title={future ? 'Future date' : fmt(dateStr)}
