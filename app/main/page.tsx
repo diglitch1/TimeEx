@@ -376,13 +376,17 @@ export default function MainPage() {
 
         const eventSnapshot = activeEventSnapshotRef.current;
         if (eventSnapshot?.id === activeEvent) {
-            recordEventAction(runStatsRef.current, {
-                eventId: activeEvent,
-                valueDelta: getWalletTotalValue(walletRef.current) - eventSnapshot.walletValue,
-                date: currentDateTime.toISOString(),
-            });
-            saveRunStats(runStatsRef.current);
-            activeEventSnapshotRef.current = null;
+            const snapshotDate = currentDateTime.toISOString();
+
+            window.setTimeout(() => {
+                recordEventAction(runStatsRef.current, {
+                    eventId: activeEvent,
+                    valueDelta: getWalletTotalValue(walletRef.current) - eventSnapshot.walletValue,
+                    date: snapshotDate,
+                });
+                saveRunStats(runStatsRef.current);
+                activeEventSnapshotRef.current = null;
+            }, 0);
         }
 
         setTriggeredEvents(prev =>
