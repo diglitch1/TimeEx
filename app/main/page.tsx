@@ -1,6 +1,6 @@
 'use client';
 import DotComRealityCheckModal from './components/DotComRealityCheckModal';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WalletItem } from './utils/walletData';
 import {
     DEFAULT_STARTING_CASH,
@@ -28,6 +28,7 @@ import CarCrashModal from './components/CarCrash';
 import FreelanceGigModal from './components/FreelanceGig';
 import JobOpportunityModal from './components/JobOpportunity';
 import GameOverModal from './components/GameOverModal';
+import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 import {
@@ -41,6 +42,17 @@ import type {
     NotificationDraft,
     NotificationTone,
 } from './utils/notifications';
+import {
+    buildGameOverSummary,
+    createRunStats,
+    loadRunStats,
+    recordBuyAction,
+    recordEventAction,
+    recordSellAction,
+    saveGameOverSummary,
+    saveRunStats,
+    type RunStats,
+} from './utils/runStats';
 
 function formatNotificationTimestamp(date: Date) {
     return new Intl.DateTimeFormat('en-US', {
@@ -143,6 +155,11 @@ const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
 const TIMELINE_STORAGE_KEY = 'timeline';
 const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
+const END_GAME_REDIRECT_DELAY_MS = 2200;
+
+function getWalletTotalValue(wallet: WalletItem[]) {
+    return wallet.reduce((sum, item) => sum + item.usdValue, 0);
+}
 
 function readStoredDecision(key: string, property: string) {
     const parsed = readStoredJson<Record<string, unknown>>(key);
@@ -196,6 +213,12 @@ export default function MainPage() {
     const notificationsRef = useRef<GameNotification[]>([]);
     const historyOpenRef = useRef(false);
     const walletRef = useRef<WalletItem[]>([]);
+    const runStatsRef = useRef<RunStats>(createRunStats(startingCash));
+    const activeEventSnapshotRef = useRef<{
+        id: string;
+        walletValue: number;
+    } | null>(null);
+    const endGameHandledRef = useRef(false);
 
     const jumpToDate = (dateStr: string) => {
         const idx = TIMELINE_DATES.indexOf(dateStr);
@@ -218,6 +241,10 @@ export default function MainPage() {
         TOTAL_SECONDS <= 1 ? 0 : secondsIntoDay / (TOTAL_SECONDS - 1);
     const inGameMinutes =
         DAY_START_MINUTES + Math.round(dayProgress * playableMinutes);
+    const hasReachedTimelineEnd =
+        !gameOver &&
+        dayIndex === TIMELINE_DATE_OBJECTS.length - 1 &&
+        secondsIntoDay >= TOTAL_SECONDS - 1;
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
         if (typeof window === 'undefined') {
@@ -229,9 +256,12 @@ export default function MainPage() {
 
         return createStartingWallet(loadStartingCash(DEFAULT_STARTING_CASH));
     });
-    const currentDateTime = new Date(baseDate);
-    currentDateTime.setHours(0, 0, 0, 0);
-    currentDateTime.setMinutes(inGameMinutes);
+    const currentDateTime = useMemo(() => {
+        const nextDateTime = new Date(baseDate);
+        nextDateTime.setHours(0, 0, 0, 0);
+        nextDateTime.setMinutes(inGameMinutes);
+        return nextDateTime;
+    }, [baseDate, inGameMinutes]);
 
     const gameHour = currentDateTime.getHours();
     const currentDateKey = toLocalDateStr(currentDateTime);
@@ -288,6 +318,13 @@ export default function MainPage() {
         price: number;
         timestamp: Date;
     }) => {
+        recordBuyAction(runStatsRef.current, {
+            symbol: details.symbol,
+            totalCost: details.totalCost,
+            units: details.units,
+            date: details.timestamp.toISOString(),
+        });
+        saveRunStats(runStatsRef.current);
         pushNotification(
             buildTradeNotification({
                 titleVerb: 'Bought',
@@ -308,6 +345,13 @@ export default function MainPage() {
         price: number;
         timestamp: Date;
     }) => {
+        recordSellAction(runStatsRef.current, {
+            symbol: details.symbol,
+            totalReceived: details.totalReceived,
+            units: details.units,
+            date: details.timestamp.toISOString(),
+        });
+        saveRunStats(runStatsRef.current);
         pushNotification(
             buildTradeNotification({
                 titleVerb: 'Sold',
@@ -330,10 +374,21 @@ export default function MainPage() {
     const handleCloseActiveEvent = useCallback(() => {
         if (!activeEvent) return;
 
+        const eventSnapshot = activeEventSnapshotRef.current;
+        if (eventSnapshot?.id === activeEvent) {
+            recordEventAction(runStatsRef.current, {
+                eventId: activeEvent,
+                valueDelta: getWalletTotalValue(walletRef.current) - eventSnapshot.walletValue,
+                date: currentDateTime.toISOString(),
+            });
+            saveRunStats(runStatsRef.current);
+            activeEventSnapshotRef.current = null;
+        }
+
         setTriggeredEvents(prev =>
             prev.includes(activeEvent) ? prev : [...prev, activeEvent]
         );
-    }, [activeEvent]);
+    }, [activeEvent, currentDateTime]);
 
     const handleGameOver = useCallback((reason: string) => {
         if (activeEvent) {
@@ -346,14 +401,14 @@ export default function MainPage() {
     }, [activeEvent]);
 
     useEffect(() => {
-        if (gameOver) return;
+        if (gameOver || hasReachedTimelineEnd) return;
 
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [gameOver]);
+    }, [gameOver, hasReachedTimelineEnd]);
 
     useEffect(() => {
         notificationsRef.current = notifications;
@@ -366,6 +421,18 @@ export default function MainPage() {
     useEffect(() => {
         walletRef.current = wallet;
     }, [wallet]);
+
+    useEffect(() => {
+        if (!activeEvent) {
+            activeEventSnapshotRef.current = null;
+            return;
+        }
+
+        activeEventSnapshotRef.current = {
+            id: activeEvent,
+            walletValue: getWalletTotalValue(walletRef.current),
+        };
+    }, [activeEvent]);
 
     useEffect(() => {
         const ownedStocks = walletRef.current.filter(item =>
@@ -425,6 +492,10 @@ export default function MainPage() {
     }, [triggeredEvents]);
 
     useEffect(() => {
+        runStatsRef.current = loadRunStats() ?? createRunStats(startingCash);
+    }, [startingCash]);
+
+    useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
     }, []);
@@ -445,43 +516,60 @@ export default function MainPage() {
         }
     }, [router]);
 
+    useEffect(() => {
+        if (endGameHandledRef.current || !hasReachedTimelineEnd) return;
+
+        endGameHandledRef.current = true;
+        saveGameOverSummary(
+            buildGameOverSummary(runStatsRef.current, walletRef.current, currentDateTime)
+        );
+
+        const redirectTimer = window.setTimeout(() => {
+            router.replace('/game-over');
+        }, END_GAME_REDIRECT_DELAY_MS);
+
+        return () => window.clearTimeout(redirectTimer);
+    }, [currentDateTime, hasReachedTimelineEnd, router]);
+
     if (!mounted) return null;
 
     return (
         <>
+            <EndGameOverlay visible={hasReachedTimelineEnd} />
+
             {/* GLOBAL EVENT MODAL */}
-            {activeEvent === 'dot-com-frenzy' && (
+            {!hasReachedTimelineEnd && activeEvent === 'dot-com-frenzy' && (
                 <DotComFrenzyModal
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'apply-for-college' && (
+            {!hasReachedTimelineEnd && activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'dot-com-reality-check' && (
+            {!hasReachedTimelineEnd && activeEvent === 'dot-com-reality-check' && (
                 <DotComRealityCheckModal
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'family-help' && (
+            {!hasReachedTimelineEnd && activeEvent === 'family-help' && (
                 <FamilyHelpModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'car-insurance' && (
+            {!hasReachedTimelineEnd && activeEvent === 'car-insurance' && (
                 <CarInsuranceModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'college-results' && (
+            {!hasReachedTimelineEnd && activeEvent === 'college-results' && (
                 <CollegeResultsModal
                     wallet={wallet}
                     setWallet={setWallet}
@@ -489,14 +577,14 @@ export default function MainPage() {
                 />
 
             )}
-            {activeEvent === 'college-party-invite' && (
+            {!hasReachedTimelineEnd && activeEvent === 'college-party-invite' && (
                 <CollegePartyInvite
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'party-consequences' && (
+            {!hasReachedTimelineEnd && activeEvent === 'party-consequences' && (
                 <PartyConsequencesModal
                     wallet={wallet}
                     setWallet={setWallet}
@@ -504,14 +592,14 @@ export default function MainPage() {
                     onGameOver={handleGameOver}
                 />
             )}
-            {activeEvent === 'parents-support' && (
+            {!hasReachedTimelineEnd && activeEvent === 'parents-support' && (
                 <ParentsSupportModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'car-crash' && (
+            {!hasReachedTimelineEnd && activeEvent === 'car-crash' && (
                 <CarCrashModal
                     wallet={wallet}
                     setWallet={setWallet}
@@ -519,14 +607,14 @@ export default function MainPage() {
                     onGameOver={handleGameOver}
                 />
             )}
-            {activeEvent === 'freelance-gig' && (
+            {!hasReachedTimelineEnd && activeEvent === 'freelance-gig' && (
                 <FreelanceGigModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {activeEvent === 'job-opportunity' && (
+            {!hasReachedTimelineEnd && activeEvent === 'job-opportunity' && (
                 <JobOpportunityModal
                     wallet={wallet}
                     setWallet={setWallet}
@@ -535,7 +623,9 @@ export default function MainPage() {
             )}
 
             {/* MAIN PAGE LAYOUT */}
-            <div className="flex min-h-screen w-full bg-[#f8fafc]">
+            <div className={`flex min-h-screen w-full bg-[#f8fafc] transition-all duration-700 ${
+                hasReachedTimelineEnd ? 'pointer-events-none select-none blur-[1px] saturate-90' : ''
+            }`}>
                 <Sidebar
                     wallet={wallet}
                     currentDate={currentDateTime}

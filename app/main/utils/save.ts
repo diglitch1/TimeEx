@@ -1,4 +1,5 @@
 import { clearGameOver, saveStartingCash, saveWallet } from './walletStorage';
+import { clearRunStats, resetRunStats } from './runStats';
 
 const RESETTABLE_STORAGE_KEYS = [
     'timeline',
@@ -36,5 +37,7 @@ export function resetGame(startingCash: number) {
 
     RESETTABLE_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
     clearGameOver();
+    clearRunStats();
+    resetRunStats(startingCash);
     localStorage.setItem('gameStarted', 'true');
 }
