@@ -175,8 +175,8 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
 
                 {/* ---------- HEADER / STORY ---------- */}
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-red-600">
-                        ! College Results !
+                    <h2 className="text-center text-2xl font-bold text-red-600">
+                        College Results
                     </h2>
 
                     {[

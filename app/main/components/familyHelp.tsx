@@ -77,8 +77,8 @@ export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
       animate-event-in">
 
                 {/* TITLE */}
-                <h2 className="text-2xl font-bold text-red-600 mb-3">
-                    ! Family Member in Need !
+                <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
+                    Family Member in Need
                 </h2>
 
                 <p className="text-lg mb-6">
