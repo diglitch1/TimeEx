@@ -127,8 +127,8 @@ export default function PartyConsequencesModal({
                 />
 
                 {/* TITLE */}
-                <h2 className="text-2xl font-bold text-red-600 mb-3">
-                    ! Party Consequences !
+                <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
+                    Party Consequences
                 </h2>
 
                 <p className="text-lg mb-6">

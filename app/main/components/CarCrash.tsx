@@ -91,8 +91,8 @@ export default function CarCrashModal({
 
 
                 {/* TITLE */}
-                <h2 className="text-2xl font-bold text-red-600 mb-3">
-                    ! Car Crash !
+                <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
+                    Car Crash
                 </h2>
 
                 {/* STORY */}

@@ -84,8 +84,8 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white w-[980px] rounded-2xl p-12 text-gray-900 shadow-xl animate-event-in">
-                <h2 className="text-2xl font-bold text-red-600 mb-4">
-                    ! Dot-Com Selloff Begins !
+                <h2 className="mb-4 text-center text-2xl font-bold text-red-600">
+                    Dot-Com Selloff Begins
                 </h2>
 
                 <div className="mb-6">
