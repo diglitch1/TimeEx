@@ -654,12 +654,20 @@ function MainPageContent() {
         const insuranceData = readStoredJson<{ insured: boolean }>('carInsurance');
         const hasInsurance = insuranceData?.insured === true;
 
-        const collegeResult = readStoredJson<{ result: string }>('collegeResult');
-        const isAccepted =
-            collegeResult?.result === 'accepted' || collegeResult?.result === 'accepted-flying';
+        const collegeResult = readStoredJson<{ result: string; fallback?: string | null }>('collegeResult');
+        const collegeResultKind = collegeResult?.result;
+        // accepted-flying = full scholarship, no tuition
         const collegeApp = readStoredJson<{ schoolId: string; schoolName?: string }>('collegeApplication');
-        const schoolId = collegeApp?.schoolId;
-        const monthlyTuition = schoolId ? (MONTHLY_TUITION[schoolId] ?? null) : null;
+        let tuitionSchoolId: string | null = null;
+        let tuitionSchoolName: string | null = null;
+        if (collegeResultKind === 'accepted') {
+            tuitionSchoolId = collegeApp?.schoolId ?? null;
+            tuitionSchoolName = collegeApp?.schoolName ?? tuitionSchoolId;
+        } else if (collegeResultKind === 'fallback') {
+            tuitionSchoolId = 'state-university';
+            tuitionSchoolName = 'State University';
+        }
+        const monthlyTuition = tuitionSchoolId ? (MONTHLY_TUITION[tuitionSchoolId] ?? null) : null;
 
         let totalOwed = 0;
         const billingParts: string[] = [];
@@ -693,7 +701,7 @@ function MainPageContent() {
             }
         }
 
-        if (isAccepted && schoolId && monthlyTuition !== null) {
+        if (tuitionSchoolId && monthlyTuition !== null) {
             const lastBilled = localStorage.getItem('billing_college_lastDate');
             if (!lastBilled) {
                 localStorage.setItem('billing_college_lastDate', currentDateKey);
@@ -707,7 +715,7 @@ function MainPageContent() {
                     pushNotification({
                         tone: 'loss',
                         title: 'Monthly tuition payment',
-                        message: `$${amount.toFixed(2)} deducted for ${months} month${months > 1 ? 's' : ''} of tuition at ${collegeApp?.schoolName ?? schoolId}.`,
+                        message: `$${amount.toFixed(2)} deducted for ${months} month${months > 1 ? 's' : ''} of tuition at ${tuitionSchoolName}.`,
                         timestampLabel: dayStartTimestampLabel,
                         sourceKey: `billing-college:${currentDateKey}`,
                     });
