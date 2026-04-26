@@ -123,7 +123,7 @@ export default function PartyConsequencesModal({
                 <img
                     src="/images/events/jail.png"
                     alt="Jail cell"
-                    className="w-full h-[380px] object-cover rounded-xl mb-6"
+                    className="event-story-image rounded-xl mb-5"
                 />
 
                 {/* TITLE */}

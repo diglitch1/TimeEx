@@ -80,7 +80,7 @@ export default function CollegePartyInvite({
                 <img
                     src={IMG_GANG}
                     alt="Students approaching you"
-                    className="w-full h-full object-cover rounded-xl mb-6"
+                    className="event-story-image rounded-xl mb-5"
                     draggable={false}
                 />
                 <p className="text-lg mb-6">

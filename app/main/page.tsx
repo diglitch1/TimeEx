@@ -640,7 +640,7 @@ function MainPageContent() {
             )}
 
             {/* MAIN PAGE LAYOUT */}
-            <div className={`flex min-h-screen w-full bg-[#f8fafc] transition-all duration-700 ${
+            <div className={`flex min-h-screen w-full overflow-x-hidden bg-[#f8fafc] transition-all duration-700 ${
                 hasReachedTimelineEnd ? 'pointer-events-none select-none blur-[1px] saturate-90' : ''
             }`}>
                 <Sidebar
@@ -649,8 +649,8 @@ function MainPageContent() {
                     scenarioId={scenarioId}
                     startingCash={startingCash}
                 />
-                <div className="flex-1 p-6">
-                    <div className="mx-auto w-full max-w-[1420px]">
+                <div className="min-w-0 flex-1 box-border p-4 xl:p-5">
+                    <div className="mx-auto w-full max-w-[1280px]">
                         <Timeline
                             timelineDates={TIMELINE_DATES}
                             markers={TIMELINE}
@@ -658,7 +658,7 @@ function MainPageContent() {
                             onJumpToDate={jumpToDate}
                         />
 
-                        <div className="mt-6">
+                        <div className="mt-5">
                             <MainPanel
                                 wallet={wallet}
                                 setWallet={setWallet}

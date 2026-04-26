@@ -73,7 +73,7 @@ export default function ParentsSupportModal({
                 <img
                     src="/images/events/car.png"
                     alt="New car"
-                    className="w-full h-[380px] object-cover rounded-xl mb-6"
+                    className="event-story-image rounded-xl mb-5"
                 />
                 <p className="text-lg mb-6">
                     Your parents notice you’ve been struggling lately with college,

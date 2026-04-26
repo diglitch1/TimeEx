@@ -121,3 +121,86 @@ body::before {
 .animate-float {
     animation: float 4s ease-in-out infinite;
 }
+
+@keyframes eventModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-event-in {
+    box-sizing: border-box;
+    max-width: min(900px, calc(100vw - 32px));
+    max-height: calc(100svh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    animation: eventModalIn 180ms ease-out both;
+}
+
+.news-event-modal {
+    width: min(900px, calc(100vw - 32px)) !important;
+    padding: clamp(1rem, 2.4svh, 1.75rem) !important;
+}
+
+.news-event-copy {
+    font-size: clamp(0.95rem, 1.7svh, 1.05rem);
+    line-height: 1.55;
+}
+
+.news-event-image {
+    display: block;
+    width: 100%;
+    height: clamp(240px, 42svh, 360px);
+    object-fit: contain;
+    background: #101010;
+}
+
+.news-dialogue {
+    bottom: clamp(6px, 1.1svh, 10px);
+}
+
+.news-dialogue-title {
+    font-size: clamp(0.95rem, 2svh, 1.1rem);
+    line-height: 1.2;
+}
+
+.news-dialogue-button {
+    min-height: clamp(86px, 13svh, 112px);
+}
+
+.news-dialogue-text {
+    font-size: clamp(1.25rem, 3svh, 1.6rem);
+    line-height: 1.35;
+}
+
+.event-story-image {
+    width: 100%;
+    height: clamp(220px, 36svh, 320px);
+    object-fit: cover;
+}
+
+@media (max-height: 820px) and (min-width: 900px) {
+    .animate-event-in {
+        border-radius: 1rem !important;
+        padding: 1.5rem !important;
+    }
+
+    .animate-event-in h2 {
+        margin-bottom: 0.65rem;
+        font-size: 1.35rem;
+        line-height: 1.2;
+    }
+
+    .animate-event-in p.text-lg {
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+}
