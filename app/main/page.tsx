@@ -33,6 +33,7 @@ import Timeline from './components/Timeline';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 import {
     getAssetsWithMarket,
+    findRowAtOrBefore,
     toLocalDateStr,
     type AssetWithData,
 } from './utils/marketData';
@@ -133,6 +134,67 @@ function buildDailyMoveNotification(
                 : `Your ${ownedUnits.toFixed(4)} shares ${positionVerb} ${formatNotificationCurrency(Math.abs(positionMoveUsd))} after a ${Math.abs(asset.change).toFixed(2)}% move.`,
         timestampLabel,
         sourceKey: `daily-move:${dateKey}:${asset.symbol}`,
+    };
+}
+
+function buildPeriodMoveNotification({
+    symbol,
+    ownedUnits,
+    fromPrice,
+    toPrice,
+    fromDateKey,
+    toDateKey,
+    timestampLabel,
+}: {
+    symbol: string;
+    ownedUnits: number;
+    fromPrice: number;
+    toPrice: number;
+    fromDateKey: string;
+    toDateKey: string;
+    timestampLabel: string;
+}): NotificationDraft {
+    const priceDelta = toPrice - fromPrice;
+    const positionDelta = priceDelta * ownedUnits;
+    const changePct = fromPrice !== 0 ? (priceDelta / fromPrice) * 100 : 0;
+
+    const calDays = Math.round(
+        (new Date(toDateKey + 'T00:00:00').getTime() - new Date(fromDateKey + 'T00:00:00').getTime())
+        / (1000 * 60 * 60 * 24)
+    );
+
+    const direction = priceDelta > 0 ? 'up' : priceDelta < 0 ? 'down' : 'flat';
+    const verb = positionDelta > 0 ? 'gained' : positionDelta < 0 ? 'lost' : 'held steady at';
+
+    let title: string;
+    let periodPhrase: string;
+
+    if (calDays <= 1) {
+        title = `${symbol} is ${direction} today`;
+        periodPhrase = `after today's move`;
+    } else {
+        const periodStr =
+            calDays < 30
+                ? `${calDays} days`
+                : calDays < 365
+                    ? `${Math.round(calDays / 30)} month${Math.round(calDays / 30) === 1 ? '' : 's'}`
+                    : `${(calDays / 365).toFixed(1)}y`;
+        title = `${symbol} ${direction} over ${periodStr}`;
+        const fromLabel = new Date(fromDateKey + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const toLabel   = new Date(toDateKey   + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        periodPhrase = `from ${fromLabel} → ${toLabel}`;
+    }
+
+    const message = priceDelta === 0
+        ? `Your ${ownedUnits.toFixed(4)} shares are unchanged at ${formatNotificationCurrency(toPrice)}.`
+        : `Your ${ownedUnits.toFixed(4)} shares ${verb} ${formatNotificationCurrency(Math.abs(positionDelta))} (${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%) ${periodPhrase}.`;
+
+    return {
+        tone: getPositionMoveTone(changePct),
+        title,
+        message,
+        timestampLabel,
+        sourceKey: `period-move:${fromDateKey}:${toDateKey}:${symbol}`,
     };
 }
 
@@ -239,6 +301,7 @@ function MainPageContent() {
     const [gameSeconds, setGameSeconds] = useState(readStoredGameSeconds);
     const [skipLabel, setSkipLabel] = useState<string | null>(null);
     const skipLabelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastSeenDateKeyRef = useRef<string>('');
 
 
     const dayIndex = Math.min(
@@ -506,6 +569,19 @@ function MainPageContent() {
     }, [activeEvent]);
 
     useEffect(() => {
+        // On first mount, record current date as baseline without firing notifications.
+        if (lastSeenDateKeyRef.current === '') {
+            lastSeenDateKeyRef.current = currentDateKey;
+            return;
+        }
+
+        const fromDateKey = lastSeenDateKeyRef.current;
+
+        // Always advance the baseline so the next transition compares from today.
+        lastSeenDateKeyRef.current = currentDateKey;
+
+        if (fromDateKey === currentDateKey) return;
+
         const ownedStocks = walletRef.current.filter(item =>
             item.id !== 'cash' &&
             item.id !== 'car' &&
@@ -514,23 +590,31 @@ function MainPageContent() {
 
         if (ownedStocks.length === 0 || gameOver) return;
 
-        const marketBySymbol = new Map(
-            getAssetsWithMarket(currentDateKey, 4)
-                .filter((asset): asset is AssetWithData => asset.hasData && asset.previous !== null)
-                .map(asset => [asset.symbol, asset])
+        const allAssets = getAssetsWithMarket(currentDateKey, 4);
+        const assetBySymbol = new Map(
+            allAssets
+                .filter((a): a is AssetWithData => a.hasData)
+                .map(a => [a.symbol, a])
         );
 
         ownedStocks.forEach(item => {
-            const asset = marketBySymbol.get(item.label);
+            const asset = assetBySymbol.get(item.label);
             if (!asset) return;
 
+            // Price at the last date the player was on — this spans the full skip.
+            const fromRow = findRowAtOrBefore(asset.data, fromDateKey);
+            if (!fromRow) return;
+
             pushNotification(
-                buildDailyMoveNotification(
-                    asset,
-                    item.units,
-                    currentDateKey,
-                    dayStartTimestampLabel
-                )
+                buildPeriodMoveNotification({
+                    symbol: item.label,
+                    ownedUnits: item.units,
+                    fromPrice: fromRow.close,
+                    toPrice: asset.price,
+                    fromDateKey,
+                    toDateKey: currentDateKey,
+                    timestampLabel: dayStartTimestampLabel,
+                })
             );
         });
     }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
@@ -561,7 +645,7 @@ function MainPageContent() {
 
         if (skipLabelTimerRef.current) clearTimeout(skipLabelTimerRef.current);
         setSkipLabel(`${period} → ${dest}`);
-        skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 2500);
+        skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 30_000);
     }, []);
 
     const skip30Seconds = () => {
