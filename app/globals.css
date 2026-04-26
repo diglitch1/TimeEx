@@ -202,13 +202,28 @@ body::before {
     line-height: 1.45;
 }
 
+.car-offer-modal {
+    width: min(720px, calc(100vw - 32px)) !important;
+    padding: clamp(0.9rem, 2.2svh, 1.5rem) !important;
+    overflow: hidden;
+}
+
+.car-offer-image {
+    width: 100%;
+    height: clamp(120px, 20svh, 170px);
+    object-fit: cover;
+    object-position: center 58%;
+    display: block;
+}
+
 @media (max-height: 820px) and (min-width: 900px) {
     .animate-event-in {
         border-radius: 1rem !important;
         padding: 1.5rem !important;
     }
 
-    .party-event-modal {
+    .party-event-modal,
+    .car-offer-modal {
         padding: clamp(0.8rem, 2svh, 1.25rem) !important;
     }
 
