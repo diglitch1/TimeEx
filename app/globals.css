@@ -133,6 +133,15 @@ body::before {
     }
 }
 
+@keyframes skipBadgeIn {
+    from { opacity: 0; transform: translateY(-5px) scale(0.94); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+.skip-badge {
+    animation: skipBadgeIn 0.22s ease-out both;
+}
+
 .animate-event-in {
     box-sizing: border-box;
     max-width: min(900px, calc(100vw - 32px));

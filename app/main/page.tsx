@@ -237,6 +237,8 @@ function MainPageContent() {
     const [cashBreakTick, setCashBreakTick] = useState(() => Date.now());
 
     const [gameSeconds, setGameSeconds] = useState(readStoredGameSeconds);
+    const [skipLabel, setSkipLabel] = useState<string | null>(null);
+    const skipLabelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
     const dayIndex = Math.min(
@@ -533,15 +535,51 @@ function MainPageContent() {
         });
     }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
 
+    const flashSkip = useCallback((fromDateStr: string, toDateStr: string) => {
+        const calDays = Math.round(
+            (new Date(toDateStr + 'T00:00:00').getTime() - new Date(fromDateStr + 'T00:00:00').getTime())
+            / (1000 * 60 * 60 * 24)
+        );
+        if (calDays <= 0) return;
+
+        let period: string;
+        if (calDays === 1) {
+            period = '+1 day';
+        } else if (calDays < 30) {
+            period = `+${calDays} days`;
+        } else if (calDays < 365) {
+            const months = Math.round(calDays / 30);
+            period = `+${months} month${months === 1 ? '' : 's'}`;
+        } else {
+            const yrs = (calDays / 365).toFixed(1);
+            period = `+${yrs}y`;
+        }
+
+        const dest = new Date(toDateStr + 'T00:00:00').toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+        });
+
+        if (skipLabelTimerRef.current) clearTimeout(skipLabelTimerRef.current);
+        setSkipLabel(`${period} → ${dest}`);
+        skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 2500);
+    }, []);
+
     const skip30Seconds = () => {
         if (activeEvent) return;
-
+        const newSeconds = gameSeconds + 30;
+        const newDayIdx = Math.min(Math.floor(newSeconds / TOTAL_SECONDS), TIMELINE_DATE_OBJECTS.length - 1);
+        if (newDayIdx > dayIndex) {
+            flashSkip(currentDateKey, TIMELINE_DATES[newDayIdx]);
+        }
         setGameSeconds(s => s + 30);
     };
 
     const skipToNextDay = () => {
         if (activeEvent) return;
-
+        const newDayIdx = Math.min(dayIndex + 1, TIMELINE_DATE_OBJECTS.length - 1);
+        if (newDayIdx > dayIndex) {
+            flashSkip(currentDateKey, TIMELINE_DATES[newDayIdx]);
+        }
         setGameSeconds(current => {
             const nextDayStart = (Math.floor(current / TOTAL_SECONDS) + 1) * TOTAL_SECONDS;
             const lastDayStart = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
@@ -551,17 +589,22 @@ function MainPageContent() {
 
     const skipToFinalMinute = () => {
         if (activeEvent) return;
-
+        const finalDayIdx = TIMELINE_DATE_OBJECTS.length - 1;
+        if (finalDayIdx > dayIndex) {
+            flashSkip(currentDateKey, TIMELINE_DATES[finalDayIdx]);
+        }
         setGameSeconds(current => Math.max(current, FINAL_MINUTE_START_SECONDS));
     };
 
     const jumpToDate = useCallback((dateStr: string) => {
         if (activeEvent) return;
-
         const idx = TIMELINE_DATES.indexOf(dateStr);
         if (idx === -1) return;
+        if (idx > dayIndex) {
+            flashSkip(currentDateKey, dateStr);
+        }
         setGameSeconds(idx * TOTAL_SECONDS);
-    }, [activeEvent]);
+    }, [activeEvent, dayIndex, currentDateKey, flashSkip]);
 
     useEffect(() => {
         saveWallet(wallet);
@@ -742,6 +785,7 @@ function MainPageContent() {
                             markers={TIMELINE}
                             currentDate={currentDateTime}
                             onJumpToDate={jumpToDate}
+                            skipFlash={skipLabel}
                         />
 
                         <div className="mt-5">
