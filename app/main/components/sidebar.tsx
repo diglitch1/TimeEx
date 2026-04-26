@@ -67,8 +67,8 @@ export default function Sidebar({
                     </div>
 
                     <div className="mt-4 rounded-[22px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-4">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
+                        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
+                            <div className="min-w-0">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
                                     Net Worth
                                 </p>
@@ -76,7 +76,7 @@ export default function Sidebar({
                                     {formatSidebarCurrency(totalValue)}
                                 </p>
                             </div>
-                            <div className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                            <div className={`ml-auto inline-flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
                                 gainLoss >= 0
                                     ? 'bg-emerald-100 text-emerald-700'
                                     : 'bg-red-100 text-red-700'
