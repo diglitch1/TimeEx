@@ -215,12 +215,27 @@ const DAY_START_MINUTES = 2 * 60;
 const DAY_END_MINUTES = (24 * 60) - 1;
 const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
-const FINAL_MINUTE_START_SECONDS =
-    (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS + Math.max(TOTAL_SECONDS - 60, 0);
+const FINAL_MINUTE_START_SECONDS = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
 const TIMELINE_STORAGE_KEY = 'timeline';
 const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
 const END_GAME_REDIRECT_DELAY_MS = 2200;
 const CASH_BREAK_SECONDS = 30;
+const BILLING_BREAK_SECONDS = 120;
+const MONTHLY_INSURANCE = 70;
+const MONTHLY_TUITION: Record<string, number> = {
+    'atlas': 700,
+    'ivy-tech': 600,
+    'northbridge': 500,
+    'state-university': 200,
+    'city-college': 150,
+    'community-college': 100,
+};
+
+function getMonthsElapsed(fromDateStr: string, toDateStr: string): number {
+    const fromParts = fromDateStr.split('-').map(Number);
+    const toParts = toDateStr.split('-').map(Number);
+    return (toParts[0] - fromParts[0]) * 12 + (toParts[1] - fromParts[1]);
+}
 
 function getWalletTotalValue(wallet: WalletItem[]) {
     return wallet.reduce((sum, item) => sum + item.usdValue, 0);
@@ -297,6 +312,12 @@ function MainPageContent() {
         deadline: number;
     } | null>(null);
     const [cashBreakTick, setCashBreakTick] = useState(() => Date.now());
+    const [billingBreak, setBillingBreak] = useState<{
+        reason: string;
+        totalOwed: number;
+        deadline: number;
+    } | null>(null);
+    const [billingBreakTick, setBillingBreakTick] = useState(() => Date.now());
 
     const [gameSeconds, setGameSeconds] = useState(readStoredGameSeconds);
     const [skipLabel, setSkipLabel] = useState<string | null>(null);
@@ -311,6 +332,7 @@ function MainPageContent() {
     const baseDate = TIMELINE_DATE_OBJECTS[dayIndex];
 
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
+    const isLastDay = dayIndex === TIMELINE_DATE_OBJECTS.length - 1;
     const playableMinutes = DAY_END_MINUTES - DAY_START_MINUTES;
     const dayProgress =
         TOTAL_SECONDS <= 1 ? 0 : secondsIntoDay / (TOTAL_SECONDS - 1);
@@ -318,8 +340,8 @@ function MainPageContent() {
         DAY_START_MINUTES + Math.round(dayProgress * playableMinutes);
     const hasReachedTimelineEnd =
         !gameOver &&
-        dayIndex === TIMELINE_DATE_OBJECTS.length - 1 &&
-        secondsIntoDay >= TOTAL_SECONDS - 1;
+        isLastDay &&
+        secondsIntoDay >= 60;
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
         if (typeof window === 'undefined') {
@@ -343,7 +365,9 @@ function MainPageContent() {
     dayStartTime.setHours(0, 0, 0, 0);
     dayStartTime.setMinutes(DAY_START_MINUTES);
     const dayStartTimestampLabel = formatNotificationTimestamp(dayStartTime);
-    const secondsLeft = TOTAL_SECONDS - secondsIntoDay;
+    const secondsLeft = isLastDay
+        ? Math.max(0, 60 - secondsIntoDay)
+        : TOTAL_SECONDS - secondsIntoDay;
 
     const attendedCollegeParty = readStoredDecision('collegeParty', 'attended');
     const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
@@ -451,6 +475,10 @@ function MainPageContent() {
     const cashBreakRemaining = cashBreakActive
         ? Math.max(0, Math.ceil((cashBreak.deadline - cashBreakTick) / 1000))
         : 0;
+    const billingBreakActive = billingBreak !== null && billingBreak.deadline > billingBreakTick;
+    const billingBreakRemaining = billingBreakActive
+        ? Math.max(0, Math.ceil((billingBreak.deadline - billingBreakTick) / 1000))
+        : 0;
     const eventModalOpen = activeEvent !== null && !cashBreakActive && !hasReachedTimelineEnd;
 
     const handleCloseActiveEvent = useCallback(() => {
@@ -502,13 +530,14 @@ function MainPageContent() {
 
     useEffect(() => {
         if (gameOver || hasReachedTimelineEnd || activeEvent) return;
+        if (billingBreak !== null && billingBreak.deadline > Date.now()) return;
 
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [activeEvent, gameOver, hasReachedTimelineEnd]);
+    }, [activeEvent, billingBreak, gameOver, hasReachedTimelineEnd]);
 
     useEffect(() => {
         if (!cashBreak || cashBreak.eventId !== activeEvent) return;
@@ -619,6 +648,118 @@ function MainPageContent() {
         });
     }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
 
+    useEffect(() => {
+        if (gameOver) return;
+
+        const insuranceData = readStoredJson<{ insured: boolean }>('carInsurance');
+        const hasInsurance = insuranceData?.insured === true;
+
+        const collegeResult = readStoredJson<{ result: string }>('collegeResult');
+        const isAccepted =
+            collegeResult?.result === 'accepted' || collegeResult?.result === 'accepted-flying';
+        const collegeApp = readStoredJson<{ schoolId: string; schoolName?: string }>('collegeApplication');
+        const schoolId = collegeApp?.schoolId;
+        const monthlyTuition = schoolId ? (MONTHLY_TUITION[schoolId] ?? null) : null;
+
+        let totalOwed = 0;
+        const billingParts: string[] = [];
+        const dateIso = new Date(currentDateKey + 'T00:00:00').toISOString();
+
+        if (hasInsurance) {
+            const lastBilled = localStorage.getItem('billing_insurance_lastDate');
+            if (!lastBilled) {
+                localStorage.setItem('billing_insurance_lastDate', currentDateKey);
+            } else {
+                const months = getMonthsElapsed(lastBilled, currentDateKey);
+                if (months > 0) {
+                    const amount = months * MONTHLY_INSURANCE;
+                    totalOwed += amount;
+                    billingParts.push(`car insurance (${months} mo x $${MONTHLY_INSURANCE})`);
+                    localStorage.setItem('billing_insurance_lastDate', currentDateKey);
+                    pushNotification({
+                        tone: 'loss',
+                        title: 'Monthly insurance payment',
+                        message: `$${amount.toFixed(2)} deducted for ${months} month${months > 1 ? 's' : ''} of car insurance.`,
+                        timestampLabel: dayStartTimestampLabel,
+                        sourceKey: `billing-insurance:${currentDateKey}`,
+                    });
+                    recordEventAction(runStatsRef.current, {
+                        eventId: 'billing-insurance',
+                        valueDelta: -amount,
+                        date: dateIso,
+                    });
+                    saveRunStats(runStatsRef.current);
+                }
+            }
+        }
+
+        if (isAccepted && schoolId && monthlyTuition !== null) {
+            const lastBilled = localStorage.getItem('billing_college_lastDate');
+            if (!lastBilled) {
+                localStorage.setItem('billing_college_lastDate', currentDateKey);
+            } else {
+                const months = getMonthsElapsed(lastBilled, currentDateKey);
+                if (months > 0) {
+                    const amount = months * monthlyTuition;
+                    totalOwed += amount;
+                    billingParts.push(`tuition (${months} mo x $${monthlyTuition})`);
+                    localStorage.setItem('billing_college_lastDate', currentDateKey);
+                    pushNotification({
+                        tone: 'loss',
+                        title: 'Monthly tuition payment',
+                        message: `$${amount.toFixed(2)} deducted for ${months} month${months > 1 ? 's' : ''} of tuition at ${collegeApp?.schoolName ?? schoolId}.`,
+                        timestampLabel: dayStartTimestampLabel,
+                        sourceKey: `billing-college:${currentDateKey}`,
+                    });
+                    recordEventAction(runStatsRef.current, {
+                        eventId: 'billing-college',
+                        valueDelta: -amount,
+                        date: dateIso,
+                    });
+                    saveRunStats(runStatsRef.current);
+                }
+            }
+        }
+
+        if (totalOwed <= 0) return;
+
+        const currentCash = walletRef.current.find(item => item.id === 'cash')?.units ?? 0;
+        const remainingCash = currentCash - totalOwed;
+
+        setWallet(prev =>
+            prev.map(item =>
+                item.id === 'cash'
+                    ? { ...item, units: item.units - totalOwed, usdValue: item.usdValue - totalOwed }
+                    : item
+            )
+        );
+
+        if (remainingCash < 0) {
+            const deadline = Date.now() + BILLING_BREAK_SECONDS * 1000;
+            setBillingBreak({ reason: billingParts.join(' + '), totalOwed, deadline });
+            setBillingBreakTick(Date.now());
+        }
+    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification, setWallet]);
+
+    useEffect(() => {
+        if (!billingBreak) return;
+
+        const tick = () => {
+            const now = Date.now();
+            setBillingBreakTick(now);
+            if (now >= billingBreak.deadline) {
+                setBillingBreak(null);
+                const cash = walletRef.current.find(item => item.id === 'cash')?.units ?? 0;
+                if (cash < 0) {
+                    handleGameOver(`Could not cover monthly payments: ${billingBreak.reason}`);
+                }
+            }
+        };
+
+        const interval = window.setInterval(tick, 250);
+        return () => window.clearInterval(interval);
+    }, [billingBreak, handleGameOver]);
+
     const flashSkip = useCallback((fromDateStr: string, toDateStr: string) => {
         const calDays = Math.round(
             (new Date(toDateStr + 'T00:00:00').getTime() - new Date(fromDateStr + 'T00:00:00').getTime())
@@ -649,7 +790,7 @@ function MainPageContent() {
     }, []);
 
     const skip30Seconds = () => {
-        if (activeEvent) return;
+        if (activeEvent || billingBreakActive) return;
         const newSeconds = gameSeconds + 30;
         const newDayIdx = Math.min(Math.floor(newSeconds / TOTAL_SECONDS), TIMELINE_DATE_OBJECTS.length - 1);
         if (newDayIdx > dayIndex) {
@@ -659,7 +800,7 @@ function MainPageContent() {
     };
 
     const skipToNextDay = () => {
-        if (activeEvent) return;
+        if (activeEvent || billingBreakActive) return;
         const newDayIdx = Math.min(dayIndex + 1, TIMELINE_DATE_OBJECTS.length - 1);
         if (newDayIdx > dayIndex) {
             flashSkip(currentDateKey, TIMELINE_DATES[newDayIdx]);
@@ -672,7 +813,7 @@ function MainPageContent() {
     };
 
     const skipToFinalMinute = () => {
-        if (activeEvent) return;
+        if (activeEvent || billingBreakActive) return;
         const finalDayIdx = TIMELINE_DATE_OBJECTS.length - 1;
         if (finalDayIdx > dayIndex) {
             flashSkip(currentDateKey, TIMELINE_DATES[finalDayIdx]);
@@ -681,14 +822,14 @@ function MainPageContent() {
     };
 
     const jumpToDate = useCallback((dateStr: string) => {
-        if (activeEvent) return;
+        if (activeEvent || billingBreakActive) return;
         const idx = TIMELINE_DATES.indexOf(dateStr);
         if (idx === -1) return;
         if (idx > dayIndex) {
             flashSkip(currentDateKey, dateStr);
         }
         setGameSeconds(idx * TOTAL_SECONDS);
-    }, [activeEvent, dayIndex, currentDateKey, flashSkip]);
+    }, [activeEvent, billingBreakActive, dayIndex, currentDateKey, flashSkip]);
 
     useEffect(() => {
         saveWallet(wallet);
@@ -750,7 +891,16 @@ function MainPageContent() {
     return (
         <>
             <EndGameOverlay visible={hasReachedTimelineEnd} />
-            {cashBreakActive ? (
+            {billingBreakActive ? (
+                <div className="fixed left-1/2 top-5 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-950 shadow-[0_18px_44px_rgba(15,23,42,0.18)]">
+                    <p className="text-sm font-semibold">
+                        {billingBreakRemaining}s to cover payments — ${billingBreak!.totalOwed.toFixed(2)} owed
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed">
+                        Your cash went negative after monthly deductions ({billingBreak!.reason}). Sell assets to bring your balance above zero or the game will end.
+                    </p>
+                </div>
+            ) : cashBreakActive ? (
                 <div className="fixed left-1/2 top-5 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950 shadow-[0_18px_44px_rgba(15,23,42,0.18)]">
                     <p className="text-sm font-semibold">
                         {cashBreakRemaining}s to raise cash
@@ -888,7 +1038,7 @@ function MainPageContent() {
                                 onDismissToast={handleDismissToast}
                                 onBuyNotification={handleBuyNotification}
                                 onSellNotification={handleSellNotification}
-                                timeControlsDisabled={activeEvent !== null}
+                                timeControlsDisabled={activeEvent !== null || billingBreakActive}
                             />
                         </div>
                     </div>
