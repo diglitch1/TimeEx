@@ -162,7 +162,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[900px] min-h-[520px] rounded-2xl p-8 shadow-xl relative animate-event-in">
+            <div className="overflow-hidden bg-white w-[900px] min-h-[520px] rounded-2xl p-8 shadow-xl relative animate-event-in">
 
                 {/* LOGO */}
                 {application?.logo && (

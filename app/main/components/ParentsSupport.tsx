@@ -63,7 +63,7 @@ export default function ParentsSupportModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="car-offer-modal bg-white rounded-2xl text-gray-900 shadow-xl animate-event-in">
+            <div className="car-offer-modal overflow-hidden bg-white rounded-2xl text-gray-900 shadow-xl animate-event-in">
 
                 {/* TITLE */}
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">

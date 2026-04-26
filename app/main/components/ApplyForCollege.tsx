@@ -139,7 +139,7 @@ export default function ApplyForCollegeModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="relative bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+            <div className="relative overflow-hidden bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
                 <button
                     type="button"
                     onClick={onRequestCashBreak}
@@ -293,7 +293,7 @@ export default function ApplyForCollegeModal({
             {/* DETAIL MODAL */}
             {detailSchool && (
                 <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
-                    <div className="bg-white w-[600px] rounded-2xl p-6 text-gray-900 shadow-xl animate-event-in border border-gray-300">
+                    <div className="overflow-hidden bg-white w-[600px] rounded-2xl p-6 text-gray-900 shadow-xl animate-event-in border border-gray-300">
 
                         {/* HEADER */}
                         <div className="flex items-center gap-4 mb-4">

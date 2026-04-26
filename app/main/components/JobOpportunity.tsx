@@ -282,7 +282,7 @@ export default function JobOpportunityModal({ wallet, setWallet, onClose }: Prop
     /* ---------- UI ---------- */
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[900px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+            <div className="overflow-hidden bg-white w-[900px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
 
                 {/* TOP BAR / BRAND */}
                 <div className="flex items-center gap-3 mb-6">

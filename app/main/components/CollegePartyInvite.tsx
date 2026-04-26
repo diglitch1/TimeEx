@@ -72,7 +72,7 @@ export default function CollegePartyInvite({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="party-event-modal relative bg-white rounded-2xl text-gray-900 shadow-xl animate-event-in">
+            <div className="party-event-modal relative overflow-hidden bg-white rounded-2xl text-gray-900 shadow-xl animate-event-in">
                 <button
                     type="button"
                     onClick={onRequestCashBreak}

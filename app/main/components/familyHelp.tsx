@@ -74,7 +74,7 @@ export default function FamilyHelpModal({wallet, setWallet, onClose, onRequestCa
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="relative bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl
+            <div className="relative overflow-hidden bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl
       animate-event-in">
                 <button
                     type="button"
