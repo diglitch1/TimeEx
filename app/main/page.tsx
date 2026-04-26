@@ -265,7 +265,6 @@ export default function MainPage() {
         return nextDateTime;
     }, [baseDate, inGameMinutes]);
 
-    const gameHour = currentDateTime.getHours();
     const currentDateKey = toLocalDateStr(currentDateTime);
     const dayStartTime = new Date(baseDate);
     dayStartTime.setHours(0, 0, 0, 0);
@@ -657,7 +656,6 @@ export default function MainPage() {
                                 setWallet={setWallet}
                                 currentDate={currentDateTime}
                                 secondsLeft={secondsLeft}
-                                gameHour={gameHour}
                                 onSkip30={skip30Seconds}
                                 onSkipDay={skipToNextDay}
                                 onSkipFinalMinute={skipToFinalMinute}

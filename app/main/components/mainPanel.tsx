@@ -153,7 +153,6 @@ export default function MainTradePanel({
     secondsLeft,
     wallet,
     setWallet,
-    gameHour,
     onSkip30,
     onSkipDay,
     onSkipFinalMinute,
@@ -169,7 +168,6 @@ export default function MainTradePanel({
     secondsLeft: number;
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
-    gameHour: number;
     onSkip30: () => void;
     onSkipDay: () => void;
     onSkipFinalMinute: () => void;
@@ -452,9 +450,6 @@ export default function MainTradePanel({
     const ownedUnits = ownedAsset?.units ?? 0;
     const ownedValue = ownedUnits * price;
     const tradeSide: 'buy' | 'sell' = side === 'sell' && ownedUnits <= 0 ? 'buy' : side;
-    const marketStatus = gameHour >= 9 && gameHour < 16
-        ? { label: 'Market Open', tone: 'bg-emerald-100 text-emerald-700 border-emerald-200' }
-        : { label: 'Market Closed', tone: 'bg-gray-100 text-gray-600 border-gray-200' };
     const amountValue = Number(amount);
     const unitsValue = Number(units);
     const validAmount = Number.isFinite(amountValue) ? amountValue : 0;
@@ -852,7 +847,7 @@ export default function MainTradePanel({
                             ? 'border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white'
                             : 'border-red-100 bg-gradient-to-br from-red-50 via-white to-white'
                     }`}>
-                        <div className="mb-4 flex items-start justify-between gap-3">
+                        <div className="mb-4">
                             <div>
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
                                     Trade Ticket
@@ -861,9 +856,6 @@ export default function MainTradePanel({
                                     {activeAsset?.symbol ?? 'Select Asset'}
                                 </p>
                             </div>
-                            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${marketStatus.tone}`}>
-                                {marketStatus.label}
-                            </span>
                         </div>
 
                         <div className="mb-4 grid grid-cols-2 gap-3">
