@@ -178,6 +178,12 @@ body::before {
     line-height: 1.55;
 }
 
+.news-event-frame {
+    overflow: hidden;
+    border-radius: 1rem;
+    background: #101010;
+}
+
 .news-event-image {
     display: block;
     width: 100%;
@@ -188,6 +194,10 @@ body::before {
 
 .news-dialogue {
     bottom: clamp(6px, 1.1svh, 10px);
+}
+
+.news-dialogue-panel {
+    border-radius: 0.9rem;
 }
 
 .news-dialogue-title {

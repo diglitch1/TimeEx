@@ -102,11 +102,11 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
                     </div>
 
                     <div className="relative">
-                        <div className="flex justify-center">
+                        <div className="news-event-frame flex justify-center">
                             <img
                                 src="/images/scenario-events/news-live2.png"
                                 alt="Live market news broadcast showing a tech selloff"
-                                className="news-event-image rounded-xl"
+                                className="news-event-image"
                             />
                         </div>
 
@@ -117,7 +117,7 @@ export default function DotComRealityCheckModal({ onClose }: Props) {
                                     : 'opacity-0 translate-y-6 pointer-events-none'
                             }`}
                         >
-                            <div className="bg-[#111111] border-4 border-[#2f2f2f] shadow-[inset_0_0_0_2px_#7a7a7a] rounded-sm overflow-hidden">
+                            <div className="news-dialogue-panel bg-[#111111] border-4 border-[#2f2f2f] shadow-[inset_0_0_0_2px_#7a7a7a] overflow-hidden">
                                 <div className="bg-[#1a1a1a] border-b-2 border-[#3a3a3a] px-4 py-2">
                                     <p
                                         className="news-dialogue-title text-white tracking-wide"
