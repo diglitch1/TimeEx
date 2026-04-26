@@ -1,6 +1,6 @@
 'use client';
 import DotComRealityCheckModal from './components/DotComRealityCheckModal';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WalletItem } from './utils/walletData';
 import {
     DEFAULT_STARTING_CASH,
@@ -202,6 +202,14 @@ function readStoredTriggeredEvents() {
 }
 
 export default function MainPage() {
+    return (
+        <Suspense fallback={null}>
+            <MainPageContent />
+        </Suspense>
+    );
+}
+
+function MainPageContent() {
     const [mounted, setMounted] = useState(false);
     const searchParams = useSearchParams();
     const [startingCash] = useState(() => loadStartingCash(DEFAULT_STARTING_CASH));

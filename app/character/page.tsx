@@ -14,6 +14,7 @@ type SelectionOption = {
     characterStats?: { label: string; value: string }[];
     scenarioTitle: string;
     scenarioImage: string;
+    scenarioPeriod?: string;
     scenarioFacts?: string[];
 };
 
@@ -107,7 +108,7 @@ function SelectionCard({
 
                     <div className="flex items-center gap-3">
                         <span className="rounded-full border border-[#B9D5EF] bg-white/80 px-4 py-2 text-sm font-semibold text-[#2C6CA3]">
-                            {option.playable ? "Available now" : "Locked"}
+                            {option.playable ? "Available" : "Locked"}
                         </span>
                         {option.playable && isSelected && (
                             <span className="rounded-full bg-[#1E6FBF] px-4 py-2 text-sm font-semibold text-white">
@@ -296,11 +297,10 @@ export default function CharacterPage() {
         <main className="min-h-screen bg-[#F7FAFC] text-[#0A355B]">
             <div className="border-b border-[#CFE3F8] bg-gradient-to-b from-[#EAF4FF] via-[#F2F8FF] to-[#F7FAFC] px-6 pt-12 pb-14 md:px-10">
                 <h1 className="text-center text-3xl font-bold md:text-4xl">
-                    Pick your character and scenario
+                    Character & Scenario
                 </h1>
                 <p className="mx-auto mt-4 max-w-3xl text-center text-[17px] leading-relaxed text-[#3F6D98]">
-                    Each box is one full starting path. Choose the character and the matched
-                    scenario together.
+                    Choose the character and the matched scenario together.
                 </p>
             </div>
 
