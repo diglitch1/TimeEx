@@ -153,6 +153,8 @@ const DAY_START_MINUTES = 2 * 60;
 const DAY_END_MINUTES = (24 * 60) - 1;
 const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
+const FINAL_MINUTE_START_SECONDS =
+    (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS + Math.max(TOTAL_SECONDS - 60, 0);
 const TIMELINE_STORAGE_KEY = 'timeline';
 const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
 const END_GAME_REDIRECT_DELAY_MS = 2200;
@@ -480,6 +482,10 @@ export default function MainPage() {
         });
     };
 
+    const skipToFinalMinute = () => {
+        setGameSeconds(current => Math.max(current, FINAL_MINUTE_START_SECONDS));
+    };
+
     useEffect(() => {
         saveWallet(wallet);
     }, [wallet]);
@@ -654,6 +660,7 @@ export default function MainPage() {
                                 gameHour={gameHour}
                                 onSkip30={skip30Seconds}
                                 onSkipDay={skipToNextDay}
+                                onSkipFinalMinute={skipToFinalMinute}
                                 notifications={notifications}
                                 activeToastIds={activeToastIds}
                                 historyOpen={historyOpen}

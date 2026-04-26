@@ -87,7 +87,7 @@ export default function GameOverPage() {
             summary
                 ? [
                     {
-                        label: 'Starting Money',
+                        label: 'Starting Capital',
                         value: formatCurrency(summary.startingCash),
                         iconSrc: '/images/endgame/starting_money.png',
                     },
@@ -97,12 +97,12 @@ export default function GameOverPage() {
                         iconSrc: '/images/endgame/final_balance.png',
                     },
                     {
-                        label: 'Tot Invested',
+                        label: 'Total Invested',
                         value: formatCurrency(summary.totalInvestedAmount),
                         iconSrc: '/images/endgame/tot_invested.png',
                     },
                     {
-                        label: 'Tot Spent On Events',
+                        label: 'Total Spent On Events',
                         value: formatCurrency(summary.moneySpentOnEvents),
                         iconSrc: '/images/endgame/tot_spent_on_events.png',
                     },
@@ -140,11 +140,11 @@ export default function GameOverPage() {
                             priority
                         />
                         <p className="mt-1 text-sm font-medium text-[#23496C] md:text-[15px]">
-                            Your journey through the timeline has come to an end.
+                            You successfully survived the dot-com bubble. Here are your final stats.
                         </p>
                         {summary ? (
                             <p className="mt-3 text-sm font-medium text-[#335B7E]">
-                                Completed on {formatDate(summary.completedAt)}
+                                Run completed on {formatDate(summary.completedAt)}
                             </p>
                         ) : null}
                     </div>

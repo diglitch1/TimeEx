@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-    --background: #ffffff;
+    --background: #f8fafc;
     --foreground: #171717;
 }
 @keyframes pixelFadeIn {
@@ -25,15 +25,35 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
+        --background: #f8fafc;
+        --foreground: #171717;
     }
 }
 
+html {
+    min-height: 100%;
+    background: var(--background) !important;
+    color-scheme: light;
+    overscroll-behavior-y: none;
+}
+
 body {
-    background: var(--background);
+    position: relative;
+    min-height: 100%;
+    margin: 0;
+    background: var(--background) !important;
     color: var(--foreground);
     font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    overscroll-behavior-y: none;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: var(--background);
+    pointer-events: none;
 }
 
 .guardian-article {

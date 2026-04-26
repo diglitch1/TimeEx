@@ -150,6 +150,7 @@ export default function MainTradePanel({
     gameHour,
     onSkip30,
     onSkipDay,
+    onSkipFinalMinute,
     notifications,
     activeToastIds,
     historyOpen,
@@ -165,6 +166,7 @@ export default function MainTradePanel({
     gameHour: number;
     onSkip30: () => void;
     onSkipDay: () => void;
+    onSkipFinalMinute: () => void;
     notifications: GameNotification[];
     activeToastIds: string[];
     historyOpen: boolean;
@@ -494,9 +496,9 @@ export default function MainTradePanel({
                     <button
                         onClick={onSkip30}
                         className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 cursor-pointer"
-                        title="Skip 30 seconds"
+                        title="Reduce remaining time by 30 seconds"
                     >
-                        +30s
+                        -30 sec
                     </button>
 
                     <button
@@ -505,6 +507,14 @@ export default function MainTradePanel({
                         title="Skip to next day"
                     >
                         Next Day
+                    </button>
+
+                    <button
+                        onClick={onSkipFinalMinute}
+                        className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-400 cursor-pointer"
+                        title="Skip to one minute before the game ends"
+                    >
+                        End -1m
                     </button>
 
                     <NotificationCenter
