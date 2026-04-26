@@ -181,14 +181,35 @@ body::before {
 
 .event-story-image {
     width: 100%;
-    height: clamp(220px, 36svh, 320px);
+    height: clamp(130px, 26svh, 260px);
     object-fit: cover;
+}
+
+.party-event-modal {
+    width: min(720px, calc(100vw - 32px)) !important;
+    padding: clamp(0.9rem, 2.2svh, 1.4rem) !important;
+    overflow: hidden;
+}
+
+.party-event-image {
+    width: 100%;
+    height: clamp(110px, 22svh, 190px);
+    object-fit: cover;
+}
+
+.party-event-copy {
+    font-size: clamp(0.9rem, 1.8svh, 1rem);
+    line-height: 1.45;
 }
 
 @media (max-height: 820px) and (min-width: 900px) {
     .animate-event-in {
         border-radius: 1rem !important;
         padding: 1.5rem !important;
+    }
+
+    .party-event-modal {
+        padding: clamp(0.8rem, 2svh, 1.25rem) !important;
     }
 
     .animate-event-in h2 {
@@ -201,6 +222,16 @@ body::before {
         margin-bottom: 1rem;
         font-size: 1rem;
         line-height: 1.5;
+    }
+
+    .animate-event-in button.rounded-full {
+        padding-top: 0.65rem !important;
+        padding-bottom: 0.65rem !important;
+        font-size: 1rem !important;
+    }
+
+    .event-story-image {
+        height: clamp(120px, 24svh, 220px);
     }
 
 }
