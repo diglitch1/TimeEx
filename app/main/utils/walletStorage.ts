@@ -9,7 +9,7 @@ export const WALLET_KEY = 'timeex_wallet';
 export const LEGACY_WALLET_KEY = 'wallet';
 export const STARTING_CASH_KEY = 'timeex_starting_cash';
 export const GAME_OVER_KEY = 'gameOver';
-export const DEFAULT_STARTING_CASH = 7000;
+export const DEFAULT_STARTING_CASH = 5000;
 
 function isWalletItem(value: unknown): value is WalletItem {
     if (!value || typeof value !== 'object') return false;

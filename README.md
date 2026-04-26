@@ -15,7 +15,7 @@
 
 TimeEx turns financial history into a playable experience. Each run begins by choosing a character and stepping into a historical market scenario, combining investing, narrative choices, and timed events in one game loop.
 
-The current prototype follows **Kira Light** through the **dot-com bubble** with **$7,000** in starting capital, but the project is designed to expand with more playable characters and more historical scenarios over time.
+The current prototype follows **Kira Light** through the **dot-com bubble** with **$5,000** in starting capital, but the project is designed to expand with more playable characters and more historical scenarios over time.
 
 The project mixes **historical market data**, **narrative scenario framing**, **portfolio management**, and **decision-based events** into one experience. Instead of only reading about market history, the player lives through it.
 

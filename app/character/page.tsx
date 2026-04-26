@@ -29,7 +29,7 @@ const SELECTION_OPTIONS: SelectionOption[] = [
         characterStats: [
             { label: "Age", value: "18" },
             { label: "Occupation", value: "Student" },
-            { label: "Starting capital", value: "$7,000" },
+            { label: "Starting capital", value: "$5,000" },
         ],
         scenarioTitle: "Dot-com Bubble",
         scenarioImage: "/images/dotcom.jpeg",
