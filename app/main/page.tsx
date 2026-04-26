@@ -379,6 +379,7 @@ function MainPageContent() {
         if (triggeredEvents.includes(event.id)) return false;
         return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig);
     })?.id ?? null;
+    const eventModalOpen = activeEvent !== null && !hasReachedTimelineEnd;
 
     const handleCloseActiveEvent = useCallback(() => {
         if (!activeEvent) return;
@@ -422,6 +423,22 @@ function MainPageContent() {
 
         return () => clearInterval(interval);
     }, [gameOver, hasReachedTimelineEnd]);
+
+    useEffect(() => {
+        if (!eventModalOpen) return;
+
+        const { body, documentElement } = document;
+        const previousBodyOverflow = body.style.overflow;
+        const previousHtmlOverflow = documentElement.style.overflow;
+
+        body.style.overflow = 'hidden';
+        documentElement.style.overflow = 'hidden';
+
+        return () => {
+            body.style.overflow = previousBodyOverflow;
+            documentElement.style.overflow = previousHtmlOverflow;
+        };
+    }, [eventModalOpen]);
 
     useEffect(() => {
         notificationsRef.current = notifications;
