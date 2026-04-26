@@ -57,11 +57,8 @@ export default function Sidebar({
                             />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
-                                Portfolio Terminal
-                            </p>
                             <p className="text-xl font-semibold tracking-tight text-gray-950">
-                                TimeEx
+                                Kira Light
                             </p>
                         </div>
                     </div>
