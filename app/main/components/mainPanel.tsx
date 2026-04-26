@@ -42,6 +42,8 @@ type TradeOutcome =
         error: string;
     };
 
+const TRADE_UNIT_EPSILON = 0.0001;
+
 function executeTrade({
     wallet,
     symbol,
@@ -105,11 +107,15 @@ function executeTrade({
         };
     }
 
-    if (!position || position.units < unitAmount) {
+    const sellUnits = position && Math.abs(unitAmount - position.units) <= TRADE_UNIT_EPSILON
+        ? position.units
+        : unitAmount;
+
+    if (!position || sellUnits > position.units) {
         return { error: 'Not enough asset' };
     }
 
-    const cashReceived = unitAmount * price;
+    const cashReceived = sellUnits * price;
 
     const nextWallet = wallet
         .map(item => {
@@ -123,7 +129,7 @@ function executeTrade({
             }
 
             if (item.label === symbol) {
-                const nextUnits = item.units - unitAmount;
+                const nextUnits = item.units - sellUnits;
                 return {
                     ...item,
                     units: nextUnits,
@@ -137,7 +143,7 @@ function executeTrade({
 
     return {
         nextWallet,
-        units: unitAmount,
+        units: sellUnits,
         totalValue: cashReceived,
     };
 }
@@ -453,8 +459,14 @@ export default function MainTradePanel({
     const unitsValue = Number(units);
     const validAmount = Number.isFinite(amountValue) ? amountValue : 0;
     const validUnits = Number.isFinite(unitsValue) ? unitsValue : 0;
+    const sellUnitsForValidation =
+        tradeSide === 'sell' && Math.abs(validUnits - ownedUnits) <= TRADE_UNIT_EPSILON
+            ? ownedUnits
+            : validUnits;
     const estimatedValue = tradeSide === 'buy' ? validAmount : validUnits * price;
-    const canAffordTrade = tradeSide === 'buy' ? validAmount > 0 && validAmount <= cashBalance : validUnits > 0 && validUnits <= ownedUnits;
+    const canAffordTrade = tradeSide === 'buy'
+        ? validAmount > 0 && validAmount <= cashBalance
+        : sellUnitsForValidation > 0 && sellUnitsForValidation <= ownedUnits;
     const isTradeReady = hasActiveData && canAffordTrade;
 
     const applyBuyPreset = (preset: number) => {
@@ -468,7 +480,7 @@ export default function MainTradePanel({
 
     const applySellPreset = (ratio: number) => {
         if (!price || ownedUnits <= 0) return;
-        const nextUnits = ownedUnits * ratio;
+        const nextUnits = ratio === 1 ? ownedUnits : ownedUnits * ratio;
         lastEdited.current = 'units';
         setUnits(nextUnits.toFixed(4));
         setAmount((nextUnits * price).toFixed(2));
