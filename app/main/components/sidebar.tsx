@@ -67,7 +67,7 @@ export default function Sidebar({
                     </div>
 
                     <div className="mt-4 rounded-[22px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-4">
-                        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
+                        <div>
                             <div className="min-w-0">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
                                     Net Worth
@@ -75,14 +75,14 @@ export default function Sidebar({
                                 <p className="mt-1 text-[2.15rem] font-semibold tracking-tight text-gray-950">
                                     {formatSidebarCurrency(totalValue)}
                                 </p>
-                            </div>
-                            <div className={`ml-auto inline-flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
-                                gainLoss >= 0
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-red-100 text-red-700'
-                            }`}>
-                                {gainLoss >= 0 ? '+' : '-'}
-                                {formatSidebarCurrency(Math.abs(gainLoss))}
+                                <div className={`mt-2 inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
+                                    gainLoss >= 0
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {gainLoss >= 0 ? '+' : '-'}
+                                    {formatSidebarCurrency(Math.abs(gainLoss))}
+                                </div>
                             </div>
                         </div>
 
