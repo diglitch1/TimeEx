@@ -140,7 +140,7 @@ export default function GameOverPage() {
                             priority
                         />
                         <p className="mt-1 text-sm font-medium text-[#23496C] md:text-[15px]">
-                            You successfully survived the dot-com bubble. Here are your final stats.
+                            Congratulations! You successfully survived the dot-com bubble. Here are your final stats.
                         </p>
                         {summary ? (
                             <p className="mt-3 text-sm font-medium text-[#335B7E]">
