@@ -14,7 +14,6 @@ type SelectionOption = {
     characterStats?: { label: string; value: string }[];
     scenarioTitle: string;
     scenarioImage: string;
-    scenarioPeriod: string;
     scenarioFacts?: string[];
 };
 
@@ -50,7 +49,6 @@ const SELECTION_OPTIONS: SelectionOption[] = [
         characterImage: "/images/man.jpeg",
         scenarioTitle: "Future Scenario",
         scenarioImage: "/images/IMG.png",
-        scenarioPeriod: "Coming soon",
     },
     {
         id: "C-pandemic",
@@ -61,7 +59,6 @@ const SELECTION_OPTIONS: SelectionOption[] = [
         characterImage: "/images/man.jpeg",
         scenarioTitle: "Future Scenario",
         scenarioImage: "/images/IMG.png",
-        scenarioPeriod: "Coming soon",
     },
 ];
 
@@ -200,7 +197,7 @@ function SelectionCard({
                             </p>
                         </div>
 
-                        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
                             <div className={`rounded-2xl border border-[#D9E9F8] p-4 md:p-5 ${sectionTone}`}>
                                 {option.playable && option.scenarioFacts ? (
                                     <div className="space-y-3">
@@ -220,7 +217,7 @@ function SelectionCard({
                                 )}
                             </div>
 
-                            <div className="relative w-full">
+                            <div className="relative mx-auto w-full max-w-[220px]">
                                 <div
                                     className={`
                                         relative aspect-[4/3] overflow-hidden rounded-2xl border ${imageTone}
