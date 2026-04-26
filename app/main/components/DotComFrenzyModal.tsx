@@ -117,7 +117,7 @@ export default function DotComFrenzyModal({ onClose }: Props) {
                             }`}
                         >
                             <div className="news-dialogue-panel bg-[#111111] border-4 border-[#2f2f2f] shadow-[inset_0_0_0_2px_#7a7a7a] overflow-hidden">
-                                <div className="bg-[#1a1a1a] border-b-2 border-[#3a3a3a] px-4 py-2">
+                                <div className="news-dialogue-heading bg-[#1a1a1a] border-b-2 border-[#3a3a3a] px-4 py-2">
                                     <p
                                         className="news-dialogue-title text-white tracking-wide"
                                         style={{

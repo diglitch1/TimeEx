@@ -171,6 +171,8 @@ body::before {
 .news-event-modal {
     width: min(900px, calc(100vw - 32px)) !important;
     padding: clamp(1rem, 2.4svh, 1.75rem) !important;
+    border-radius: 1.5rem !important;
+    overflow: hidden;
 }
 
 .news-event-copy {
@@ -180,8 +182,10 @@ body::before {
 
 .news-event-frame {
     overflow: hidden;
-    border-radius: 1rem;
+    border-radius: 1.4rem;
     background: #101010;
+    clip-path: inset(0 round 1.4rem);
+    isolation: isolate;
 }
 
 .news-event-image {
@@ -190,6 +194,8 @@ body::before {
     height: clamp(240px, 42svh, 360px);
     object-fit: contain;
     background: #101010;
+    border-radius: inherit;
+    clip-path: inset(0 round 1.4rem);
 }
 
 .news-dialogue {
@@ -197,7 +203,15 @@ body::before {
 }
 
 .news-dialogue-panel {
-    border-radius: 0.9rem;
+    border-radius: 1.15rem;
+    clip-path: inset(0 round 1.15rem);
+    background-clip: padding-box;
+}
+
+.news-dialogue-heading {
+    border-top-left-radius: calc(1.15rem - 4px);
+    border-top-right-radius: calc(1.15rem - 4px);
+    overflow: hidden;
 }
 
 .news-dialogue-title {
@@ -207,6 +221,9 @@ body::before {
 
 .news-dialogue-button {
     min-height: clamp(86px, 13svh, 112px);
+    border-bottom-left-radius: calc(1.15rem - 4px);
+    border-bottom-right-radius: calc(1.15rem - 4px);
+    overflow: hidden;
 }
 
 .news-dialogue-text {
