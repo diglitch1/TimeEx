@@ -40,12 +40,12 @@ export default function Sidebar({
     );
 
     const gainLoss = totalValue - startingCash;
-    const panelClass = 'rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
+    const panelClass = 'rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
     const sectionLabelClass = 'mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-gray-400';
 
     return (
-        <aside className="w-[416px] shrink-0 border-r border-gray-200 bg-[#f8fafc] px-5 py-6 text-base">
-            <div className="flex h-full flex-col gap-5">
+        <aside className="w-[360px] shrink-0 border-r border-gray-200 bg-[#f8fafc] px-4 py-5 text-sm">
+            <div className="flex h-full flex-col gap-4">
                 <div className={panelClass}>
                     <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-gray-200 bg-white">
@@ -60,46 +60,46 @@ export default function Sidebar({
                             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
                                 Portfolio Terminal
                             </p>
-                            <p className="text-2xl font-semibold tracking-tight text-gray-950">
+                            <p className="text-xl font-semibold tracking-tight text-gray-950">
                                 TimeEx
                             </p>
                         </div>
                     </div>
 
-                    <div className="mt-5 rounded-[24px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-5">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
+                    <div className="mt-4 rounded-[22px] border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-white p-4">
+                        <div>
+                            <div className="min-w-0">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
                                     Net Worth
                                 </p>
-                                <p className="mt-1 text-[2.6rem] font-semibold tracking-tight text-gray-950">
+                                <p className="mt-1 text-[2.15rem] font-semibold tracking-tight text-gray-950">
                                     {formatSidebarCurrency(totalValue)}
                                 </p>
-                            </div>
-                            <div className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                                gainLoss >= 0
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-red-100 text-red-700'
-                            }`}>
-                                {gainLoss >= 0 ? '+' : '-'}
-                                {formatSidebarCurrency(Math.abs(gainLoss))}
+                                <div className={`mt-2 inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
+                                    gainLoss >= 0
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {gainLoss >= 0 ? '+' : '-'}
+                                    {formatSidebarCurrency(Math.abs(gainLoss))}
+                                </div>
                             </div>
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-3">
-                            <div className="rounded-[18px] border border-gray-200 bg-white p-4">
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-3">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
                                     Starting Cash
                                 </p>
-                                <p className="mt-1 text-xl font-semibold text-gray-950">
+                                <p className="mt-1 text-lg font-semibold text-gray-950">
                                     {formatSidebarCurrency(startingCash)}
                                 </p>
                             </div>
-                            <div className="rounded-[18px] border border-gray-200 bg-white p-4">
+                            <div className="rounded-[18px] border border-gray-200 bg-white p-3">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
                                     Holdings
                                 </p>
-                                <p className="mt-1 text-xl font-semibold text-gray-950">
+                                <p className="mt-1 text-lg font-semibold text-gray-950">
                                     {wallet.length}
                                 </p>
                             </div>
@@ -114,12 +114,12 @@ export default function Sidebar({
                             {wallet.map(item => (
                                 <div
                                     key={item.id}
-                                    className="flex items-center gap-4 rounded-[22px] border border-gray-200 bg-gradient-to-r from-gray-50 to-white px-4 py-4"
+                                    className="flex items-center gap-3 rounded-[20px] border border-gray-200 bg-gradient-to-r from-gray-50 to-white px-3 py-3"
                                 >
                                     <WalletIcon label={item.label} />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
-                                            <p className="truncate text-base font-semibold text-gray-950">
+                                            <p className="truncate text-sm font-semibold text-gray-950">
                                                 {item.label}
                                             </p>
                                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
@@ -133,7 +133,7 @@ export default function Sidebar({
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-base font-semibold text-gray-950">
+                                        <p className="text-sm font-semibold text-gray-950">
                                             {formatSidebarCurrency(item.usdValue)}
                                         </p>
                                         <p className="mt-1 text-xs font-medium text-gray-400">
@@ -156,12 +156,12 @@ export default function Sidebar({
                                         symbol={marketMover.symbol}
                                         name={marketMover.name}
                                         size={40}
-                                        className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border ${
+                                        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border ${
                                             marketMover.positive
                                                 ? 'border-emerald-200 bg-emerald-50'
                                                 : 'border-red-200 bg-red-50'
                                         }`}
-                                        imageClassName="h-10 w-10 object-contain"
+                                        imageClassName="h-9 w-9 object-contain"
                                         fallbackTextClassName="text-sm"
                                     />
 
@@ -170,7 +170,7 @@ export default function Sidebar({
                                             Featured Stock
                                         </p>
                                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                                            <p className="truncate text-xl font-semibold tracking-tight text-gray-950">
+                                            <p className="truncate text-lg font-semibold tracking-tight text-gray-950">
                                                 {marketMover.name}
                                             </p>
                                             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -178,7 +178,7 @@ export default function Sidebar({
                                             </span>
                                         </div>
                                         <div className="mt-3 flex flex-wrap items-center gap-3">
-                                            <p className="text-3xl font-semibold tracking-tight text-gray-950">
+                                            <p className="text-2xl font-semibold tracking-tight text-gray-950">
                                                 {formatSidebarCurrency(marketMover.price)}
                                             </p>
                                             <span className={`rounded-full px-3 py-1 text-sm font-semibold ${
@@ -193,12 +193,12 @@ export default function Sidebar({
                                     </div>
                                 </div>
 
-                                <div className={`mt-5 rounded-[24px] border p-3 ${
+                                <div className={`mt-4 rounded-[22px] border p-3 ${
                                     marketMover.positive
                                         ? 'border-emerald-100 bg-gradient-to-b from-emerald-50 via-white to-white'
                                         : 'border-red-100 bg-gradient-to-b from-red-50 via-white to-white'
                                 }`}>
-                                    <div className="h-[160px] overflow-hidden rounded-[20px] bg-white px-3 py-3">
+                                    <div className="h-[128px] overflow-hidden rounded-[18px] bg-white px-3 py-3">
                                         <MarketMoverChart
                                             data={marketMover.spark}
                                             positive={marketMover.positive}

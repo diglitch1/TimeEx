@@ -163,6 +163,7 @@ export default function MainTradePanel({
     onDismissToast,
     onBuyNotification,
     onSellNotification,
+    timeControlsDisabled,
 }: {
     currentDate: Date;
     secondsLeft: number;
@@ -190,6 +191,7 @@ export default function MainTradePanel({
         price: number;
         timestamp: Date;
     }) => void;
+    timeControlsDisabled?: boolean;
 }) {
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -484,10 +486,10 @@ export default function MainTradePanel({
 
 
     return (
-        <div className="flex-1 w-full bg-transparent px-4 py-4">
+        <div className="min-w-0 flex-1 w-full bg-transparent px-3 py-3">
 
             {/* TIME INFO */}
-            <div className="mb-10 flex items-center justify-between">
+            <div className="mb-8 flex items-center justify-between">
                 <div>
                     <p className="text-lg text-gray-800">
                         Time now:{' '}
@@ -502,24 +504,39 @@ export default function MainTradePanel({
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onSkip30}
-                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 cursor-pointer"
-                        title="Reduce remaining time by 30 seconds"
+                        disabled={timeControlsDisabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            timeControlsDisabled
+                                ? 'cursor-not-allowed bg-blue-300'
+                                : 'cursor-pointer bg-blue-600 hover:bg-blue-500'
+                        }`}
+                        title={timeControlsDisabled ? 'Complete the current scenario first' : 'Reduce remaining time by 30 seconds'}
                     >
                         -30 sec
                     </button>
 
                     <button
                         onClick={onSkipDay}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 cursor-pointer"
-                        title="Skip to next day"
+                        disabled={timeControlsDisabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            timeControlsDisabled
+                                ? 'cursor-not-allowed bg-slate-400'
+                                : 'cursor-pointer bg-slate-900 hover:bg-slate-800'
+                        }`}
+                        title={timeControlsDisabled ? 'Complete the current scenario first' : 'Skip to next day'}
                     >
                         Next Day
                     </button>
 
                     <button
                         onClick={onSkipFinalMinute}
-                        className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-400 cursor-pointer"
-                        title="Skip to one minute before the game ends"
+                        disabled={timeControlsDisabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            timeControlsDisabled
+                                ? 'cursor-not-allowed bg-amber-300'
+                                : 'cursor-pointer bg-amber-500 hover:bg-amber-400'
+                        }`}
+                        title={timeControlsDisabled ? 'Complete the current scenario first' : 'Skip to one minute before the game ends'}
                     >
                         End -1m
                     </button>
@@ -536,7 +553,7 @@ export default function MainTradePanel({
 
             {/* ASSET CAROUSEL */}
             <div className="w-full">
-                <div className="relative rounded-[28px] border border-gray-200 bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="relative rounded-[24px] border border-gray-200 bg-white px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                     <div className="mb-4 flex items-center justify-between gap-4 px-1">
                         <div>
                             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
@@ -551,7 +568,7 @@ export default function MainTradePanel({
                         </p>
                     </div>
 
-                    <div className="flex gap-5 overflow-x-auto px-1 pb-1">
+                    <div className="flex gap-4 overflow-x-auto px-1 pb-1">
                         {featuredAssets.map(asset => {
                             const isActive = activeAsset !== null && asset.symbol === activeAsset.symbol;
 
@@ -560,7 +577,7 @@ export default function MainTradePanel({
                                     key={asset.symbol}
                                     onClick={() => handleSelectAsset(asset)}
 
-                                    className={`min-w-[300px] cursor-pointer rounded-[24px] border px-6 py-5 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
+                                    className={`min-w-[260px] cursor-pointer rounded-[22px] border px-5 py-4 transition shadow-[0_8px_24px_rgba(15,23,42,0.04)]
                     ${isActive
                                         ? 'border-blue-500 bg-blue-50/80'
                                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70'}
@@ -574,7 +591,7 @@ export default function MainTradePanel({
                                             <p className="truncate text-lg font-semibold text-gray-950">
                                                 {asset.name}
                                             </p>
-                                            <p className="text-3xl font-semibold tracking-tight text-gray-950">
+                                            <p className="text-2xl font-semibold tracking-tight text-gray-950">
                                                 {asset.hasData ? formatCurrency(asset.price) : '—'}
                                             </p>
                                             <p className={`text-sm font-semibold ${
@@ -588,7 +605,7 @@ export default function MainTradePanel({
                                         </div>
 
                                         {asset.hasData && (
-                                            <div className="w-28 shrink-0 pt-3">
+                                            <div className="w-24 shrink-0 pt-3">
                                                 <MiniSparkline
                                                     data={asset.spark}
                                                     positive={asset.positive}
@@ -603,7 +620,7 @@ export default function MainTradePanel({
                 </div>
             </div>
 
-            <div className="mt-6 rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="mt-5 rounded-[24px] border border-gray-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                 <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 md:flex-row md:items-end md:justify-between">
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">
@@ -734,11 +751,11 @@ export default function MainTradePanel({
             </div>
             {/* ================= TRADE PANEL ================= */}
 
-            <div className="mt-10 grid grid-cols-[minmax(0,1fr)_360px] items-start gap-8">
+            <div className="mt-8 grid grid-cols-[minmax(0,1fr)_330px] items-start gap-6">
 
 
                 {/* LEFT: CHART */}
-                <div className="min-w-0 self-start rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="min-w-0 self-start rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
 
                     {/* HEADER */}
                     <div className="mb-5 border-b border-gray-200 pb-5">
@@ -819,8 +836,8 @@ export default function MainTradePanel({
                             : 'border-red-100 bg-gradient-to-b from-red-50 via-white to-white'
                     }`}>
                         <div
-                            style={{height: '430px'}}
-                            className="mx-auto w-full max-w-[1080px] rounded-[24px] bg-white p-3"
+                            style={{height: 'min(380px, 48svh)'}}
+                            className="mx-auto w-full max-w-[980px] rounded-[22px] bg-white p-3"
                         >
                             {hasActiveData && chartData.length > 1 ? (
                                 <HoverChart
@@ -840,7 +857,7 @@ export default function MainTradePanel({
 
 
                 {/* RIGHT */}
-                <div className="self-start rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="self-start rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
 
                     <div className={`mb-6 rounded-[24px] border p-4 ${
                         tradeSide === 'buy'

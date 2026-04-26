@@ -63,7 +63,7 @@ export default function ParentsSupportModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+            <div className="car-offer-modal overflow-hidden bg-white rounded-2xl text-gray-900 shadow-xl animate-event-in">
 
                 {/* TITLE */}
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
@@ -73,22 +73,20 @@ export default function ParentsSupportModal({
                 <img
                     src="/images/events/car.png"
                     alt="New car"
-                    className="w-full h-[380px] object-cover rounded-xl mb-6"
+                    className="car-offer-image rounded-xl mb-3"
                 />
-                <p className="text-lg mb-6">
-                    Your parents notice you’ve been struggling lately with college,
-                    stress, and recent trouble.
-                    <br />
-                    <span className="text-gray-700">
-                        They feel generous and decide to gift you a car.
+                <p className="text-lg mb-4">
+                    Your parents notice the stress from college and recent trouble.
+                    <span className="block text-gray-700">
+                        They feel generous and offer to gift you a car.
                     </span>
                 </p>
 
                 {/* ACCEPT / DECLINE */}
-                <div className="flex gap-4 mb-6">
+                <div className="flex gap-3 mb-4">
                     <button
                         onClick={() => setChoice('accept')}
-                        className={`flex-1 rounded-full py-3 text-lg font-semibold border transition ${
+                        className={`flex-1 rounded-full py-2 text-base font-semibold border transition ${
                             choice === 'accept'
                                 ? 'bg-green-500 text-white border-green-500'
                                 : 'bg-white text-gray-600 border-gray-300'
@@ -99,7 +97,7 @@ export default function ParentsSupportModal({
 
                     <button
                         onClick={() => setChoice('decline')}
-                        className={`flex-1 rounded-full py-3 text-lg font-semibold border transition ${
+                        className={`flex-1 rounded-full py-2 text-base font-semibold border transition ${
                             choice === 'decline'
                                 ? 'bg-red-500 text-white border-red-500'
                                 : 'bg-white text-gray-600 border-gray-300'
@@ -110,10 +108,10 @@ export default function ParentsSupportModal({
                 </div>
 
                 {/* CONTENT */}
-                <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-2 gap-4 mb-4">
 
                     {/* LEFT */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <div>
                             <label className="text-sm font-medium mb-1 block">
                                 Outcome
@@ -133,10 +131,10 @@ export default function ParentsSupportModal({
                     </div>
 
                     {/* RIGHT — WALLET */}
-                    <div className="border border-gray-300 rounded-xl p-4">
+                    <div className="border border-gray-300 rounded-xl p-3">
                         <p className="font-semibold mb-2">Wallet</p>
 
-                        <div className="space-y-1 text-gray-800 max-h-[180px] overflow-y-auto">
+                        <div className="space-y-1 text-sm text-gray-800 max-h-[120px] overflow-y-auto">
                             {wallet.map(item => (
                                 <p key={item.id}>
                                     {item.label}:{' '}
@@ -155,7 +153,7 @@ export default function ParentsSupportModal({
                 {/* CONFIRM */}
                 <button
                     onClick={handleConfirm}
-                    className="w-full rounded-full py-4 text-lg font-semibold transition
+                    className="w-full rounded-full py-3 text-base font-semibold transition
                                bg-blue-600 text-white hover:bg-blue-500"
                 >
                     confirm

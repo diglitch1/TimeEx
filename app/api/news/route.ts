@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getNewsForDate } from '@/app/lib/guardian';
+import {
+    getNewsForDate,
+    isGuardianConfigurationError,
+} from '@/app/lib/guardian';
+import { isNewsRateLimited } from '@/app/lib/news-rate-limit';
 import {
     DEFAULT_NEWS_DATE,
     GENERIC_NEWS_ERROR_MESSAGE,
@@ -8,35 +12,8 @@ import {
     normalizeScenarioId,
 } from '@/app/lib/news-shared';
 
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 30;
-const rateLimitStore = new Map<string, number[]>();
-
-function getClientKey(request: Request) {
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    if (forwardedFor) {
-        return forwardedFor.split(',')[0]?.trim() || 'anonymous';
-    }
-
-    return request.headers.get('x-real-ip') ?? 'anonymous';
-}
-
-function isRateLimited(clientKey: string) {
-    const now = Date.now();
-    const recentRequests = (rateLimitStore.get(clientKey) ?? []).filter(
-        timestamp => now - timestamp < RATE_LIMIT_WINDOW_MS
-    );
-
-    recentRequests.push(now);
-    rateLimitStore.set(clientKey, recentRequests);
-
-    return recentRequests.length > MAX_REQUESTS_PER_WINDOW;
-}
-
 export async function GET(request: Request) {
-    const clientKey = getClientKey(request);
-
-    if (isRateLimited(clientKey)) {
+    if (isNewsRateLimited(request)) {
         return NextResponse.json(
             { articles: [], error: 'Too many news requests. Please wait a minute and try again.' },
             { status: 429 }
@@ -52,10 +29,10 @@ export async function GET(request: Request) {
     try {
         const articles = await getNewsForDate(date, scenario, limit);
         return NextResponse.json({ articles });
-    } catch {
+    } catch (error) {
         return NextResponse.json(
             { articles: [], error: GENERIC_NEWS_ERROR_MESSAGE },
-            { status: 500 }
+            { status: isGuardianConfigurationError(error) ? 503 : 500 }
         );
     }
 }

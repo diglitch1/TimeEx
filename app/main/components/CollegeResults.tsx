@@ -162,7 +162,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[900px] min-h-[560px] rounded-2xl p-8 shadow-xl relative">
+            <div className="overflow-hidden bg-white w-[900px] min-h-[520px] rounded-2xl p-8 shadow-xl relative animate-event-in">
 
                 {/* LOGO */}
                 {application?.logo && (
@@ -199,14 +199,14 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
 
                 {/* ---------- LAPTOP / DESKTOP ---------- */}
                 {['laptop-closed', 'laptop-half', 'laptop-open', 'zoom', 'desktop', 'email'].includes(stage) && (
-                    <div className="flex justify-center mt-6">
-                        <div className="relative w-[740px] h-[360px]">
+                    <div className="flex justify-center mt-5">
+                        <div className="relative w-[min(740px,100%)] h-[min(340px,42svh)]">
 
                             {/* CLOSED */}
                             <img
                                 src={IMG_CLOSED}
                                 onClick={() => stage === 'laptop-closed' && setStage('laptop-half')}
-                                className={`absolute inset-0 mx-auto max-h-[340px] object-contain transition-opacity
+                                className={`absolute inset-0 mx-auto max-h-[min(320px,40svh)] object-contain transition-opacity
                                     ${stage === 'laptop-closed' ? 'opacity-100 cursor-pointer' : 'opacity-0 pointer-events-none'}
                                 `}
                             />
@@ -214,7 +214,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
                             {/* HALF */}
                             <img
                                 src={IMG_HALF}
-                                className={`absolute inset-0 mx-auto max-h-[340px] object-contain transition-opacity
+                                className={`absolute inset-0 mx-auto max-h-[min(320px,40svh)] object-contain transition-opacity
                                     ${stage === 'laptop-half' ? 'opacity-100' : 'opacity-0 pointer-events-none'}
                                 `}
                             />
@@ -223,7 +223,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
                             <img
                                 src={IMG_OPEN}
                                 onClick={() => stage === 'laptop-open' && setStage('zoom')}
-                                className={`absolute inset-0 mx-auto max-h-[340px] object-contain transition-opacity
+                                className={`absolute inset-0 mx-auto max-h-[min(320px,40svh)] object-contain transition-opacity
                                     ${stage === 'laptop-open' ? 'opacity-100 cursor-pointer' : 'opacity-0 pointer-events-none'}
                                 `}
                             />
@@ -231,7 +231,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
                             {/* ZOOM */}
                             <img
                                 src={IMG_OPEN}
-                                className={`absolute inset-0 mx-auto max-h-[340px] object-contain animate-zoom-screen
+                                className={`absolute inset-0 mx-auto max-h-[min(320px,40svh)] object-contain animate-zoom-screen
                                     ${stage === 'zoom' ? 'opacity-100' : 'opacity-0 pointer-events-none'}
                                 `}
                             />
@@ -239,7 +239,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
                             {/* DESKTOP */}
                             {(stage === 'desktop' || stage === 'email') && (
                                 <div className="absolute inset-0 flex justify-center">
-                                    <div className="relative w-[700px]">
+                                    <div className="relative w-[min(700px,100%)]">
                                         <img
                                             src={IMG_DESKTOP}
                                             className="w-full rounded-xl border"
@@ -385,7 +385,7 @@ export default function CollegeResultsModal({ wallet, setWallet, onClose }: Prop
                                 This conversation will help determine your admission.
                             </p>
                         </div>
-                        <img src={IMG_INTERVIEWER} className="h-[350px] mb-6" />
+                        <img src={IMG_INTERVIEWER} className="h-[min(310px,36svh)] mb-5" />
 
                         <div className="w-full max-w-[760px] bg-gradient-to-b from-white to-blue-50 border border-blue-300 rounded-2xl shadow-lg p-6">
                             <p className="font-semibold text-lg text-blue-900 mb-6">

@@ -8,6 +8,7 @@ type Props = {
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
     onGameOver: (reason: string) => void;
+    onRequestCashBreak: () => void;
 };
 
 const BAIL_COST = 600;
@@ -17,6 +18,7 @@ export default function PartyConsequencesModal({
                                                    setWallet,
                                                    onClose,
                                                    onGameOver,
+                                                   onRequestCashBreak,
                                                }: Props) {
 
     /* ---------- READ FLAGS (NO EARLY RETURN YET) ---------- */
@@ -117,13 +119,22 @@ export default function PartyConsequencesModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+            <div className="relative overflow-hidden bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+                <button
+                    type="button"
+                    onClick={onRequestCashBreak}
+                    className="scenario-break-button"
+                    aria-label="Exit scenario for 30 seconds to raise cash"
+                    title="Exit for 30 seconds to sell assets"
+                >
+                    ×
+                </button>
 
                 {/* IMAGE */}
                 <img
                     src="/images/events/jail.png"
                     alt="Jail cell"
-                    className="w-full h-[380px] object-cover rounded-xl mb-6"
+                    className="event-story-image rounded-xl mb-5"
                 />
 
                 {/* TITLE */}

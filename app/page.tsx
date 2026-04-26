@@ -59,8 +59,9 @@ export default function LandingPage() {
             <style jsx>{`
                 .landing {
                     position: relative;
-                    width: 100vw;
-                    height: 100vh;
+                    width: 100%;
+                    min-height: 100vh;
+                    min-height: 100svh;
                     overflow: hidden;
                     background: black;
                 }
@@ -69,7 +70,7 @@ export default function LandingPage() {
                     position: absolute;
                     inset: 0;
                     background-image: url('/images/theIMAGE.jpeg');
-                    background-size: 100% auto;
+                    background-size: cover;
                     background-position: center;
                     background-repeat: no-repeat;
                     animation: drift 55s linear infinite;
@@ -84,16 +85,19 @@ export default function LandingPage() {
                 .content {
                     position: relative;
                     z-index: 10;
-                    height: 100%;
+                    min-height: 100vh;
+                    min-height: 100svh;
+                    box-sizing: border-box;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: 18px;
+                    gap: clamp(8px, 1.7svh, 18px);
+                    padding: clamp(18px, 3svh, 42px) 24px clamp(88px, 13svh, 124px);
                 }
 
                 .logo {
-                    width: min(300px, 85vw);
+                    width: clamp(145px, 24svh, 280px);
                     image-rendering: pixelated;
                     animation: float 4s ease-in-out infinite;
                 }
@@ -105,9 +109,9 @@ export default function LandingPage() {
                 }
 
                 .title {
-                    width: min(650px, 92vw);
+                    width: clamp(340px, min(52vw, 58svh), 650px);
                     image-rendering: pixelated;
-                    margin-top: -10px;
+                    margin-top: clamp(-8px, -1svh, -4px);
                 }
 
                 .play {
@@ -115,11 +119,12 @@ export default function LandingPage() {
                     border: none;
                     padding: 0;
                     cursor: pointer;
-                    margin-top: 14px;
+                    margin-top: clamp(4px, 1svh, 12px);
+                    flex: 0 0 auto;
                 }
 
                 .play img {
-                    width: min(360px, 75vw);
+                    width: clamp(220px, min(30vw, 38svh), 340px);
                     image-rendering: pixelated;
                     transition: filter 0.15s ease, transform 0.15s ease;
                 }
@@ -137,11 +142,11 @@ export default function LandingPage() {
                 /* TIMELINE */
                 .timeline-wrap {
                     position: relative;
-                    width: 100%;
+                    width: min(82vw, 1000px);
                     max-width: 1000px;
-                    height: 70px;
+                    height: clamp(46px, 8svh, 70px);
                     overflow: hidden;
-                    margin: 14px 0 12px;
+                    margin: clamp(6px, 1.5svh, 14px) 0 clamp(4px, 1.2svh, 12px);
                     mask-image: linear-gradient(
                         to right,
                         transparent,
@@ -169,7 +174,7 @@ export default function LandingPage() {
                     position: absolute;
                     top: 50%;
                     display: flex;
-                    gap: 48px;
+                    gap: clamp(28px, 4vw, 48px);
                     transform: translateY(-50%);
                     animation: timelineDrift 60s linear infinite;
                 }
@@ -187,9 +192,9 @@ export default function LandingPage() {
 
                 .tick.major .year {
                     font-family: monospace;
-                    font-size: 14px;
+                    font-size: clamp(11px, 1.7svh, 14px);
                     color: rgba(190,225,255,0.95);
-                    margin-bottom: 6px;
+                    margin-bottom: clamp(3px, 0.8svh, 6px);
                 }
 
                 .bar {
@@ -239,10 +244,13 @@ export default function LandingPage() {
 
                 .credits {
                     position: absolute;
-                    bottom: 18px;
+                    bottom: clamp(12px, 2.4svh, 22px);
                     width: 100%;
+                    box-sizing: border-box;
+                    padding: 0 24px;
                     text-align: center;
-                    font-size: 17px;
+                    font-size: clamp(12px, 1.9svh, 17px);
+                    line-height: 1.35;
                     color: white;
                     z-index: 6;
                 }

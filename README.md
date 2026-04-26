@@ -53,6 +53,17 @@ npm run dev
 
 Open `http://localhost:3000` in your browser.
 
+### News API Key
+
+Guardian news requests are proxied through server routes, so the browser never needs the key.
+Create a local `.env.local` file or configure the same variable in your deployment provider:
+
+```bash
+GUARDIAN_API_KEY=your-private-guardian-key
+```
+
+Do not use `NEXT_PUBLIC_GUARDIAN_API_KEY`; that would ship the key to users.
+
 ### Useful Commands
 
 | Command | Purpose |

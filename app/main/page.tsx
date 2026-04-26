@@ -158,6 +158,7 @@ const FINAL_MINUTE_START_SECONDS =
 const TIMELINE_STORAGE_KEY = 'timeline';
 const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
 const END_GAME_REDIRECT_DELAY_MS = 2200;
+const CASH_BREAK_SECONDS = 30;
 
 function getWalletTotalValue(wallet: WalletItem[]) {
     return wallet.reduce((sum, item) => sum + item.usdValue, 0);
@@ -229,12 +230,11 @@ function MainPageContent() {
         walletValue: number;
     } | null>(null);
     const endGameHandledRef = useRef(false);
-
-    const jumpToDate = (dateStr: string) => {
-        const idx = TIMELINE_DATES.indexOf(dateStr);
-        if (idx === -1) return;
-        setGameSeconds(idx * TOTAL_SECONDS); // jump to start of that day
-    };
+    const [cashBreak, setCashBreak] = useState<{
+        eventId: string;
+        deadline: number;
+    } | null>(null);
+    const [cashBreakTick, setCashBreakTick] = useState(() => Date.now());
 
     const [gameSeconds, setGameSeconds] = useState(readStoredGameSeconds);
 
@@ -379,6 +379,14 @@ function MainPageContent() {
         if (triggeredEvents.includes(event.id)) return false;
         return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig);
     })?.id ?? null;
+    const cashBreakActive =
+        activeEvent !== null &&
+        cashBreak?.eventId === activeEvent &&
+        cashBreak.deadline > cashBreakTick;
+    const cashBreakRemaining = cashBreakActive
+        ? Math.max(0, Math.ceil((cashBreak.deadline - cashBreakTick) / 1000))
+        : 0;
+    const eventModalOpen = activeEvent !== null && !cashBreakActive && !hasReachedTimelineEnd;
 
     const handleCloseActiveEvent = useCallback(() => {
         if (!activeEvent) return;
@@ -401,6 +409,7 @@ function MainPageContent() {
         setTriggeredEvents(prev =>
             prev.includes(activeEvent) ? prev : [...prev, activeEvent]
         );
+        setCashBreak(null);
     }, [activeEvent, currentDateTime]);
 
     const handleGameOver = useCallback((reason: string) => {
@@ -410,18 +419,65 @@ function MainPageContent() {
             );
         }
 
+        setCashBreak(null);
         setGameOver(saveGameOver(reason));
     }, [activeEvent]);
 
+    const handleRequestCashBreak = useCallback(() => {
+        if (!activeEvent) return;
+
+        const deadline = Date.now() + CASH_BREAK_SECONDS * 1000;
+
+        setCashBreak({
+            eventId: activeEvent,
+            deadline,
+        });
+        setCashBreakTick(Date.now());
+    }, [activeEvent]);
+
     useEffect(() => {
-        if (gameOver || hasReachedTimelineEnd) return;
+        if (gameOver || hasReachedTimelineEnd || activeEvent) return;
 
         const interval = setInterval(() => {
             setGameSeconds(s => s + 1);
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [gameOver, hasReachedTimelineEnd]);
+    }, [activeEvent, gameOver, hasReachedTimelineEnd]);
+
+    useEffect(() => {
+        if (!cashBreak || cashBreak.eventId !== activeEvent) return;
+
+        const updateCountdown = () => {
+            const now = Date.now();
+
+            setCashBreakTick(now);
+
+            if (now >= cashBreak.deadline) {
+                setCashBreak(null);
+            }
+        };
+
+        const interval = window.setInterval(updateCountdown, 250);
+
+        return () => window.clearInterval(interval);
+    }, [activeEvent, cashBreak]);
+
+    useEffect(() => {
+        if (!eventModalOpen) return;
+
+        const { body, documentElement } = document;
+        const previousBodyOverflow = body.style.overflow;
+        const previousHtmlOverflow = documentElement.style.overflow;
+
+        body.style.overflow = 'hidden';
+        documentElement.style.overflow = 'hidden';
+
+        return () => {
+            body.style.overflow = previousBodyOverflow;
+            documentElement.style.overflow = previousHtmlOverflow;
+        };
+    }, [eventModalOpen]);
 
     useEffect(() => {
         notificationsRef.current = notifications;
@@ -478,10 +534,14 @@ function MainPageContent() {
     }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
 
     const skip30Seconds = () => {
+        if (activeEvent) return;
+
         setGameSeconds(s => s + 30);
     };
 
     const skipToNextDay = () => {
+        if (activeEvent) return;
+
         setGameSeconds(current => {
             const nextDayStart = (Math.floor(current / TOTAL_SECONDS) + 1) * TOTAL_SECONDS;
             const lastDayStart = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
@@ -490,8 +550,18 @@ function MainPageContent() {
     };
 
     const skipToFinalMinute = () => {
+        if (activeEvent) return;
+
         setGameSeconds(current => Math.max(current, FINAL_MINUTE_START_SECONDS));
     };
+
+    const jumpToDate = useCallback((dateStr: string) => {
+        if (activeEvent) return;
+
+        const idx = TIMELINE_DATES.indexOf(dateStr);
+        if (idx === -1) return;
+        setGameSeconds(idx * TOTAL_SECONDS);
+    }, [activeEvent]);
 
     useEffect(() => {
         saveWallet(wallet);
@@ -553,40 +623,53 @@ function MainPageContent() {
     return (
         <>
             <EndGameOverlay visible={hasReachedTimelineEnd} />
+            {cashBreakActive ? (
+                <div className="fixed left-1/2 top-5 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950 shadow-[0_18px_44px_rgba(15,23,42,0.18)]">
+                    <p className="text-sm font-semibold">
+                        {cashBreakRemaining}s to raise cash
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed">
+                        Sell assets now, then the scenario will reopen. You cannot skip days until this scenario is completed.
+                    </p>
+                </div>
+            ) : null}
 
             {/* GLOBAL EVENT MODAL */}
-            {!hasReachedTimelineEnd && activeEvent === 'dot-com-frenzy' && (
+            {eventModalOpen && activeEvent === 'dot-com-frenzy' && (
                 <DotComFrenzyModal
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'apply-for-college' && (
+            {eventModalOpen && activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'dot-com-reality-check' && (
+            {eventModalOpen && activeEvent === 'dot-com-reality-check' && (
                 <DotComRealityCheckModal
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'family-help' && (
+            {eventModalOpen && activeEvent === 'family-help' && (
                 <FamilyHelpModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'car-insurance' && (
+            {eventModalOpen && activeEvent === 'car-insurance' && (
                 <CarInsuranceModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'college-results' && (
+            {eventModalOpen && activeEvent === 'college-results' && (
                 <CollegeResultsModal
                     wallet={wallet}
                     setWallet={setWallet}
@@ -594,44 +677,47 @@ function MainPageContent() {
                 />
 
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'college-party-invite' && (
+            {eventModalOpen && activeEvent === 'college-party-invite' && (
                 <CollegePartyInvite
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'party-consequences' && (
+            {eventModalOpen && activeEvent === 'party-consequences' && (
                 <PartyConsequencesModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                     onGameOver={handleGameOver}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'parents-support' && (
+            {eventModalOpen && activeEvent === 'parents-support' && (
                 <ParentsSupportModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'car-crash' && (
+            {eventModalOpen && activeEvent === 'car-crash' && (
                 <CarCrashModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                     onGameOver={handleGameOver}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'freelance-gig' && (
+            {eventModalOpen && activeEvent === 'freelance-gig' && (
                 <FreelanceGigModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}
-            {!hasReachedTimelineEnd && activeEvent === 'job-opportunity' && (
+            {eventModalOpen && activeEvent === 'job-opportunity' && (
                 <JobOpportunityModal
                     wallet={wallet}
                     setWallet={setWallet}
@@ -640,7 +726,7 @@ function MainPageContent() {
             )}
 
             {/* MAIN PAGE LAYOUT */}
-            <div className={`flex min-h-screen w-full bg-[#f8fafc] transition-all duration-700 ${
+            <div className={`flex min-h-screen w-full overflow-x-hidden bg-[#f8fafc] transition-all duration-700 ${
                 hasReachedTimelineEnd ? 'pointer-events-none select-none blur-[1px] saturate-90' : ''
             }`}>
                 <Sidebar
@@ -649,8 +735,8 @@ function MainPageContent() {
                     scenarioId={scenarioId}
                     startingCash={startingCash}
                 />
-                <div className="flex-1 p-6">
-                    <div className="mx-auto w-full max-w-[1420px]">
+                <div className="min-w-0 flex-1 box-border p-4 xl:p-5">
+                    <div className="mx-auto w-full max-w-[1280px]">
                         <Timeline
                             timelineDates={TIMELINE_DATES}
                             markers={TIMELINE}
@@ -658,7 +744,7 @@ function MainPageContent() {
                             onJumpToDate={jumpToDate}
                         />
 
-                        <div className="mt-6">
+                        <div className="mt-5">
                             <MainPanel
                                 wallet={wallet}
                                 setWallet={setWallet}
@@ -674,6 +760,7 @@ function MainPageContent() {
                                 onDismissToast={handleDismissToast}
                                 onBuyNotification={handleBuyNotification}
                                 onSellNotification={handleSellNotification}
+                                timeControlsDisabled={activeEvent !== null}
                             />
                         </div>
                     </div>
