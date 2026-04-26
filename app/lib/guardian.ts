@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import {
     SCENARIO_DATE_NEWS_CONFIG,
     SCENARIO_NEWS_CONFIG,
@@ -56,6 +54,17 @@ export type GuardianArticle = {
     lastModified: string | null;
 };
 
+export class GuardianConfigurationError extends Error {
+    constructor() {
+        super('Guardian API key not found. Set GUARDIAN_API_KEY as a private server environment variable.');
+        this.name = 'GuardianConfigurationError';
+    }
+}
+
+export function isGuardianConfigurationError(error: unknown) {
+    return error instanceof GuardianConfigurationError;
+}
+
 function decodeHtmlEntities(value: string) {
     return value
         .replace(/&amp;/g, '&')
@@ -104,55 +113,18 @@ function htmlToTextBlocks(html?: string | null) {
         .filter(Boolean);
 }
 
-function normalizeDotEnvValue(rawValue: string) {
-    return rawValue.trim().replace(/^['"]|['"]$/g, '');
-}
-
-async function readGuardianApiKeyFromDotEnv() {
-    try {
-        const envContents = await readFile(path.join(process.cwd(), '.env'), 'utf8');
-        const lines = envContents.split(/\r?\n/);
-
-        for (const line of lines) {
-            const trimmed = line.trim();
-
-            if (!trimmed || trimmed.startsWith('#')) continue;
-
-            const match = trimmed.match(
-                /^(?:const\s+)?(GUARDIAN_API_KEY)\s*=\s*(.+)$/
-            );
-
-            if (!match) continue;
-
-            return normalizeDotEnvValue(match[2]);
-        }
-    } catch {
-        return null;
-    }
-
-    return null;
-}
-
-export async function getGuardianApiKey() {
-    const directValue = process.env.GUARDIAN_API_KEY;
+export function getGuardianApiKey() {
+    const directValue = process.env.GUARDIAN_API_KEY?.trim();
 
     if (directValue) {
         return directValue;
     }
 
-    const fallbackValue = await readGuardianApiKeyFromDotEnv();
-
-    if (fallbackValue) {
-        return fallbackValue;
-    }
-
-    throw new Error(
-        'Guardian API key not found. Set GUARDIAN_API_KEY in .env.'
-    );
+    throw new GuardianConfigurationError();
 }
 
 async function fetchGuardianJson(url: URL) {
-    const apiKey = await getGuardianApiKey();
+    const apiKey = getGuardianApiKey();
     url.searchParams.set('api-key', apiKey);
     url.searchParams.set('format', 'json');
 
