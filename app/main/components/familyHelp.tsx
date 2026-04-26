@@ -7,11 +7,12 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 // this event happens March 21 at 14:00
 
-export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
+export default function FamilyHelpModal({wallet, setWallet, onClose, onRequestCashBreak,}: Props) {
 
     const [choice, setChoice] = useState<'help' | 'decline'>('help');
     const [source, setSource] = useState(wallet[0]?.id ?? '');
@@ -73,8 +74,17 @@ export default function FamilyHelpModal({wallet, setWallet, onClose,}: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl
+            <div className="relative bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl
       animate-event-in">
+                <button
+                    type="button"
+                    onClick={onRequestCashBreak}
+                    className="scenario-break-button"
+                    aria-label="Exit scenario for 30 seconds to raise cash"
+                    title="Exit for 30 seconds to sell assets"
+                >
+                    ×
+                </button>
 
                 {/* TITLE */}
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">

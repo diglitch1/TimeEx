@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 const MONTHLY_COST = 70;
@@ -15,6 +16,7 @@ export default function CarInsuranceModal({
                                               wallet,
                                               setWallet,
                                               onClose,
+                                              onRequestCashBreak,
                                           }: Props) {
     const [choice, setChoice] = useState<'buy' | 'skip'>('buy');
 
@@ -63,7 +65,16 @@ export default function CarInsuranceModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+            <div className="relative bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+                <button
+                    type="button"
+                    onClick={onRequestCashBreak}
+                    className="scenario-break-button"
+                    aria-label="Exit scenario for 30 seconds to raise cash"
+                    title="Exit for 30 seconds to sell assets"
+                >
+                    ×
+                </button>
 
                 {/* TITLE */}
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">

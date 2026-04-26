@@ -163,6 +163,7 @@ export default function MainTradePanel({
     onDismissToast,
     onBuyNotification,
     onSellNotification,
+    timeControlsDisabled,
 }: {
     currentDate: Date;
     secondsLeft: number;
@@ -190,6 +191,7 @@ export default function MainTradePanel({
         price: number;
         timestamp: Date;
     }) => void;
+    timeControlsDisabled?: boolean;
 }) {
 
     const minutes = Math.floor(secondsLeft / 60);
@@ -502,24 +504,39 @@ export default function MainTradePanel({
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onSkip30}
-                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 cursor-pointer"
-                        title="Reduce remaining time by 30 seconds"
+                        disabled={timeControlsDisabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            timeControlsDisabled
+                                ? 'cursor-not-allowed bg-blue-300'
+                                : 'cursor-pointer bg-blue-600 hover:bg-blue-500'
+                        }`}
+                        title={timeControlsDisabled ? 'Complete the current scenario first' : 'Reduce remaining time by 30 seconds'}
                     >
                         -30 sec
                     </button>
 
                     <button
                         onClick={onSkipDay}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 cursor-pointer"
-                        title="Skip to next day"
+                        disabled={timeControlsDisabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            timeControlsDisabled
+                                ? 'cursor-not-allowed bg-slate-400'
+                                : 'cursor-pointer bg-slate-900 hover:bg-slate-800'
+                        }`}
+                        title={timeControlsDisabled ? 'Complete the current scenario first' : 'Skip to next day'}
                     >
                         Next Day
                     </button>
 
                     <button
                         onClick={onSkipFinalMinute}
-                        className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-400 cursor-pointer"
-                        title="Skip to one minute before the game ends"
+                        disabled={timeControlsDisabled}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                            timeControlsDisabled
+                                ? 'cursor-not-allowed bg-amber-300'
+                                : 'cursor-pointer bg-amber-500 hover:bg-amber-400'
+                        }`}
+                        title={timeControlsDisabled ? 'Complete the current scenario first' : 'Skip to one minute before the game ends'}
                     >
                         End -1m
                     </button>

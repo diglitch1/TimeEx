@@ -143,6 +143,31 @@ body::before {
     animation: eventModalIn 180ms ease-out both;
 }
 
+.scenario-break-button {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    display: inline-flex;
+    height: 2rem;
+    width: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #4b5563;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.scenario-break-button:hover {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #b45309;
+}
+
 .news-event-modal {
     width: min(900px, calc(100vw - 32px)) !important;
     padding: clamp(1rem, 2.4svh, 1.75rem) !important;

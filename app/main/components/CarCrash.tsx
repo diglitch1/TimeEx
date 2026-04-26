@@ -7,6 +7,7 @@ type Props = {
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
     onGameOver: (reason: string) => void;
+    onRequestCashBreak: () => void;
 };
 
 const INSURED_COST = 200;
@@ -17,6 +18,7 @@ export default function CarCrashModal({
                                           setWallet,
                                           onClose,
                                           onGameOver,
+                                          onRequestCashBreak,
                                       }: Props) {
 
     /* ---------- READ FLAGS ---------- */
@@ -86,7 +88,16 @@ export default function CarCrashModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+            <div className="relative bg-white w-[760px] rounded-2xl p-8 text-gray-900 shadow-xl animate-event-in">
+                <button
+                    type="button"
+                    onClick={onRequestCashBreak}
+                    className="scenario-break-button"
+                    aria-label="Exit scenario for 30 seconds to raise cash"
+                    title="Exit for 30 seconds to sell assets"
+                >
+                    ×
+                </button>
 
 
 
