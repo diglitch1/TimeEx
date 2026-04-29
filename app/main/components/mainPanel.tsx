@@ -4,8 +4,7 @@ import {useState, useEffect, useMemo, useRef, useId} from 'react';
 import { type WalletItem } from '../utils/walletData';
 import { getChartData, type RangeKey } from '../utils/chartSelector';
 import {
-    BROWSE_ASSET_CATALOG,
-    FEATURED_ASSET_CATALOG,
+    getScenarioAssetCatalogs,
     getAssetsWithMarket,
     toLocalDateStr,
     type AssetMarket,
@@ -150,6 +149,7 @@ function executeTrade({
 
 export default function MainTradePanel({
     currentDate,
+    scenarioId,
     secondsLeft,
     wallet,
     setWallet,
@@ -166,6 +166,7 @@ export default function MainTradePanel({
     timeControlsDisabled,
 }: {
     currentDate: Date;
+    scenarioId: string;
     secondsLeft: number;
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
@@ -206,10 +207,14 @@ export default function MainTradePanel({
     });
 
     const dateStr = toLocalDateStr(currentDate);
+    const scenarioCatalogs = useMemo(
+        () => getScenarioAssetCatalogs(scenarioId),
+        [scenarioId]
+    );
 
     const allAssetsWithMarket = useMemo<AssetMarket[]>(
-        () => getAssetsWithMarket(dateStr, 12),
-        [dateStr]
+        () => getAssetsWithMarket(dateStr, 12, scenarioCatalogs.allCatalog),
+        [dateStr, scenarioCatalogs]
     );
 
     const assetBySymbol = useMemo(
@@ -233,13 +238,13 @@ export default function MainTradePanel({
     );
 
     const featuredAssets = useMemo<AssetMarket[]>(
-        () => resolveCatalogAssets(FEATURED_ASSET_CATALOG, assetBySymbol),
-        [assetBySymbol]
+        () => resolveCatalogAssets(scenarioCatalogs.featuredCatalog, assetBySymbol),
+        [assetBySymbol, scenarioCatalogs]
     );
 
     const browseAssets = useMemo<AssetMarket[]>(
-        () => resolveCatalogAssets(BROWSE_ASSET_CATALOG, assetBySymbol),
-        [assetBySymbol]
+        () => resolveCatalogAssets(scenarioCatalogs.browseCatalog, assetBySymbol),
+        [assetBySymbol, scenarioCatalogs]
     );
 
     useEffect(() => {

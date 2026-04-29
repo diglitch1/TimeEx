@@ -31,7 +31,9 @@ import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
+import { PANDEMIC_TIMELINE, PANDEMIC_TIMELINE_DATES } from './utils/pandemicTimeline';
 import {
+    getScenarioAssetCatalogs,
     getAssetsWithMarket,
     findRowAtOrBefore,
     toLocalDateStr,
@@ -159,8 +161,8 @@ function buildPeriodMoveNotification({
     const changePct = fromPrice !== 0 ? (priceDelta / fromPrice) * 100 : 0;
 
     const calDays = Math.round(
-        (new Date(toDateKey + 'T00:00:00').getTime() - new Date(fromDateKey + 'T00:00:00').getTime())
-        / (1000 * 60 * 60 * 24)
+        (new Date(toDateKey + 'T00:00:00').getTime() - new Date(fromDateKey + 'T00:00:00').getTime()) /
+            (1000 * 60 * 60 * 24)
     );
 
     const direction = priceDelta > 0 ? 'up' : priceDelta < 0 ? 'down' : 'flat';
@@ -177,17 +179,24 @@ function buildPeriodMoveNotification({
             calDays < 30
                 ? `${calDays} days`
                 : calDays < 365
-                    ? `${Math.round(calDays / 30)} month${Math.round(calDays / 30) === 1 ? '' : 's'}`
-                    : `${(calDays / 365).toFixed(1)}y`;
+                  ? `${Math.round(calDays / 30)} month${Math.round(calDays / 30) === 1 ? '' : 's'}`
+                  : `${(calDays / 365).toFixed(1)}y`;
         title = `${symbol} ${direction} over ${periodStr}`;
-        const fromLabel = new Date(fromDateKey + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const toLabel   = new Date(toDateKey   + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        periodPhrase = `from ${fromLabel} → ${toLabel}`;
+        const fromLabel = new Date(fromDateKey + 'T00:00:00').toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+        });
+        const toLabel = new Date(toDateKey + 'T00:00:00').toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+        });
+        periodPhrase = `from ${fromLabel} to ${toLabel}`;
     }
 
-    const message = priceDelta === 0
-        ? `Your ${ownedUnits.toFixed(4)} shares are unchanged at ${formatNotificationCurrency(toPrice)}.`
-        : `Your ${ownedUnits.toFixed(4)} shares ${verb} ${formatNotificationCurrency(Math.abs(positionDelta))} (${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%) ${periodPhrase}.`;
+    const message =
+        priceDelta === 0
+            ? `Your ${ownedUnits.toFixed(4)} shares are unchanged at ${formatNotificationCurrency(toPrice)}.`
+            : `Your ${ownedUnits.toFixed(4)} shares ${verb} ${formatNotificationCurrency(Math.abs(positionDelta))} (${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%) ${periodPhrase}.`;
 
     return {
         tone: getPositionMoveTone(changePct),
@@ -212,20 +221,16 @@ function createStartingWallet(startingCash: number): WalletItem[] {
 
 const DAY_DURATION_SECONDS = 6 * 60;
 const DAY_START_MINUTES = 2 * 60;
-const DAY_END_MINUTES = (24 * 60) - 1;
+const DAY_END_MINUTES = 24 * 60 - 1;
 const TOTAL_SECONDS = DAY_DURATION_SECONDS;
-const TIMELINE_DATE_OBJECTS = TIMELINE_DATES.map(date => new Date(date));
-const FINAL_MINUTE_START_SECONDS = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
-const TIMELINE_STORAGE_KEY = 'timeline';
-const TRIGGERED_EVENTS_STORAGE_KEY = 'triggeredEvents';
 const END_GAME_REDIRECT_DELAY_MS = 2200;
 const CASH_BREAK_SECONDS = 30;
 const BILLING_BREAK_SECONDS = 120;
 const MONTHLY_INSURANCE = 70;
 const MONTHLY_TUITION: Record<string, number> = {
-    'atlas': 700,
+    atlas: 700,
     'ivy-tech': 600,
-    'northbridge': 500,
+    northbridge: 500,
     'state-university': 200,
     'city-college': 150,
     'community-college': 100,
@@ -246,28 +251,28 @@ function readStoredDecision(key: string, property: string) {
     return parsed?.[property] === true;
 }
 
-function readStoredGameSeconds() {
+function readStoredGameSeconds(storageKey: string, timelineDates: string[]) {
     if (typeof window === 'undefined') return 0;
 
     try {
-        const raw = localStorage.getItem(TIMELINE_STORAGE_KEY);
+        const raw = localStorage.getItem(storageKey);
         if (!raw) return 0;
 
         const parsed = Number.parseInt(raw, 10);
         if (!Number.isFinite(parsed) || parsed < 0) return 0;
 
-        const lastDayStart = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
+        const lastDayStart = (timelineDates.length - 1) * TOTAL_SECONDS;
         return Math.min(parsed, lastDayStart);
     } catch {
         return 0;
     }
 }
 
-function readStoredTriggeredEvents() {
+function readStoredTriggeredEvents(storageKey: string) {
     if (typeof window === 'undefined') return [];
 
     try {
-        const raw = localStorage.getItem(TRIGGERED_EVENTS_STORAGE_KEY);
+        const raw = localStorage.getItem(storageKey);
         if (!raw) return [];
 
         const parsed = JSON.parse(raw);
@@ -290,9 +295,28 @@ export default function MainPage() {
 function MainPageContent() {
     const [mounted, setMounted] = useState(false);
     const searchParams = useSearchParams();
+    const scenarioId = normalizeScenarioId(searchParams.get('scenario'));
+    const scenarioCatalogs = useMemo(() => getScenarioAssetCatalogs(scenarioId), [scenarioId]);
+    const timelineDates = useMemo(
+        () => (scenarioId === 'pandemic' ? PANDEMIC_TIMELINE_DATES : TIMELINE_DATES),
+        [scenarioId]
+    );
+    const timelineMarkers = useMemo(
+        () => (scenarioId === 'pandemic' ? PANDEMIC_TIMELINE : TIMELINE),
+        [scenarioId]
+    );
+    const timelineDateObjects = useMemo(
+        () => timelineDates.map(date => new Date(date)),
+        [timelineDates]
+    );
+    const timelineStorageKey = scenarioId === 'pandemic' ? 'timeline:pandemic' : 'timeline';
+    const triggeredEventsStorageKey =
+        scenarioId === 'pandemic' ? 'triggeredEvents:pandemic' : 'triggeredEvents';
+    const scenarioEvents = scenarioId === 'pandemic' ? [] : GAME_EVENTS;
     const [startingCash] = useState(() => loadStartingCash(DEFAULT_STARTING_CASH));
-
-    const [triggeredEvents, setTriggeredEvents] = useState<string[]>(readStoredTriggeredEvents);
+    const [triggeredEvents, setTriggeredEvents] = useState<string[]>(() =>
+        readStoredTriggeredEvents(triggeredEventsStorageKey)
+    );
     const [gameOver, setGameOver] = useState(loadGameOver);
     const [notifications, setNotifications] = useState<GameNotification[]>([]);
     const [activeToastIds, setActiveToastIds] = useState<string[]>([]);
@@ -302,15 +326,9 @@ function MainPageContent() {
     const historyOpenRef = useRef(false);
     const walletRef = useRef<WalletItem[]>([]);
     const runStatsRef = useRef<RunStats>(createRunStats(startingCash));
-    const activeEventSnapshotRef = useRef<{
-        id: string;
-        walletValue: number;
-    } | null>(null);
+    const activeEventSnapshotRef = useRef<{ id: string; walletValue: number } | null>(null);
     const endGameHandledRef = useRef(false);
-    const [cashBreak, setCashBreak] = useState<{
-        eventId: string;
-        deadline: number;
-    } | null>(null);
+    const [cashBreak, setCashBreak] = useState<{ eventId: string; deadline: number } | null>(null);
     const [cashBreakTick, setCashBreakTick] = useState(() => Date.now());
     const [billingBreak, setBillingBreak] = useState<{
         reason: string;
@@ -318,30 +336,22 @@ function MainPageContent() {
         deadline: number;
     } | null>(null);
     const [billingBreakTick, setBillingBreakTick] = useState(() => Date.now());
-
-    const [gameSeconds, setGameSeconds] = useState(readStoredGameSeconds);
+    const [gameSeconds, setGameSeconds] = useState(() =>
+        readStoredGameSeconds(timelineStorageKey, timelineDates)
+    );
     const [skipLabel, setSkipLabel] = useState<string | null>(null);
     const skipLabelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSeenDateKeyRef = useRef<string>('');
 
-
-    const dayIndex = Math.min(
-        Math.floor(gameSeconds / TOTAL_SECONDS),
-        TIMELINE_DATE_OBJECTS.length - 1
-    );
-    const baseDate = TIMELINE_DATE_OBJECTS[dayIndex];
-
+    const dayIndex = Math.min(Math.floor(gameSeconds / TOTAL_SECONDS), timelineDateObjects.length - 1);
+    const baseDate = timelineDateObjects[dayIndex];
     const secondsIntoDay = gameSeconds % TOTAL_SECONDS;
-    const isLastDay = dayIndex === TIMELINE_DATE_OBJECTS.length - 1;
+    const finalMinuteStartSeconds = (timelineDateObjects.length - 1) * TOTAL_SECONDS;
+    const isLastDay = dayIndex === timelineDateObjects.length - 1;
     const playableMinutes = DAY_END_MINUTES - DAY_START_MINUTES;
-    const dayProgress =
-        TOTAL_SECONDS <= 1 ? 0 : secondsIntoDay / (TOTAL_SECONDS - 1);
-    const inGameMinutes =
-        DAY_START_MINUTES + Math.round(dayProgress * playableMinutes);
-    const hasReachedTimelineEnd =
-        !gameOver &&
-        isLastDay &&
-        secondsIntoDay >= 60;
+    const dayProgress = TOTAL_SECONDS <= 1 ? 0 : secondsIntoDay / (TOTAL_SECONDS - 1);
+    const inGameMinutes = DAY_START_MINUTES + Math.round(dayProgress * playableMinutes);
+    const hasReachedTimelineEnd = !gameOver && isLastDay && secondsIntoDay >= 60;
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
         if (typeof window === 'undefined') {
@@ -353,6 +363,7 @@ function MainPageContent() {
 
         return createStartingWallet(loadStartingCash(DEFAULT_STARTING_CASH));
     });
+
     const currentDateTime = useMemo(() => {
         const nextDateTime = new Date(baseDate);
         nextDateTime.setHours(0, 0, 0, 0);
@@ -365,15 +376,16 @@ function MainPageContent() {
     dayStartTime.setHours(0, 0, 0, 0);
     dayStartTime.setMinutes(DAY_START_MINUTES);
     const dayStartTimestampLabel = formatNotificationTimestamp(dayStartTime);
-    const secondsLeft = isLastDay
-        ? Math.max(0, 60 - secondsIntoDay)
-        : TOTAL_SECONDS - secondsIntoDay;
+    const secondsLeft = isLastDay ? Math.max(0, 60 - secondsIntoDay) : TOTAL_SECONDS - secondsIntoDay;
 
     const attendedCollegeParty = readStoredDecision('collegeParty', 'attended');
     const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
-        if (draft.sourceKey && notificationsRef.current.some(notification => notification.sourceKey === draft.sourceKey)) {
+        if (
+            draft.sourceKey &&
+            notificationsRef.current.some(notification => notification.sourceKey === draft.sourceKey)
+        ) {
             return;
         }
 
@@ -409,65 +421,74 @@ function MainPageContent() {
         setActiveToastIds(prev => prev.filter(toastId => toastId !== id));
     }, []);
 
-    const handleBuyNotification = useCallback((details: {
-        symbol: string;
-        units: number;
-        totalCost: number;
-        price: number;
-        timestamp: Date;
-    }) => {
-        recordBuyAction(runStatsRef.current, {
-            symbol: details.symbol,
-            totalCost: details.totalCost,
-            units: details.units,
-            date: details.timestamp.toISOString(),
-        });
-        saveRunStats(runStatsRef.current);
-        pushNotification(
-            buildTradeNotification({
-                titleVerb: 'Bought',
-                messageVerb: 'purchased',
+    const handleBuyNotification = useCallback(
+        (details: {
+            symbol: string;
+            units: number;
+            totalCost: number;
+            price: number;
+            timestamp: Date;
+        }) => {
+            recordBuyAction(runStatsRef.current, {
                 symbol: details.symbol,
+                totalCost: details.totalCost,
                 units: details.units,
-                totalValue: details.totalCost,
-                price: details.price,
-                timestampLabel: formatNotificationTimestamp(details.timestamp),
-            })
-        );
-    }, [pushNotification]);
+                date: details.timestamp.toISOString(),
+            });
+            saveRunStats(runStatsRef.current);
+            pushNotification(
+                buildTradeNotification({
+                    titleVerb: 'Bought',
+                    messageVerb: 'purchased',
+                    symbol: details.symbol,
+                    units: details.units,
+                    totalValue: details.totalCost,
+                    price: details.price,
+                    timestampLabel: formatNotificationTimestamp(details.timestamp),
+                })
+            );
+        },
+        [pushNotification]
+    );
 
-    const handleSellNotification = useCallback((details: {
-        symbol: string;
-        units: number;
-        totalReceived: number;
-        price: number;
-        timestamp: Date;
-    }) => {
-        recordSellAction(runStatsRef.current, {
-            symbol: details.symbol,
-            totalReceived: details.totalReceived,
-            units: details.units,
-            date: details.timestamp.toISOString(),
-        });
-        saveRunStats(runStatsRef.current);
-        pushNotification(
-            buildTradeNotification({
-                titleVerb: 'Sold',
-                messageVerb: 'sold',
+    const handleSellNotification = useCallback(
+        (details: {
+            symbol: string;
+            units: number;
+            totalReceived: number;
+            price: number;
+            timestamp: Date;
+        }) => {
+            recordSellAction(runStatsRef.current, {
                 symbol: details.symbol,
+                totalReceived: details.totalReceived,
                 units: details.units,
-                totalValue: details.totalReceived,
-                price: details.price,
-                timestampLabel: formatNotificationTimestamp(details.timestamp),
-            })
-        );
-    }, [pushNotification]);
+                date: details.timestamp.toISOString(),
+            });
+            saveRunStats(runStatsRef.current);
+            pushNotification(
+                buildTradeNotification({
+                    titleVerb: 'Sold',
+                    messageVerb: 'sold',
+                    symbol: details.symbol,
+                    units: details.units,
+                    totalValue: details.totalReceived,
+                    price: details.price,
+                    timestampLabel: formatNotificationTimestamp(details.timestamp),
+                })
+            );
+        },
+        [pushNotification]
+    );
 
-    const activeEvent = gameOver ? null : GAME_EVENTS.find(event => {
-        if (event.date !== currentDateKey) return false;
-        if (triggeredEvents.includes(event.id)) return false;
-        return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig);
-    })?.id ?? null;
+    const activeEvent = gameOver
+        ? null
+        : (scenarioEvents.find(event => {
+              if (event.date !== currentDateKey) return false;
+              if (triggeredEvents.includes(event.id)) return false;
+              return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig);
+          })?.id ?? null);
+
     const cashBreakActive =
         activeEvent !== null &&
         cashBreak?.eventId === activeEvent &&
@@ -481,7 +502,7 @@ function MainPageContent() {
         : 0;
     const eventModalOpen = activeEvent !== null && !cashBreakActive && !hasReachedTimelineEnd;
 
-    const handleCloseActiveEvent = useCallback(() => {
+    const handleCloseActiveEvent = () => {
         if (!activeEvent) return;
 
         const eventSnapshot = activeEventSnapshotRef.current;
@@ -499,32 +520,24 @@ function MainPageContent() {
             }, 0);
         }
 
-        setTriggeredEvents(prev =>
-            prev.includes(activeEvent) ? prev : [...prev, activeEvent]
-        );
+        setTriggeredEvents(prev => (prev.includes(activeEvent) ? prev : [...prev, activeEvent]));
         setCashBreak(null);
-    }, [activeEvent, currentDateTime]);
+    };
 
-    const handleGameOver = useCallback((reason: string) => {
+    const handleGameOver = (reason: string) => {
         if (activeEvent) {
-            setTriggeredEvents(prev =>
-                prev.includes(activeEvent) ? prev : [...prev, activeEvent]
-            );
+            setTriggeredEvents(prev => (prev.includes(activeEvent) ? prev : [...prev, activeEvent]));
         }
 
         setCashBreak(null);
         setGameOver(saveGameOver(reason));
-    }, [activeEvent]);
+    };
 
     const handleRequestCashBreak = useCallback(() => {
         if (!activeEvent) return;
 
         const deadline = Date.now() + CASH_BREAK_SECONDS * 1000;
-
-        setCashBreak({
-            eventId: activeEvent,
-            deadline,
-        });
+        setCashBreak({ eventId: activeEvent, deadline });
         setCashBreakTick(Date.now());
     }, [activeEvent]);
 
@@ -544,16 +557,13 @@ function MainPageContent() {
 
         const updateCountdown = () => {
             const now = Date.now();
-
             setCashBreakTick(now);
-
             if (now >= cashBreak.deadline) {
                 setCashBreak(null);
             }
         };
 
         const interval = window.setInterval(updateCountdown, 250);
-
         return () => window.clearInterval(interval);
     }, [activeEvent, cashBreak]);
 
@@ -563,7 +573,6 @@ function MainPageContent() {
         const { body, documentElement } = document;
         const previousBodyOverflow = body.style.overflow;
         const previousHtmlOverflow = documentElement.style.overflow;
-
         body.style.overflow = 'hidden';
         documentElement.style.overflow = 'hidden';
 
@@ -598,39 +607,30 @@ function MainPageContent() {
     }, [activeEvent]);
 
     useEffect(() => {
-        // On first mount, record current date as baseline without firing notifications.
         if (lastSeenDateKeyRef.current === '') {
             lastSeenDateKeyRef.current = currentDateKey;
             return;
         }
 
         const fromDateKey = lastSeenDateKeyRef.current;
-
-        // Always advance the baseline so the next transition compares from today.
         lastSeenDateKeyRef.current = currentDateKey;
-
         if (fromDateKey === currentDateKey) return;
 
-        const ownedStocks = walletRef.current.filter(item =>
-            item.id !== 'cash' &&
-            item.id !== 'car' &&
-            item.units > 0
+        const ownedStocks = walletRef.current.filter(
+            item => item.id !== 'cash' && item.id !== 'car' && item.units > 0
         );
-
         if (ownedStocks.length === 0 || gameOver) return;
 
-        const allAssets = getAssetsWithMarket(currentDateKey, 4);
         const assetBySymbol = new Map(
-            allAssets
-                .filter((a): a is AssetWithData => a.hasData)
-                .map(a => [a.symbol, a])
+            getAssetsWithMarket(currentDateKey, 4, scenarioCatalogs.allCatalog)
+                .filter((asset): asset is AssetWithData => asset.hasData)
+                .map(asset => [asset.symbol, asset])
         );
 
         ownedStocks.forEach(item => {
             const asset = assetBySymbol.get(item.label);
             if (!asset) return;
 
-            // Price at the last date the player was on — this spans the full skip.
             const fromRow = findRowAtOrBefore(asset.data, fromDateKey);
             if (!fromRow) return;
 
@@ -646,20 +646,19 @@ function MainPageContent() {
                 })
             );
         });
-    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
+    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification, scenarioCatalogs]);
 
     useEffect(() => {
         if (gameOver) return;
 
         const insuranceData = readStoredJson<{ insured: boolean }>('carInsurance');
         const hasInsurance = insuranceData?.insured === true;
-
         const collegeResult = readStoredJson<{ result: string; fallback?: string | null }>('collegeResult');
         const collegeResultKind = collegeResult?.result;
-        // accepted-flying = full scholarship, no tuition
         const collegeApp = readStoredJson<{ schoolId: string; schoolName?: string }>('collegeApplication');
         let tuitionSchoolId: string | null = null;
         let tuitionSchoolName: string | null = null;
+
         if (collegeResultKind === 'accepted') {
             tuitionSchoolId = collegeApp?.schoolId ?? null;
             tuitionSchoolName = collegeApp?.schoolName ?? tuitionSchoolId;
@@ -667,8 +666,8 @@ function MainPageContent() {
             tuitionSchoolId = 'state-university';
             tuitionSchoolName = 'State University';
         }
-        const monthlyTuition = tuitionSchoolId ? (MONTHLY_TUITION[tuitionSchoolId] ?? null) : null;
 
+        const monthlyTuition = tuitionSchoolId ? (MONTHLY_TUITION[tuitionSchoolId] ?? null) : null;
         let totalOwed = 0;
         const billingParts: string[] = [];
         const dateIso = new Date(currentDateKey + 'T00:00:00').toISOString();
@@ -766,12 +765,12 @@ function MainPageContent() {
 
         const interval = window.setInterval(tick, 250);
         return () => window.clearInterval(interval);
-    }, [billingBreak, handleGameOver]);
+    }, [billingBreak]);
 
     const flashSkip = useCallback((fromDateStr: string, toDateStr: string) => {
         const calDays = Math.round(
-            (new Date(toDateStr + 'T00:00:00').getTime() - new Date(fromDateStr + 'T00:00:00').getTime())
-            / (1000 * 60 * 60 * 24)
+            (new Date(toDateStr + 'T00:00:00').getTime() - new Date(fromDateStr + 'T00:00:00').getTime()) /
+                (1000 * 60 * 60 * 24)
         );
         if (calDays <= 0) return;
 
@@ -789,82 +788,82 @@ function MainPageContent() {
         }
 
         const dest = new Date(toDateStr + 'T00:00:00').toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
         });
 
         if (skipLabelTimerRef.current) clearTimeout(skipLabelTimerRef.current);
-        setSkipLabel(`${period} → ${dest}`);
-        skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 30_000);
+        setSkipLabel(`${period} to ${dest}`);
+        skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 30000);
     }, []);
 
     const skip30Seconds = () => {
         if (activeEvent || billingBreakActive) return;
         const newSeconds = gameSeconds + 30;
-        const newDayIdx = Math.min(Math.floor(newSeconds / TOTAL_SECONDS), TIMELINE_DATE_OBJECTS.length - 1);
+        const newDayIdx = Math.min(Math.floor(newSeconds / TOTAL_SECONDS), timelineDateObjects.length - 1);
         if (newDayIdx > dayIndex) {
-            flashSkip(currentDateKey, TIMELINE_DATES[newDayIdx]);
+            flashSkip(currentDateKey, timelineDates[newDayIdx]);
         }
         setGameSeconds(s => s + 30);
     };
 
     const skipToNextDay = () => {
         if (activeEvent || billingBreakActive) return;
-        const newDayIdx = Math.min(dayIndex + 1, TIMELINE_DATE_OBJECTS.length - 1);
+        const newDayIdx = Math.min(dayIndex + 1, timelineDateObjects.length - 1);
         if (newDayIdx > dayIndex) {
-            flashSkip(currentDateKey, TIMELINE_DATES[newDayIdx]);
+            flashSkip(currentDateKey, timelineDates[newDayIdx]);
         }
         setGameSeconds(current => {
             const nextDayStart = (Math.floor(current / TOTAL_SECONDS) + 1) * TOTAL_SECONDS;
-            const lastDayStart = (TIMELINE_DATE_OBJECTS.length - 1) * TOTAL_SECONDS;
+            const lastDayStart = (timelineDateObjects.length - 1) * TOTAL_SECONDS;
             return Math.min(nextDayStart, lastDayStart);
         });
     };
 
     const skipToFinalMinute = () => {
         if (activeEvent || billingBreakActive) return;
-        const finalDayIdx = TIMELINE_DATE_OBJECTS.length - 1;
+        const finalDayIdx = timelineDateObjects.length - 1;
         if (finalDayIdx > dayIndex) {
-            flashSkip(currentDateKey, TIMELINE_DATES[finalDayIdx]);
+            flashSkip(currentDateKey, timelineDates[finalDayIdx]);
         }
-        setGameSeconds(current => Math.max(current, FINAL_MINUTE_START_SECONDS));
+        setGameSeconds(current => Math.max(current, finalMinuteStartSeconds));
     };
 
-    const jumpToDate = useCallback((dateStr: string) => {
-        if (activeEvent || billingBreakActive) return;
-        const idx = TIMELINE_DATES.indexOf(dateStr);
-        if (idx === -1) return;
-        if (idx > dayIndex) {
-            flashSkip(currentDateKey, dateStr);
-        }
-        setGameSeconds(idx * TOTAL_SECONDS);
-    }, [activeEvent, billingBreakActive, dayIndex, currentDateKey, flashSkip]);
+    const jumpToDate = useCallback(
+        (dateStr: string) => {
+            if (activeEvent || billingBreakActive) return;
+            const idx = timelineDates.indexOf(dateStr);
+            if (idx === -1) return;
+            if (idx > dayIndex) {
+                flashSkip(currentDateKey, dateStr);
+            }
+            setGameSeconds(idx * TOTAL_SECONDS);
+        },
+        [activeEvent, billingBreakActive, currentDateKey, dayIndex, flashSkip, timelineDates]
+    );
 
     useEffect(() => {
         saveWallet(wallet);
     }, [wallet]);
 
     useEffect(() => {
-        localStorage.setItem(TIMELINE_STORAGE_KEY, String(gameSeconds));
-    }, [gameSeconds]);
+        localStorage.setItem(timelineStorageKey, String(gameSeconds));
+    }, [gameSeconds, timelineStorageKey]);
 
     useEffect(() => {
-        localStorage.setItem(
-            TRIGGERED_EVENTS_STORAGE_KEY,
-            JSON.stringify(triggeredEvents)
-        );
-    }, [triggeredEvents]);
+        localStorage.setItem(triggeredEventsStorageKey, JSON.stringify(triggeredEvents));
+    }, [triggeredEvents, triggeredEventsStorageKey]);
 
     useEffect(() => {
         runStatsRef.current = loadRunStats() ?? createRunStats(startingCash);
     }, [startingCash]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
     }, []);
 
     const router = useRouter();
-    const scenarioId = normalizeScenarioId(searchParams.get('scenario'));
 
     const handleReturnHome = useCallback(() => {
         clearGameOver();
@@ -875,7 +874,7 @@ function MainPageContent() {
     useEffect(() => {
         const started = localStorage.getItem('gameStarted');
         if (!started) {
-            router.replace('/'); // 👈 kick them back
+            router.replace('/');
         }
     }, [router]);
 
@@ -902,29 +901,22 @@ function MainPageContent() {
             {billingBreakActive ? (
                 <div className="fixed left-1/2 top-5 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-950 shadow-[0_18px_44px_rgba(15,23,42,0.18)]">
                     <p className="text-sm font-semibold">
-                        {billingBreakRemaining}s to cover payments — ${billingBreak!.totalOwed.toFixed(2)} owed
+                        {billingBreakRemaining}s to cover payments - ${billingBreak.totalOwed.toFixed(2)} owed
                     </p>
                     <p className="mt-1 text-sm leading-relaxed">
-                        Your cash went negative after monthly deductions ({billingBreak!.reason}). Sell assets to bring your balance above zero or the game will end.
+                        Your cash went negative after monthly deductions ({billingBreak.reason}). Sell assets to bring your balance above zero or the game will end.
                     </p>
                 </div>
             ) : cashBreakActive ? (
                 <div className="fixed left-1/2 top-5 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950 shadow-[0_18px_44px_rgba(15,23,42,0.18)]">
-                    <p className="text-sm font-semibold">
-                        {cashBreakRemaining}s to raise cash
-                    </p>
+                    <p className="text-sm font-semibold">{cashBreakRemaining}s to raise cash</p>
                     <p className="mt-1 text-sm leading-relaxed">
                         Sell assets now, then the scenario will reopen. You cannot skip days until this scenario is completed.
                     </p>
                 </div>
             ) : null}
 
-            {/* GLOBAL EVENT MODAL */}
-            {eventModalOpen && activeEvent === 'dot-com-frenzy' && (
-                <DotComFrenzyModal
-                    onClose={handleCloseActiveEvent}
-                />
-            )}
+            {eventModalOpen && activeEvent === 'dot-com-frenzy' && <DotComFrenzyModal onClose={handleCloseActiveEvent} />}
             {eventModalOpen && activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal
                     wallet={wallet}
@@ -934,9 +926,7 @@ function MainPageContent() {
                 />
             )}
             {eventModalOpen && activeEvent === 'dot-com-reality-check' && (
-                <DotComRealityCheckModal
-                    onClose={handleCloseActiveEvent}
-                />
+                <DotComRealityCheckModal onClose={handleCloseActiveEvent} />
             )}
             {eventModalOpen && activeEvent === 'family-help' && (
                 <FamilyHelpModal
@@ -955,12 +945,7 @@ function MainPageContent() {
                 />
             )}
             {eventModalOpen && activeEvent === 'college-results' && (
-                <CollegeResultsModal
-                    wallet={wallet}
-                    setWallet={setWallet}
-                    onClose={handleCloseActiveEvent}
-                />
-
+                <CollegeResultsModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
             )}
             {eventModalOpen && activeEvent === 'college-party-invite' && (
                 <CollegePartyInvite
@@ -980,11 +965,7 @@ function MainPageContent() {
                 />
             )}
             {eventModalOpen && activeEvent === 'parents-support' && (
-                <ParentsSupportModal
-                    wallet={wallet}
-                    setWallet={setWallet}
-                    onClose={handleCloseActiveEvent}
-                />
+                <ParentsSupportModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
             )}
             {eventModalOpen && activeEvent === 'car-crash' && (
                 <CarCrashModal
@@ -996,24 +977,17 @@ function MainPageContent() {
                 />
             )}
             {eventModalOpen && activeEvent === 'freelance-gig' && (
-                <FreelanceGigModal
-                    wallet={wallet}
-                    setWallet={setWallet}
-                    onClose={handleCloseActiveEvent}
-                />
+                <FreelanceGigModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
             )}
             {eventModalOpen && activeEvent === 'job-opportunity' && (
-                <JobOpportunityModal
-                    wallet={wallet}
-                    setWallet={setWallet}
-                    onClose={handleCloseActiveEvent}
-                />
+                <JobOpportunityModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
             )}
 
-            {/* MAIN PAGE LAYOUT */}
-            <div className={`flex min-h-screen w-full overflow-x-hidden bg-[#f8fafc] transition-all duration-700 ${
-                hasReachedTimelineEnd ? 'pointer-events-none select-none blur-[1px] saturate-90' : ''
-            }`}>
+            <div
+                className={`flex min-h-screen w-full overflow-x-hidden bg-[#f8fafc] transition-all duration-700 ${
+                    hasReachedTimelineEnd ? 'pointer-events-none select-none blur-[1px] saturate-90' : ''
+                }`}
+            >
                 <Sidebar
                     wallet={wallet}
                     currentDate={currentDateTime}
@@ -1023,8 +997,8 @@ function MainPageContent() {
                 <div className="min-w-0 flex-1 box-border p-4 xl:p-5">
                     <div className="mx-auto w-full max-w-[1280px]">
                         <Timeline
-                            timelineDates={TIMELINE_DATES}
-                            markers={TIMELINE}
+                            timelineDates={timelineDates}
+                            markers={timelineMarkers}
                             currentDate={currentDateTime}
                             onJumpToDate={jumpToDate}
                             skipFlash={skipLabel}
@@ -1035,6 +1009,7 @@ function MainPageContent() {
                                 wallet={wallet}
                                 setWallet={setWallet}
                                 currentDate={currentDateTime}
+                                scenarioId={scenarioId}
                                 secondsLeft={secondsLeft}
                                 onSkip30={skip30Seconds}
                                 onSkipDay={skipToNextDay}
@@ -1052,14 +1027,7 @@ function MainPageContent() {
                     </div>
                 </div>
             </div>
-            {gameOver ? (
-                <GameOverModal
-                    reason={gameOver.reason}
-                    onReturnHome={handleReturnHome}
-                />
-            ) : null}
-
-
+            {gameOver ? <GameOverModal reason={gameOver.reason} onReturnHome={handleReturnHome} /> : null}
         </>
     );
 }

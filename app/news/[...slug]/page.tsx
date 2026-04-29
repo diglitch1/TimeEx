@@ -5,6 +5,7 @@ import { getGuardianArticleById } from '@/app/lib/guardian';
 import {
     GENERIC_NEWS_ERROR_MESSAGE,
     DEFAULT_NEWS_DATE,
+    SCENARIO_DEFAULT_NEWS_DATE,
     buildNewsListHref,
     coerceNewsDate,
     formatNewsTimestamp,
@@ -36,8 +37,11 @@ export default async function NewsArticlePage({
     }
 
     const articleId = slug.map(segment => decodeURIComponent(segment)).join('/');
-    const date = coerceNewsDate(resolvedSearchParams.date ?? DEFAULT_NEWS_DATE);
     const scenario = normalizeScenarioId(resolvedSearchParams.scenario);
+    const date = coerceNewsDate(
+        resolvedSearchParams.date ?? SCENARIO_DEFAULT_NEWS_DATE[scenario] ?? DEFAULT_NEWS_DATE,
+        scenario
+    );
 
     let errorMessage: string | null = null;
     let article: Awaited<ReturnType<typeof getGuardianArticleById>> | null = null;

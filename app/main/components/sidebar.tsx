@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo } from 'react';
 import { WalletItem } from '../utils/walletData';
 import {
+    getScenarioAssetCatalogs,
     getAssetsWithMarket,
     toLocalDateStr,
     type AssetWithData,
@@ -28,7 +29,14 @@ export default function Sidebar({
     );
 
     const dateStr = useMemo(() => toLocalDateStr(currentDate), [currentDate]);
-    const assetsWithMarket = useMemo(() => getAssetsWithMarket(dateStr, 18), [dateStr]);
+    const scenarioCatalogs = useMemo(
+        () => getScenarioAssetCatalogs(scenarioId),
+        [scenarioId]
+    );
+    const assetsWithMarket = useMemo(
+        () => getAssetsWithMarket(dateStr, 18, scenarioCatalogs.allCatalog),
+        [dateStr, scenarioCatalogs]
+    );
     const marketMover = useMemo(
         () =>
             assetsWithMarket.reduce<AssetWithData | null>((best, asset) => {
