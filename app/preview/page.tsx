@@ -8,7 +8,7 @@ import { resetGame } from '../main/utils/save';
 import Image from "next/image";
 import type React from "react";
 
-type CharacterId = "A" | "B" | "C";
+type CharacterId = "A" | "B" | "C" | "D";
 type ScenarioId = "dotcom" | "housing" | "pandemic";
 
 type CharacterInfo = {
@@ -73,6 +73,18 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         image: "/images/CharacterA.png",
 
     },
+    D: {
+        id: "D",
+        name: "Diana Gelus",
+        age: "26",
+        occupation: "Flight Attendant",
+        background: "Working in global travel when the pandemic hit.",
+        motivation: "protecting her savings during uncertainty",
+        risk: "Medium",
+        experience: "Beginner",
+        budget: "$12,000",
+        image: "/images/COVID-19-PANDEMIC/scenario-character-selection/CharacterB.png",
+    },
 };
 
 const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
@@ -104,9 +116,9 @@ const SCENARIOS: Record<ScenarioId, ScenarioInfo> = {
     },
     pandemic: {
         id: "pandemic",
-        title: "Pandemic Market Shock",
-        period: "2020",
-        image: "/images/dotcom.jpeg",
+        title: "COVID-19 Pandemic",
+        period: "2020 - 2021",
+        image: "/images/COVID-19-PANDEMIC/scenario-character-selection/scenario-COVID-19-PANDEMIC.png",
 
         description:
             "The Pandemic Market Shock was triggered by a global health crisis that caused sudden\n" +
@@ -143,6 +155,7 @@ const CHARACTER_STARTING_CASH: Record<CharacterId, number> = {
     A: 5000,
     B: 12000,
     C: 9000,
+    D: 12000,
 };
 
 export default function PreviewPage() {
@@ -176,7 +189,7 @@ function PreviewPageContent() {
 
     return (
         <main suppressHydrationWarning
-            className="min-h-screen bg-[#F7FAFC] text-[#0A355B]"
+              className="min-h-screen bg-[#F7FAFC] text-[#0A355B]"
         >
             {/* HERO */}
             <div className="px-8 pt-12 pb-10 bg-gradient-to-b from-[#EAF4FF] to-[#F7FAFC] border-b border-[#CFE3F8]">

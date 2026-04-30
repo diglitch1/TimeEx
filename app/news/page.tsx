@@ -2,8 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getNewsForDate } from '@/app/lib/guardian';
 import {
-    DEFAULT_NEWS_DATE,
     GENERIC_NEWS_ERROR_MESSAGE,
+    SCENARIO_DEFAULT_NEWS_DATE,
     SCENARIO_NEWS_CONFIG,
     buildNewsArticleHref,
     coerceNewsDate,
@@ -23,8 +23,11 @@ type NewsPageProps = {
 
 export default async function NewsPage({ searchParams }: NewsPageProps) {
     const resolvedSearchParams = await searchParams;
-    const date = coerceNewsDate(resolvedSearchParams.date ?? DEFAULT_NEWS_DATE);
     const scenario = normalizeScenarioId(resolvedSearchParams.scenario);
+    const date = coerceNewsDate(
+        resolvedSearchParams.date ?? SCENARIO_DEFAULT_NEWS_DATE[scenario],
+        scenario
+    );
     const scenarioConfig = SCENARIO_NEWS_CONFIG[scenario];
 
     let errorMessage: string | null = null;

@@ -70,6 +70,8 @@ type AssetBase = {
     data: MarketRow[];
 };
 
+export type AssetCatalogEntry = AssetBase;
+
 export type AssetWithoutData = AssetBase & {
     hasData: false;
 };
@@ -196,6 +198,60 @@ export const ALL_ASSET_CATALOG: AssetBase[] = mergeCatalogs(
     BROWSE_ASSET_CATALOG,
     LEGACY_ASSET_CATALOG
 );
+
+export const PANDEMIC_FEATURED_ASSET_CATALOG: AssetBase[] = [
+    createAsset('MSFT', 'Microsoft', MSFTData as MarketRow[]),
+    createAsset('NVDA', 'Nvidia', nvdaData as MarketRow[]),
+    createAsset('GILD', 'Gilead Sciences', GILDData as MarketRow[]),
+    createAsset('WMT', 'Walmart', WMTData as MarketRow[]),
+    createAsset('XLF', 'Financial Select Sector SPDR', XLFData as MarketRow[]),
+    createAsset('XLK', 'Technology Select Sector SPDR', XLKData as MarketRow[]),
+    createAsset('DIS', 'Disney', DISData as MarketRow[]),
+];
+
+export const PANDEMIC_BROWSE_ASSET_CATALOG: AssetBase[] = [
+    createAsset('AMGN', 'Amgen', AMGNData as MarketRow[]),
+    createAsset('CLX', 'Clorox', CLXData as MarketRow[]),
+    createAsset('DIS', 'Disney', DISData as MarketRow[]),
+    createAsset('GILD', 'Gilead Sciences', GILDData as MarketRow[]),
+    createAsset('IBM', 'IBM', IBMData as MarketRow[]),
+    createAsset('KO', 'Coca-Cola', KOData as MarketRow[]),
+    createAsset('MCD', "McDonald's", MCDData as MarketRow[]),
+    createAsset('MRK', 'Merck', MRKData as MarketRow[]),
+    createAsset('MSFT', 'Microsoft', MSFTData as MarketRow[]),
+    createAsset('NVDA', 'Nvidia', nvdaData as MarketRow[]),
+    createAsset('OXY', 'Occidental Petroleum', OXYData as MarketRow[]),
+    createAsset('SAP', 'SAP', SAPData as MarketRow[]),
+    createAsset('TGT', 'Target', TGTData as MarketRow[]),
+    createAsset('UNP', 'Union Pacific', UNPData as MarketRow[]),
+    createAsset('WFC', 'Wells Fargo', WFCData as MarketRow[]),
+    createAsset('WMT', 'Walmart', WMTData as MarketRow[]),
+    createAsset('XLF', 'Financial Select Sector SPDR', XLFData as MarketRow[]),
+    createAsset('XLK', 'Technology Select Sector SPDR', XLKData as MarketRow[]),
+    createAsset('XLP', 'Consumer Staples Select Sector SPDR', XLPData as MarketRow[]),
+    createAsset('XLY', 'Consumer Discretionary Select Sector SPDR', XLYData as MarketRow[]),
+];
+
+export const PANDEMIC_ALL_ASSET_CATALOG: AssetBase[] = mergeCatalogs(
+    PANDEMIC_FEATURED_ASSET_CATALOG,
+    PANDEMIC_BROWSE_ASSET_CATALOG
+);
+
+export function getScenarioAssetCatalogs(scenarioId?: string | null) {
+    if (scenarioId === 'pandemic') {
+        return {
+            featuredCatalog: PANDEMIC_FEATURED_ASSET_CATALOG,
+            browseCatalog: PANDEMIC_BROWSE_ASSET_CATALOG,
+            allCatalog: PANDEMIC_ALL_ASSET_CATALOG,
+        };
+    }
+
+    return {
+        featuredCatalog: FEATURED_ASSET_CATALOG,
+        browseCatalog: BROWSE_ASSET_CATALOG,
+        allCatalog: ALL_ASSET_CATALOG,
+    };
+}
 
 export function findRowAtOrBefore(data: MarketRow[], dateStr: string): MarketRow | null {
     if (!data || data.length === 0) return null;

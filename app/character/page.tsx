@@ -14,7 +14,7 @@ type SelectionOption = {
     characterStats?: { label: string; value: string }[];
     scenarioTitle: string;
     scenarioImage: string;
-    scenarioPeriod?: string;
+    scenarioPeriod: string;
     scenarioFacts?: string[];
 };
 
@@ -29,7 +29,7 @@ const SELECTION_OPTIONS: SelectionOption[] = [
         characterStats: [
             { label: "Age", value: "18" },
             { label: "Occupation", value: "Student" },
-            { label: "Starting capital", value: "$5,000" },
+            { label: "Starting capital", value: "$7,000" },
         ],
         scenarioTitle: "Dot-com Bubble",
         scenarioImage: "/images/dotcom.jpeg",
@@ -50,16 +50,30 @@ const SELECTION_OPTIONS: SelectionOption[] = [
         characterImage: "/images/man.jpeg",
         scenarioTitle: "Future Scenario",
         scenarioImage: "/images/IMG.png",
+        scenarioPeriod: "Coming soon",
     },
     {
         id: "C-pandemic",
-        playable: false,
-        characterId: "C",
+        playable: true,
+        characterId: "D",
         scenarioId: "pandemic",
-        characterName: "Future Character",
-        characterImage: "/images/man.jpeg",
-        scenarioTitle: "Future Scenario",
-        scenarioImage: "/images/IMG.png",
+        characterName: "Diana Gelus",
+        characterImage: "/images/COVID-19-PANDEMIC/scenario-character-selection/CharacterB.png",
+        characterStats: [
+            { label: "Age", value: "26" },
+            { label: "Occupation", value: "Flight Attendant" },
+            { label: "Starting capital", value: "$12,000" },
+        ],
+        scenarioTitle: "COVID-19 Pandemic",
+        scenarioImage:
+            "/images/COVID-19-PANDEMIC/scenario-character-selection/scenario-COVID-19-PANDEMIC.png",
+        scenarioPeriod: "2020 - 2021",
+        scenarioFacts: [
+            "Global pandemic outbreak",
+            "Lockdowns & travel restrictions",
+            "Markets crash rapidly",
+            "Strong recovery & tech boom",
+        ],
     },
 ];
 
@@ -108,7 +122,7 @@ function SelectionCard({
 
                     <div className="flex items-center gap-3">
                         <span className="rounded-full border border-[#B9D5EF] bg-white/80 px-4 py-2 text-sm font-semibold text-[#2C6CA3]">
-                            {option.playable ? "Available" : "Locked"}
+                            {option.playable ? "Available now" : "Locked"}
                         </span>
                         {option.playable && isSelected && (
                             <span className="rounded-full bg-[#1E6FBF] px-4 py-2 text-sm font-semibold text-white">
@@ -198,7 +212,7 @@ function SelectionCard({
                             </p>
                         </div>
 
-                        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
                             <div className={`rounded-2xl border border-[#D9E9F8] p-4 md:p-5 ${sectionTone}`}>
                                 {option.playable && option.scenarioFacts ? (
                                     <div className="space-y-3">
@@ -218,7 +232,7 @@ function SelectionCard({
                                 )}
                             </div>
 
-                            <div className="relative mx-auto w-full max-w-[220px]">
+                            <div className="relative w-full">
                                 <div
                                     className={`
                                         relative aspect-[4/3] overflow-hidden rounded-2xl border ${imageTone}
@@ -297,10 +311,11 @@ export default function CharacterPage() {
         <main className="min-h-screen bg-[#F7FAFC] text-[#0A355B]">
             <div className="border-b border-[#CFE3F8] bg-gradient-to-b from-[#EAF4FF] via-[#F2F8FF] to-[#F7FAFC] px-6 pt-12 pb-14 md:px-10">
                 <h1 className="text-center text-3xl font-bold md:text-4xl">
-                    Character & Scenario
+                    Pick your character and scenario
                 </h1>
                 <p className="mx-auto mt-4 max-w-3xl text-center text-[17px] leading-relaxed text-[#3F6D98]">
-                    Choose the character and the matched scenario together.
+                    Each box is one full starting path. Choose the character and the matched
+                    scenario together.
                 </p>
             </div>
 
@@ -312,11 +327,19 @@ export default function CharacterPage() {
                             option={option}
                             selected={selected}
                             onSelect={setSelected}
-                            onConfirm={(selection) =>
+                            onConfirm={(selection) => {
+                                if (
+                                    selection.characterId === "D" &&
+                                    selection.scenarioId === "pandemic"
+                                ) {
+                                    router.push("/preview-pandemic");
+                                    return;
+                                }
+
                                 router.push(
                                     `/preview?character=${selection.characterId}&scenario=${selection.scenarioId}`
-                                )
-                            }
+                                );
+                            }}
                         />
                     ))}
                 </div>

@@ -6,6 +6,7 @@ import {
 import { isNewsRateLimited } from '@/app/lib/news-rate-limit';
 import {
     DEFAULT_NEWS_DATE,
+    SCENARIO_DEFAULT_NEWS_DATE,
     GENERIC_NEWS_ERROR_MESSAGE,
     clampNewsLimit,
     coerceNewsDate,
@@ -21,8 +22,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const date = coerceNewsDate(searchParams.get('date') ?? DEFAULT_NEWS_DATE);
     const scenario = normalizeScenarioId(searchParams.get('scenario'));
+    const date = coerceNewsDate(
+        searchParams.get('date') ?? SCENARIO_DEFAULT_NEWS_DATE[scenario] ?? DEFAULT_NEWS_DATE,
+        scenario
+    );
     const limitParam = Number.parseInt(searchParams.get('limit') ?? '3', 10);
     const limit = clampNewsLimit(limitParam, 3, 6);
 
