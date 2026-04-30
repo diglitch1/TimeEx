@@ -16,7 +16,7 @@ import DotComFrenzyModal from './components/DotComFrenzyModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
-import { GAME_EVENTS } from './utils/events';
+import { GAME_EVENTS, HOUSING_GAME_EVENTS } from './utils/events';
 import FamilyHelpModal from './components/familyHelp';
 import ApplyForCollegeModal from './components/ApplyForCollege';
 import CarInsuranceModal from './components/CarInsurance';
@@ -27,6 +27,8 @@ import ParentsSupportModal from './components/ParentsSupport';
 import CarCrashModal from './components/CarCrash';
 import FreelanceGigModal from './components/FreelanceGig';
 import JobOpportunityModal from './components/JobOpportunity';
+import RiskyDealModal from './components/characterB/RiskyDeal';
+import DaughterRentHelpModal from './components/characterB/DaughterRentHelp';
 import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
@@ -317,7 +319,12 @@ function MainPageContent() {
             : scenarioId === 'housing'
               ? 'triggeredEvents:housing'
               : 'triggeredEvents';
-    const scenarioEvents = scenarioId === 'dotcom' ? GAME_EVENTS : [];
+    const scenarioEvents =
+        scenarioId === 'housing'
+            ? HOUSING_GAME_EVENTS
+            : scenarioId === 'dotcom'
+              ? GAME_EVENTS
+              : [];
     const [startingCash] = useState(() => loadStartingCash(DEFAULT_STARTING_CASH));
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>(() =>
         readStoredTriggeredEvents(triggeredEventsStorageKey)
@@ -983,6 +990,17 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'job-opportunity' && (
                 <JobOpportunityModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'risky-deal' && (
+                <RiskyDealModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'daughter-rent-help' && (
+                <DaughterRentHelpModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
             )}
 
             <div
