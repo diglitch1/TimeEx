@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { WalletItem } from '../utils/walletData';
 import {
     getScenarioAssetCatalogs,
@@ -12,8 +12,77 @@ import {
 import AssetAvatar from './AssetAvatar';
 import DailyNewsFeed from './DailyNewsFeed';
 
+type LotteryTone = 'pink' | 'green' | 'gold';
+
+type LotteryPrize = {
+    amount: number;
+    chance: number;
+    label: string;
+};
+
+type LotteryTicketConfig = {
+    title: string;
+    price: number;
+    tone: LotteryTone;
+    kicker: string;
+    prizes: LotteryPrize[];
+};
+
+type ScratchSession = {
+    ticket: LotteryTicketConfig;
+    prize: LotteryPrize;
+};
+
+const LOTTERY_TICKETS: LotteryTicketConfig[] = [
+    {
+        title: 'Budget Banger',
+        price: 5,
+        tone: 'pink',
+        kicker: 'Cheap shot, tiny odds, fast fun.',
+        prizes: [
+            { amount: 0, chance: 0.48, label: 'No win' },
+            { amount: 5, chance: 0.2, label: 'Break-even' },
+            { amount: 10, chance: 0.16, label: 'Small win' },
+            { amount: 25, chance: 0.1, label: 'Nice hit' },
+            { amount: 100, chance: 0.05, label: 'Big hit' },
+            { amount: 500, chance: 0.01, label: 'Jackpot' },
+        ],
+    },
+    {
+        title: 'Mediocre Fortune',
+        price: 15,
+        tone: 'green',
+        kicker: 'Balanced odds with a few real jumps.',
+        prizes: [
+            { amount: 0, chance: 0.44, label: 'No win' },
+            { amount: 10, chance: 0.16, label: 'Soft loss' },
+            { amount: 15, chance: 0.14, label: 'Break-even' },
+            { amount: 30, chance: 0.14, label: 'Small win' },
+            { amount: 75, chance: 0.08, label: 'Strong win' },
+            { amount: 300, chance: 0.03, label: 'Huge hit' },
+            { amount: 1000, chance: 0.01, label: 'Jackpot' },
+        ],
+    },
+    {
+        title: 'Eternal Riches Maybe',
+        price: 30,
+        tone: 'gold',
+        kicker: 'Worst odds, biggest dream.',
+        prizes: [
+            { amount: 0, chance: 0.42, label: 'No win' },
+            { amount: 20, chance: 0.15, label: 'Soft loss' },
+            { amount: 30, chance: 0.13, label: 'Break-even' },
+            { amount: 60, chance: 0.13, label: 'Small win' },
+            { amount: 150, chance: 0.09, label: 'Strong win' },
+            { amount: 600, chance: 0.06, label: 'Massive hit' },
+            { amount: 2500, chance: 0.02, label: 'Jackpot' },
+        ],
+    },
+];
+
 export default function Sidebar({
     wallet,
+    setWallet,
     currentDate,
     scenarioId,
     startingCash,
@@ -21,6 +90,7 @@ export default function Sidebar({
     characterId,
 }: {
     wallet: WalletItem[];
+    setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     currentDate: Date;
     scenarioId: string;
     startingCash: number;
@@ -52,8 +122,56 @@ export default function Sidebar({
     );
 
     const gainLoss = totalValue - startingCash;
+    const cashAvailable = wallet.find(item => item.id === 'cash')?.units ?? 0;
     const panelClass = 'rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]';
     const sectionLabelClass = 'mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-gray-400';
+    const [pendingTicket, setPendingTicket] = useState<LotteryTicketConfig | null>(null);
+    const [scratchSession, setScratchSession] = useState<ScratchSession | null>(null);
+    const [prizeCredited, setPrizeCredited] = useState(false);
+
+    const buyTicket = (ticket: LotteryTicketConfig) => {
+        if (cashAvailable < ticket.price) return;
+        const prize = drawLotteryPrize(ticket.prizes);
+
+        setWallet(prev =>
+            prev.map(item =>
+                item.id === 'cash'
+                    ? {
+                          ...item,
+                          units: item.units - ticket.price,
+                          usdValue: item.usdValue - ticket.price,
+                      }
+                    : item
+            )
+        );
+        setPendingTicket(null);
+        setPrizeCredited(false);
+        setScratchSession({ ticket, prize });
+    };
+
+    const collectPrize = () => {
+        if (!scratchSession || prizeCredited) {
+            setScratchSession(null);
+            return;
+        }
+
+        if (scratchSession.prize.amount > 0) {
+            setWallet(prev =>
+                prev.map(item =>
+                    item.id === 'cash'
+                        ? {
+                              ...item,
+                              units: item.units + scratchSession.prize.amount,
+                              usdValue: item.usdValue + scratchSession.prize.amount,
+                          }
+                        : item
+                )
+            );
+        }
+
+        setPrizeCredited(true);
+        setScratchSession(null);
+    };
 
     return (
         <aside className="w-[360px] shrink-0 border-r border-gray-200 bg-[#f8fafc] px-4 py-5 text-sm">
@@ -257,26 +375,44 @@ export default function Sidebar({
                 <div>
                     <p className={sectionLabelClass}>Tickets</p>
                     <div className="rounded-[28px] border border-yellow-100 bg-gradient-to-br from-yellow-50 via-white to-orange-50 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                        <p className={`mb-4 rounded-[18px] px-3 py-2 text-sm font-medium ${
+                            cashAvailable >= LOTTERY_TICKETS[0].price
+                                ? 'border border-yellow-200 bg-white/80 text-slate-600'
+                                : 'border border-red-200 bg-red-50 text-red-700'
+                        }`}>
+                            {cashAvailable >= LOTTERY_TICKETS[0].price
+                                ? `Cash available for tickets: ${formatSidebarCurrency(cashAvailable)}`
+                                : `You need at least ${formatSidebarCurrency(LOTTERY_TICKETS[0].price)} cash to buy any ticket.`}
+                        </p>
                         <div className="space-y-3">
-                            <LotteryTicket
-                                title="Budget Banger"
-                                price="$5.00"
-                                tone="pink"
-                            />
-                            <LotteryTicket
-                                title="Mediocre Fortune"
-                                price="$15.00"
-                                tone="green"
-                            />
-                            <LotteryTicket
-                                title="Eternal Riches Maybe"
-                                price="$30.00"
-                                tone="gold"
-                            />
+                            {LOTTERY_TICKETS.map(ticket => (
+                                <LotteryTicket
+                                    key={ticket.title}
+                                    title={ticket.title}
+                                    price={formatSidebarCurrency(ticket.price)}
+                                    tone={ticket.tone}
+                                    disabled={cashAvailable < ticket.price}
+                                    onBuy={() => setPendingTicket(ticket)}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
+            {pendingTicket ? (
+                <LotteryConfirmModal
+                    ticket={pendingTicket}
+                    cashAvailable={cashAvailable}
+                    onCancel={() => setPendingTicket(null)}
+                    onConfirm={() => buyTicket(pendingTicket)}
+                />
+            ) : null}
+            {scratchSession ? (
+                <LotteryScratchModal
+                    session={scratchSession}
+                    onClose={collectPrize}
+                />
+            ) : null}
         </aside>
     );
 }
@@ -458,10 +594,14 @@ function LotteryTicket({
     title,
     price,
     tone,
+    disabled = false,
+    onBuy,
 }: {
     title: string;
     price: string;
     tone: 'pink' | 'green' | 'gold';
+    disabled?: boolean;
+    onBuy: () => void;
 }) {
     const styles = {
         pink: {
@@ -487,11 +627,327 @@ function LotteryTicket({
                 <p className="text-sm font-semibold text-gray-950">{title}</p>
                 <p className={`mt-1 text-sm font-semibold ${styles.price}`}>{price}</p>
             </div>
-            <button className={`rounded-full px-4 py-2 text-sm font-semibold transition ${styles.button}`}>
+            <button
+                onClick={onBuy}
+                disabled={disabled}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    disabled
+                        ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                        : styles.button
+                }`}
+            >
                 Buy
             </button>
         </div>
     );
+}
+
+function LotteryConfirmModal({
+    ticket,
+    cashAvailable,
+    onCancel,
+    onConfirm,
+}: {
+    ticket: LotteryTicketConfig;
+    cashAvailable: number;
+    onCancel: () => void;
+    onConfirm: () => void;
+}) {
+    const styles = getLotteryToneStyles(ticket.tone);
+    const canAfford = cashAvailable >= ticket.price;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 backdrop-blur-[2px]">
+            <div className={`w-full max-w-md rounded-[30px] border p-6 shadow-[0_28px_80px_rgba(15,23,42,0.25)] ${styles.modal}`}>
+                <p className={`text-xs font-semibold uppercase tracking-[0.26em] ${styles.label}`}>
+                    {ticket.title}
+                </p>
+                <h3 className="mt-3 text-2xl font-bold text-slate-950">
+                    Buy this ticket?
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-700">
+                    {ticket.kicker} Ticket price: <span className="font-semibold">{formatSidebarCurrency(ticket.price)}</span>.
+                </p>
+
+                <div className="mt-5 rounded-[22px] border border-white/70 bg-white/75 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Prize chances
+                    </p>
+                    <div className="mt-3 space-y-2">
+                        {ticket.prizes.map(prize => (
+                            <div key={`${ticket.title}-${prize.amount}`} className="flex items-center justify-between gap-3 text-sm">
+                                <span className="font-medium text-slate-800">
+                                    {prize.amount === 0 ? 'No win' : formatSidebarCurrency(prize.amount)}
+                                </span>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+                                    {(prize.chance * 100).toFixed(prize.chance < 0.01 ? 1 : 0)}%
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <p className={`mt-4 text-sm ${canAfford ? 'text-slate-600' : 'font-semibold text-red-600'}`}>
+                    Cash available: {formatSidebarCurrency(cashAvailable)}
+                </p>
+
+                <div className="mt-6 flex items-center justify-end gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={!canAfford}
+                        className={`rounded-full px-5 py-2 text-sm font-semibold text-white transition ${
+                            canAfford ? styles.button : 'cursor-not-allowed bg-slate-300'
+                        }`}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function LotteryScratchModal({
+    session,
+    onClose,
+}: {
+    session: ScratchSession;
+    onClose: () => void;
+}) {
+    const styles = getLotteryToneStyles(session.ticket.tone);
+    const [scratchedEnough, setScratchedEnough] = useState(false);
+    const [scratchPercent, setScratchPercent] = useState(0);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-[2px]">
+            <div className={`w-full max-w-lg rounded-[32px] border p-6 shadow-[0_28px_80px_rgba(15,23,42,0.25)] ${styles.modal}`}>
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <p className={`text-xs font-semibold uppercase tracking-[0.26em] ${styles.label}`}>
+                            {session.ticket.title}
+                        </p>
+                        <h3 className="mt-3 text-2xl font-bold text-slate-950">
+                            Scratch your ticket
+                        </h3>
+                    </div>
+                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600">
+                        {scratchPercent}% cleared
+                    </span>
+                </div>
+
+                <div className="mt-5">
+                    <ScratchCard
+                        tone={session.ticket.tone}
+                        prize={session.prize}
+                        onProgress={setScratchPercent}
+                        onReveal={() => setScratchedEnough(true)}
+                    />
+                </div>
+
+                <p className="mt-4 text-sm leading-relaxed text-slate-700">
+                    Scratch away the coating to reveal your prize. Once 25% of the ticket is cleared,
+                    you can close it and any winnings go directly back into Cash.
+                </p>
+
+                <div className="mt-6 flex items-center justify-end">
+                    <button
+                        onClick={onClose}
+                        disabled={!scratchedEnough}
+                        className={`rounded-full px-5 py-2 text-sm font-semibold text-white transition ${
+                            scratchedEnough ? styles.button : 'cursor-not-allowed bg-slate-300'
+                        }`}
+                    >
+                        {session.prize.amount > 0 ? 'Collect winnings' : 'Close ticket'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ScratchCard({
+    tone,
+    prize,
+    onProgress,
+    onReveal,
+}: {
+    tone: LotteryTone;
+    prize: LotteryPrize;
+    onProgress: (percent: number) => void;
+    onReveal: () => void;
+}) {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const isDrawingRef = useRef(false);
+    const revealedRef = useRef(false);
+    const styles = getLotteryToneStyles(tone);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const context = canvas.getContext('2d');
+        if (!context) return;
+
+        canvas.width = 560;
+        canvas.height = 280;
+
+        context.globalCompositeOperation = 'source-over';
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, styles.scratchStart);
+        gradient.addColorStop(1, styles.scratchEnd);
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        context.fillStyle = 'rgba(255,255,255,0.45)';
+        context.font = '700 22px system-ui';
+        context.textAlign = 'center';
+        context.fillText('SCRATCH TO REVEAL', canvas.width / 2, canvas.height / 2 + 8);
+
+        revealedRef.current = false;
+        onProgress(0);
+    }, [onProgress, styles.scratchEnd, styles.scratchStart]);
+
+    const eraseAtPoint = (clientX: number, clientY: number) => {
+        const canvas = canvasRef.current;
+        const container = containerRef.current;
+        if (!canvas || !container) return;
+
+        const context = canvas.getContext('2d');
+        if (!context) return;
+
+        const rect = container.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+
+        context.globalCompositeOperation = 'destination-out';
+        context.beginPath();
+        context.arc(x, y, 42, 0, Math.PI * 2);
+        context.fill();
+    };
+
+    const updateProgress = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const context = canvas.getContext('2d');
+        if (!context) return;
+
+        const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+        let transparentPixels = 0;
+        for (let index = 3; index < data.length; index += 4) {
+            if (data[index] < 80) transparentPixels += 1;
+        }
+        const percent = Math.min(100, Math.round((transparentPixels / (canvas.width * canvas.height)) * 100));
+        onProgress(percent);
+
+        if (percent >= 25 && !revealedRef.current) {
+            revealedRef.current = true;
+            onReveal();
+        }
+    };
+
+    return (
+        <div
+            ref={containerRef}
+            className={`relative overflow-hidden rounded-[28px] border ${styles.card}`}
+            onPointerDown={(event) => {
+                isDrawingRef.current = true;
+                eraseAtPoint(event.clientX, event.clientY);
+                updateProgress();
+            }}
+            onPointerMove={(event) => {
+                if (!isDrawingRef.current) return;
+                eraseAtPoint(event.clientX, event.clientY);
+                updateProgress();
+            }}
+            onPointerUp={() => {
+                isDrawingRef.current = false;
+                updateProgress();
+            }}
+            onPointerLeave={() => {
+                isDrawingRef.current = false;
+            }}
+        >
+            <div className={`relative flex min-h-[220px] flex-col items-center justify-center px-6 py-8 text-center ${styles.reveal}`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+                    Prize underneath
+                </p>
+                <p className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+                    {prize.amount > 0 ? formatSidebarCurrency(prize.amount) : '$0'}
+                </p>
+                <p className="mt-3 text-base font-semibold text-slate-700">
+                    {prize.label}
+                </p>
+                <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-600">
+                    {prize.amount > 0
+                        ? 'Nice. Clear enough of the ticket and collect your winnings.'
+                        : 'No luck this time. Clear the ticket to finish the reveal.'}
+                </p>
+            </div>
+            <canvas
+                ref={canvasRef}
+                className="absolute inset-0 h-full w-full touch-none"
+            />
+        </div>
+    );
+}
+
+function drawLotteryPrize(prizes: LotteryPrize[]) {
+    const roll = Math.random();
+    let cumulative = 0;
+
+    for (const prize of prizes) {
+        cumulative += prize.chance;
+        if (roll <= cumulative) return prize;
+    }
+
+    return prizes[prizes.length - 1];
+}
+
+function getLotteryToneStyles(tone: LotteryTone) {
+    switch (tone) {
+        case 'pink':
+            return {
+                modal: 'border-pink-200 bg-gradient-to-br from-pink-50 via-white to-rose-50',
+                label: 'text-pink-500',
+                button: 'bg-pink-600 hover:bg-pink-500',
+                card: 'border-pink-200 bg-white',
+                reveal: 'bg-gradient-to-br from-pink-50 via-white to-rose-50',
+                scratchStart: '#f472b6',
+                scratchEnd: '#ec4899',
+            };
+        case 'green':
+            return {
+                modal: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50',
+                label: 'text-emerald-600',
+                button: 'bg-emerald-600 hover:bg-emerald-500',
+                card: 'border-emerald-200 bg-white',
+                reveal: 'bg-gradient-to-br from-emerald-50 via-white to-teal-50',
+                scratchStart: '#34d399',
+                scratchEnd: '#10b981',
+            };
+        case 'gold':
+        default:
+            return {
+                modal: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50',
+                label: 'text-amber-600',
+                button: 'bg-amber-500 hover:bg-amber-400',
+                card: 'border-amber-200 bg-white',
+                reveal: 'bg-gradient-to-br from-amber-50 via-white to-orange-50',
+                scratchStart: '#fbbf24',
+                scratchEnd: '#f59e0b',
+            };
+    }
 }
 
 function formatSidebarCurrency(value: number) {
