@@ -8,6 +8,8 @@ import { resetGame } from '../main/utils/save';
 import Image from "next/image";
 import type React from "react";
 
+const CHARACTER_SELECTION_SOURCE_KEY = "timeex:selection-source";
+
 type CharacterId = "A" | "B" | "C" | "D";
 type ScenarioId = "dotcom" | "housing" | "pandemic";
 
@@ -49,13 +51,13 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
 
     B: {
         id: "B",
-        name: "Daniel Ruiz",
-        age: "28",
-        occupation: 'Junior Web Developer',
-        background: "First stable tech job.",
-        motivation: "financial independence",
+        name: "Cain Amane",
+        age: "46",
+        occupation: "Real Estate Advisor",
+        background: "Starting a career during a fragile market period.",
+        motivation: "building savings and stability",
         risk: "Medium",
-        experience: "Beginner",
+        experience: "Low-Medium",
         budget: "$12,000",
         image: "/images/CharacterA.png",
 
@@ -195,7 +197,10 @@ function PreviewPageContent() {
             <div className="px-8 pt-12 pb-10 bg-gradient-to-b from-[#EAF4FF] to-[#F7FAFC] border-b border-[#CFE3F8]">
                 <header className="max-w-[1300px] mx-auto">
                     <button
-                        onClick={() => router.push("/character")}
+                        onClick={() => {
+                            localStorage.setItem(CHARACTER_SELECTION_SOURCE_KEY, "return");
+                            router.push("/character");
+                        }}
                         className="mb-6 inline-flex items-center gap-2 text-blue-700 font-medium hover:underline"
                     >
                         <span aria-hidden>←</span> Back to selection

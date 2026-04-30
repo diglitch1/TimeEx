@@ -1,11 +1,10 @@
 "use client";
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
     buildNewsArticleHref,
-    buildNewsListHref,
+    buildNewsListHrefWithOptions,
     formatNewsTimestamp,
     type NewsFeedItem,
 } from '@/app/lib/news-shared';
@@ -18,9 +17,11 @@ type NewsApiResponse = {
 export default function DailyNewsFeed({
     dateStr,
     scenarioId,
+    characterId,
 }: {
     dateStr: string;
     scenarioId: string;
+    characterId?: string | null;
 }) {
     const [articles, setArticles] = useState<NewsFeedItem[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -100,14 +101,13 @@ export default function DailyNewsFeed({
                         href={buildNewsArticleHref(article.id, {
                             date: dateStr,
                             scenario: scenarioId,
+                            character: characterId,
                         })}
                         className="flex items-start gap-4 rounded-[22px] border border-transparent px-2 py-2 transition hover:border-blue-100 hover:bg-blue-50/60"
                     >
-                        <Image
+                        <img
                             src={article.thumbnailUrl ?? '/images/newspaper.jpg'}
                             alt={article.headline}
-                            width={64}
-                            height={64}
                             className="h-16 w-16 rounded-[18px] object-cover"
                         />
 
@@ -124,7 +124,10 @@ export default function DailyNewsFeed({
             )}
 
             <Link
-                href={buildNewsListHref(dateStr, scenarioId)}
+                href={buildNewsListHrefWithOptions(dateStr, {
+                    scenario: scenarioId,
+                    character: characterId,
+                })}
                 className="mt-5 block w-full rounded-full border border-gray-200 bg-white py-3 text-center text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:text-blue-600"
             >
                 Read More

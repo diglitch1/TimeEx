@@ -17,11 +17,15 @@ export default function Sidebar({
     currentDate,
     scenarioId,
     startingCash,
+    characterName,
+    characterId,
 }: {
     wallet: WalletItem[];
     currentDate: Date;
     scenarioId: string;
     startingCash: number;
+    characterName: string;
+    characterId?: string | null;
 }) {
     const totalValue = wallet.reduce(
         (sum, item) => sum + item.usdValue,
@@ -66,7 +70,7 @@ export default function Sidebar({
                         </div>
                         <div className="min-w-0">
                             <p className="text-xl font-semibold tracking-tight text-gray-950">
-                                Kira Light
+                                {characterName}
                             </p>
                         </div>
                     </div>
@@ -242,7 +246,11 @@ export default function Sidebar({
                 <div>
                     <p className={sectionLabelClass}>News Feed</p>
                     <div className={panelClass}>
-                        <DailyNewsFeed dateStr={dateStr} scenarioId={scenarioId} />
+                        <DailyNewsFeed
+                            dateStr={dateStr}
+                            scenarioId={scenarioId}
+                            characterId={characterId}
+                        />
                     </div>
                 </div>
 

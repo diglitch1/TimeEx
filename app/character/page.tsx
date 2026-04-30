@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const CHARACTER_SELECTION_STORAGE_KEY = "timeex:selected-path";
+const CHARACTER_SELECTION_SOURCE_KEY = "timeex:selection-source";
 
 type SelectionOption = {
     id: string;
@@ -43,14 +46,25 @@ const SELECTION_OPTIONS: SelectionOption[] = [
     },
     {
         id: "B-housing",
-        playable: false,
+        playable: true,
         characterId: "B",
         scenarioId: "housing",
-        characterName: "Future Character",
-        characterImage: "/images/man.jpeg",
-        scenarioTitle: "Future Scenario",
-        scenarioImage: "/images/IMG.png",
-        scenarioPeriod: "Coming soon",
+        characterName: "Cain Amane",
+        characterImage: "/images/Global-financial-crisis/characterB.png",
+        characterStats: [
+            { label: "Age", value: "46" },
+            { label: "Occupation", value: "Real Estate Agent" },
+            { label: "Starting capital", value: "$20,000" },
+        ],
+        scenarioTitle: "Global Financial Crisis",
+        scenarioImage: "/images/Global-financial-crisis/globalCrisis.png",
+        scenarioPeriod: "2007 - 2009",
+        scenarioFacts: [
+            "Housing market collapse",
+            "Mortgage defaults surge",
+            "Banks under pressure",
+            "Real estate confidence breaks",
+        ],
     },
     {
         id: "C-pandemic",
@@ -239,12 +253,10 @@ function SelectionCard({
                                         ${option.playable ? "" : "blur-[1.5px] opacity-70"}
                                     `}
                                 >
-                                    <Image
+                                    <img
                                         src={option.scenarioImage}
                                         alt={option.scenarioTitle}
-                                        fill
-                                        sizes="(max-width: 1024px) 100vw, 220px"
-                                        className="object-cover"
+                                        className="h-full w-full object-cover"
                                     />
                                 </div>
 
@@ -304,8 +316,65 @@ function SelectionCard({
 }
 
 export default function CharacterPage() {
-    const [selected, setSelected] = useState<string | null>(SELECTION_OPTIONS[0]?.id ?? null);
+    const [selected, setSelected] = useState<string | null>(() => {
+        if (typeof window === "undefined") return SELECTION_OPTIONS[0]?.id ?? null;
+
+        const selectionSource = localStorage.getItem(CHARACTER_SELECTION_SOURCE_KEY);
+        if (selectionSource === "landing") {
+            localStorage.removeItem(CHARACTER_SELECTION_SOURCE_KEY);
+            return SELECTION_OPTIONS[0]?.id ?? null;
+        }
+
+        const storedSelection = localStorage.getItem(CHARACTER_SELECTION_STORAGE_KEY);
+        const hasStoredOption = SELECTION_OPTIONS.some((option) => option.id === storedSelection);
+        return hasStoredOption ? storedSelection : (SELECTION_OPTIONS[0]?.id ?? null);
+    });
     const router = useRouter();
+    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+    const handleSelect = (id: string) => {
+        setSelected(id);
+        localStorage.setItem(CHARACTER_SELECTION_STORAGE_KEY, id);
+    };
+
+    const handleConfirm = (selection: SelectionOption) => {
+        localStorage.setItem(CHARACTER_SELECTION_STORAGE_KEY, selection.id);
+        localStorage.setItem(CHARACTER_SELECTION_SOURCE_KEY, "return");
+
+        if (
+            selection.characterId === "B" &&
+            selection.scenarioId === "housing"
+        ) {
+            router.push("/preview-global-financial-crisis");
+            return;
+        }
+
+        if (
+            selection.characterId === "D" &&
+            selection.scenarioId === "pandemic"
+        ) {
+            router.push("/preview-pandemic");
+            return;
+        }
+
+        router.push(
+            `/preview?character=${selection.characterId}&scenario=${selection.scenarioId}`
+        );
+    };
+
+    useEffect(() => {
+        if (!selected || selected === "A-dotcom") return;
+
+        const selectedCard = cardRefs.current[selected];
+        if (!selectedCard) return;
+
+        window.setTimeout(() => {
+            selectedCard.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }, 120);
+    }, [selected]);
 
     return (
         <main className="min-h-screen bg-[#F7FAFC] text-[#0A355B]">
@@ -322,25 +391,19 @@ export default function CharacterPage() {
             <div className="px-4 py-10 md:px-8 md:py-14">
                 <div className="mx-auto flex max-w-6xl flex-col gap-8">
                     {SELECTION_OPTIONS.map((option) => (
-                        <SelectionCard
+                        <div
                             key={option.id}
-                            option={option}
-                            selected={selected}
-                            onSelect={setSelected}
-                            onConfirm={(selection) => {
-                                if (
-                                    selection.characterId === "D" &&
-                                    selection.scenarioId === "pandemic"
-                                ) {
-                                    router.push("/preview-pandemic");
-                                    return;
-                                }
-
-                                router.push(
-                                    `/preview?character=${selection.characterId}&scenario=${selection.scenarioId}`
-                                );
+                            ref={(element) => {
+                                cardRefs.current[option.id] = element;
                             }}
-                        />
+                        >
+                            <SelectionCard
+                                option={option}
+                                selected={selected}
+                                onSelect={handleSelect}
+                                onConfirm={handleConfirm}
+                            />
+                        </div>
                     ))}
                 </div>
             </div>

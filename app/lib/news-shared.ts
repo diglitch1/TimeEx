@@ -1,4 +1,5 @@
 import { TIMELINE_DATES } from '@/app/main/utils/timeline';
+import { HOUSING_TIMELINE_DATES } from '@/app/main/utils/housingTimeline';
 import { PANDEMIC_TIMELINE_DATES } from '@/app/main/utils/pandemicTimeline';
 
 export type ScenarioId = 'dotcom' | 'housing' | 'pandemic';
@@ -36,12 +37,12 @@ export const DEFAULT_NEWS_DATE = '1999-08-19';
 export const GENERIC_NEWS_ERROR_MESSAGE = 'Unable to load news right now.';
 export const SCENARIO_DEFAULT_NEWS_DATE: Record<ScenarioId, string> = {
     dotcom: DEFAULT_NEWS_DATE,
-    housing: DEFAULT_NEWS_DATE,
+    housing: HOUSING_TIMELINE_DATES[0],
     pandemic: PANDEMIC_TIMELINE_DATES[0],
 };
 export const SCENARIO_SUPPORTED_NEWS_DATES: Record<ScenarioId, readonly string[]> = {
     dotcom: TIMELINE_DATES,
-    housing: TIMELINE_DATES,
+    housing: HOUSING_TIMELINE_DATES,
     pandemic: PANDEMIC_TIMELINE_DATES,
 };
 export const SUPPORTED_NEWS_DATES = Array.from(
@@ -72,17 +73,22 @@ export const SCENARIO_NEWS_CONFIG: Record<ScenarioId, ScenarioNewsConfig> = {
     },
     housing: {
         label: 'Global financial crisis',
-        query: '"housing market" OR mortgage OR subprime OR bank OR credit',
+        query: '"housing market" OR mortgage OR subprime OR bank OR credit OR foreclosure OR recession',
         explainers: [
             {
-                title: 'Financial crisis overview',
-                href: 'https://www.investopedia.com/terms/f/financial-crisis.asp',
-                description: 'Background on the mortgage-driven crisis and the financial system damage it caused.',
+                title: 'Fed History: Subprime mortgage crisis',
+                href: 'https://www.federalreservehistory.org/essays/subprime-mortgage-crisis',
+                description: 'A Federal Reserve explainer on how mortgage lending and falling house prices fed the crisis.',
             },
             {
-                title: 'Britannica: 2007-2008 financial crisis',
-                href: 'https://www.britannica.com/event/financial-crisis-of-2007-2008',
-                description: 'A broad explanation of the causes, timeline, and global fallout.',
+                title: 'Fed History: Support for specific institutions',
+                href: 'https://www.federalreservehistory.org/essays/support-for-specific-institutions',
+                description: 'Covers Bear Stearns, Lehman Brothers, AIG, and the policy response in 2008.',
+            },
+            {
+                title: 'Britannica: financial crisis of 2007-08',
+                href: 'https://www.britannica.com/money/financial-crisis-of-2007-2008',
+                description: 'A broad overview of the causes, major events, and wider economic fallout.',
             },
         ],
     },
@@ -157,6 +163,63 @@ export const SCENARIO_DATE_NEWS_CONFIG: Partial<
             sections: ['business', 'technology', 'money'],
             keywords: ['shareholders', 'jobs', 'slowdown', 'marconi', 'logica', 'buyers', 'market'],
             fallbackQuery: 'shareholders OR jobs OR slowdown OR marconi',
+        },
+    },
+    housing: {
+        '2007-04-02': {
+            sections: ['business', 'money'],
+            keywords: ['subprime', 'mortgage lender', 'bankruptcy', 'housing market', 'defaults'],
+            fallbackQuery: 'subprime OR mortgage lender OR housing market OR defaults',
+        },
+        '2007-08-09': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['credit crunch', 'mortgage funds', 'liquidity', 'bank', 'subprime'],
+            fallbackQuery: 'credit crunch OR liquidity OR bank OR subprime',
+        },
+        '2008-03-16': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['Bear Stearns', 'JPMorgan', 'Federal Reserve', 'rescue', 'investment bank'],
+            fallbackQuery: 'Bear Stearns OR JPMorgan OR Federal Reserve rescue',
+        },
+        '2008-09-07': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['Fannie Mae', 'Freddie Mac', 'conservatorship', 'mortgage market', 'housing'],
+            fallbackQuery: 'Fannie Mae OR Freddie Mac OR mortgage market',
+        },
+        '2008-09-15': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['Lehman Brothers', 'bankruptcy', 'Wall Street', 'financial crisis', 'panic'],
+            fallbackQuery: 'Lehman Brothers OR bankruptcy OR Wall Street panic',
+        },
+        '2008-09-16': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['AIG', 'bailout', 'Federal Reserve', 'insurance giant', 'crisis'],
+            fallbackQuery: 'AIG OR bailout OR Federal Reserve crisis',
+        },
+        '2008-10-03': {
+            sections: ['business', 'money', 'politics'],
+            keywords: ['TARP', 'bailout bill', 'bank rescue', 'Congress', 'Treasury'],
+            fallbackQuery: 'TARP OR bailout bill OR bank rescue',
+        },
+        '2008-12-16': {
+            sections: ['business', 'money'],
+            keywords: ['interest rates', 'Federal Reserve', 'near zero', 'recession', 'credit markets'],
+            fallbackQuery: 'Federal Reserve OR interest rates OR recession',
+        },
+        '2009-03-09': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['stock market low', 'bank shares', 'panic', 'recession', 'recovery hopes'],
+            fallbackQuery: 'stock market low OR bank shares OR recession',
+        },
+        '2009-06-01': {
+            sections: ['business', 'money'],
+            keywords: ['stabilization', 'bank stress tests', 'recovery', 'housing market', 'jobs'],
+            fallbackQuery: 'bank stress tests OR recovery OR housing market',
+        },
+        '2009-12-31': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['recovery', 'foreclosures', 'banks', 'aftershocks', 'unemployment'],
+            fallbackQuery: 'recovery OR foreclosures OR banks OR unemployment',
         },
     },
     pandemic: {
@@ -262,10 +325,23 @@ export function formatNewsTimestamp(isoDate: string) {
 }
 
 export function buildNewsListHref(dateStr = DEFAULT_NEWS_DATE, scenario?: string | null) {
+    return buildNewsListHrefWithOptions(dateStr, { scenario });
+}
+
+export function buildNewsListHrefWithOptions(
+    dateStr = DEFAULT_NEWS_DATE,
+    options?: {
+        scenario?: string | null;
+        character?: string | null;
+    }
+) {
     const searchParams = new URLSearchParams();
-    const normalizedScenario = normalizeScenarioId(scenario);
+    const normalizedScenario = normalizeScenarioId(options?.scenario);
     searchParams.set('date', coerceNewsDate(dateStr, normalizedScenario));
     searchParams.set('scenario', normalizedScenario);
+    if (options?.character) {
+        searchParams.set('character', options.character);
+    }
 
     return `/news?${searchParams.toString()}`;
 }
@@ -275,6 +351,7 @@ export function buildNewsArticleHref(
     options?: {
         date?: string;
         scenario?: string | null;
+        character?: string | null;
     }
 ) {
     const searchParams = new URLSearchParams();
@@ -285,6 +362,10 @@ export function buildNewsArticleHref(
 
     if (options?.scenario) {
         searchParams.set('scenario', normalizeScenarioId(options.scenario));
+    }
+
+    if (options?.character) {
+        searchParams.set('character', options.character);
     }
 
     const encodedId = articleId

@@ -6,31 +6,31 @@ import { useRouter } from "next/navigation";
 
 import { resetGame } from "../main/utils/save";
 
-const DIANA_STARTING_CASH = 12000;
+const CAIN_STARTING_CASH = 20000;
 const CHARACTER_SELECTION_SOURCE_KEY = "timeex:selection-source";
 
-const COVID_SOURCES = [
+const GFC_SOURCES = [
     {
-        label: "COVID-19 market crash explained",
-        href: "https://www.investopedia.com/timeline-of-stock-market-crashes-5217820",
+        label: "Federal Reserve History: Subprime Mortgage Crisis",
+        href: "https://www.federalreservehistory.org/essays/subprime-mortgage-crisis",
         description:
-            "A concise overview of major crashes, including the speed and scale of the February-March 2020 selloff.",
+            "A primary-source overview of how subprime lending and falling house prices fed the crisis.",
     },
     {
-        label: "How governments responded (stimulus)",
-        href: "https://www.imf.org/en/Topics/imf-and-covid19/Policy-Responses-to-COVID-19",
+        label: "Federal Reserve History: Support for Specific Institutions",
+        href: "https://www.federalreservehistory.org/essays/support-for-specific-institutions",
         description:
-            "Shows global economic response. Good for understanding why recovery happened.",
+            "Covers Bear Stearns, Lehman Brothers, AIG, and the emergency interventions of 2008.",
     },
     {
-        label: "Sector winners and losers during the pandemic",
-        href: "https://www.mckinsey.com/capabilities/strategy-and-corporate-finance/our-insights/the-great-acceleration",
+        label: "Britannica: Financial Crisis of 2007-08",
+        href: "https://www.britannica.com/money/financial-crisis-of-2007-2008",
         description:
-            "Looks at how the pandemic widened gaps across industries, with some sectors collapsing while digital leaders surged.",
+            "A broad summary of the causes, major events, and global fallout of the crisis.",
     },
 ];
 
-export default function PandemicPreviewPage() {
+export default function GlobalFinancialCrisisPreviewPage() {
     const router = useRouter();
 
     return (
@@ -42,7 +42,7 @@ export default function PandemicPreviewPage() {
                             localStorage.setItem(CHARACTER_SELECTION_SOURCE_KEY, "return");
                             router.push("/character");
                         }}
-                        className="mb-6 inline-flex items-center gap-2 text-blue-700 font-medium hover:underline"
+                        className="mb-6 inline-flex items-center gap-2 font-medium text-blue-700 hover:underline"
                     >
                         <span aria-hidden>&larr;</span>
                         Back to selection
@@ -53,17 +53,17 @@ export default function PandemicPreviewPage() {
                             <div className="inline-flex items-center gap-2 rounded-full border border-[#CFE3F8] bg-white px-3 py-1 text-sm font-semibold text-blue-700">
                                 Preview
                                 <span className="text-blue-300">&bull;</span>
-                                Scenario: COVID-19 Crisis
+                                Scenario: Global Financial Crisis
                             </div>
 
                             <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">
-                                COVID-19 Crisis - Preview
+                                Global Financial Crisis - Preview
                             </h1>
 
                             <p className="mt-5 max-w-[850px] text-[17px] leading-relaxed text-[#0A355B]">
-                                This scenario takes place during a global crisis that disrupted
-                                economies, markets, and everyday life. The overview below explains
-                                how events unfolded and why markets reacted so strongly.
+                                This scenario places you inside the housing-and-credit collapse of
+                                2007-2009, when falling home prices, failing banks, and frozen
+                                lending turned a U.S. housing slump into a global crisis.
                             </p>
                         </div>
                     </div>
@@ -76,33 +76,33 @@ export default function PandemicPreviewPage() {
                         <article aria-label="Key metrics">
                             <SectionHeader
                                 title="At-a-glance"
-                                subtitle="Four quick signals that define the COVID-19 market shock."
+                                subtitle="Four quick signals that define the Global Financial Crisis."
                             />
 
                             <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                                 <MetricIconCard
                                     icon="/images/arrowD.png"
-                                    title="Market crash"
-                                    value="≈ -34%"
-                                    note="Fastest drop in modern market history (Feb-Mar 2020)"
-                                />
-                                <MetricIconCard
-                                    icon="/images/arrowU.png"
-                                    title="Market recovery"
-                                    value="≈ +70%+"
-                                    note="Strong rebound driven by stimulus and tech growth"
-                                />
-                                <MetricIconCard
-                                    icon="/images/loss.png"
-                                    title="Economic impact"
-                                    value="Millions unemployed"
-                                    note="Businesses and industries shut down worldwide"
+                                    title="S&P 500 drawdown"
+                                    value="≈ -57%"
+                                    note="U.S. stocks fell sharply from the October 2007 peak to the March 2009 low."
                                 />
                                 <MetricIconCard
                                     icon="/images/warning.png"
                                     title="Warning sign"
-                                    value="Uncertainty"
-                                    note="Sudden global events can break stable markets instantly"
+                                    value="Subprime mortgages"
+                                    note="Risky lending and securitized debt spread housing losses across the financial system."
+                                />
+                                <MetricIconCard
+                                    icon="/images/loss.png"
+                                    title="Lehman collapse"
+                                    value="Sep 15, 2008"
+                                    note="The bankruptcy became the defining panic moment of the crisis."
+                                />
+                                <MetricIconCard
+                                    icon="/images/arrowU.png"
+                                    title="Emergency response"
+                                    value="$700B TARP"
+                                    note="Congress approved a major rescue package to stabilize banks and credit markets."
                                 />
                             </div>
                         </article>
@@ -110,41 +110,41 @@ export default function PandemicPreviewPage() {
                         <article id="causes" className="scroll-mt-24">
                             <SectionHeader
                                 title="What caused this crisis?"
-                                subtitle="The market shock came from a sudden external event, not from a classic asset bubble."
+                                subtitle="The panic in 2008 came from years of cheap credit, housing speculation, and fragile financial engineering."
                             />
 
                             <div className="mt-6 space-y-5">
                                 <Card>
                                     <h3 className="text-2xl font-bold tracking-tight">
-                                        1. A global health crisis
+                                        1. A housing boom built on risky lending
                                     </h3>
                                     <p className="mt-3 leading-relaxed text-[#0A355B]">
-                                        A new virus spread rapidly across the world, overwhelming
-                                        healthcare systems and leading to widespread lockdowns.
-                                        Governments acted to protect public health, which directly
-                                        impacted economic activity.
+                                        Mortgage credit expanded aggressively in the early 2000s,
+                                        including to borrowers with weaker credit. As long as home
+                                        prices kept rising, the system looked profitable and
+                                        manageable.
                                     </p>
                                 </Card>
 
                                 <Card>
                                     <h3 className="text-2xl font-bold tracking-tight">
-                                        2. Economic activity stopped
+                                        2. Mortgage risk was spread everywhere
                                     </h3>
                                     <p className="mt-3 leading-relaxed text-[#0A355B]">
-                                        Businesses closed, travel halted, and supply chains were
-                                        disrupted. Many companies lost revenue almost overnight,
-                                        creating panic in financial markets.
+                                        Banks and investors bundled mortgages into complex financial
+                                        products. That meant housing losses did not stay local; they
+                                        moved through balance sheets across the global system.
                                     </p>
                                 </Card>
 
                                 <Card>
                                     <h3 className="text-2xl font-bold tracking-tight">
-                                        3. Government intervention changed everything
+                                        3. Confidence vanished faster than expected
                                     </h3>
                                     <p className="mt-3 leading-relaxed text-[#0A355B]">
-                                        Central banks and governments introduced massive stimulus
-                                        programs to stabilize the economy. This support helped
-                                        markets recover faster than expected.
+                                        Once defaults rose and home prices fell, institutions stopped
+                                        trusting one another. Funding dried up, major firms failed,
+                                        and panic spread from Wall Street to the broader economy.
                                     </p>
                                 </Card>
                             </div>
@@ -154,12 +154,11 @@ export default function PandemicPreviewPage() {
                                     Key idea
                                 </p>
                                 <p className="mt-3 text-lg leading-relaxed text-[#0A355B]">
-                                    This crash was not caused by a financial bubble, but by a
-                                    sudden external shock.
+                                    The Global Financial Crisis was not just a stock-market crash.
                                 </p>
                                 <p className="mt-2 text-lg leading-relaxed text-[#0A355B]">
-                                    The recovery was largely driven by government intervention and
-                                    changing market expectations.
+                                    It was a breakdown in trust across housing, credit, banking, and
+                                    the real economy all at once.
                                 </p>
                             </Card>
                         </article>
@@ -167,39 +166,39 @@ export default function PandemicPreviewPage() {
                         <article id="visual-overview" className="scroll-mt-24">
                             <SectionHeader
                                 title="Visual overview"
-                                subtitle="Market crash and recovery during the COVID-19 crisis"
+                                subtitle="Market collapse during the Global Financial Crisis"
                             />
 
                             <Card className="mt-6">
-                                <div className="overflow-hidden rounded-2xl border border-[#D6E6F5] bg-[#F7FBFF] p-4">
+                                <div className="overflow-hidden rounded-2xl border border-[#D6E6F5] bg-white p-4">
                                     <Image
-                                        src="/images/COVID-19-PANDEMIC/preview%20page/GRAPH.png"
-                                        alt="S&P 500 graph during the COVID-19 crisis"
+                                        src="/images/Global-financial-crisis/graph.png?v=2"
+                                        alt="Market graph during the Global Financial Crisis"
                                         width={1200}
                                         height={700}
+                                        unoptimized
                                         className="h-auto w-full rounded-xl object-contain"
                                     />
                                 </div>
 
                                 <div className="mt-6 grid gap-4 md:grid-cols-3">
                                     <MiniInsight
-                                        title="Sharp crash"
-                                        text="Markets dropped extremely fast as global uncertainty spread."
+                                        title="Housing stress spread outward"
+                                        text="Problems started in mortgages, but they quickly infected banks, credit markets, and household confidence."
                                     />
                                     <MiniInsight
-                                        title="Fast recovery"
-                                        text="Stimulus and policy support pushed markets upward again."
+                                        title="Bank failures changed the tone"
+                                        text="Once major institutions began to fail or need rescue, fear accelerated and selling deepened."
                                     />
                                     <MiniInsight
-                                        title="Uneven impact"
-                                        text="Some industries collapsed, while others grew rapidly."
+                                        title="Policy support mattered"
+                                        text="Rescue programs and rate cuts helped stop the panic, but the economic damage lasted far longer."
                                     />
                                 </div>
 
                                 <p className="mt-6 text-sm text-blue-600">
-                                    What to remember?: In the game, sudden global events can create
-                                    both risk and opportunity. Fast recoveries are possible, but not
-                                    guaranteed.
+                                    What to remember?: In the game, leverage, bank stress, and
+                                    confidence shocks can change the value of decisions very quickly.
                                 </p>
                             </Card>
                         </article>
@@ -212,7 +211,7 @@ export default function PandemicPreviewPage() {
 
                             <Card className="mt-6">
                                 <div className="space-y-8 text-sm text-[#0A355B]">
-                                    {COVID_SOURCES.map((source) => (
+                                    {GFC_SOURCES.map((source) => (
                                         <div key={source.href}>
                                             <ul className="space-y-2">
                                                 <li>
@@ -246,8 +245,8 @@ export default function PandemicPreviewPage() {
 
                             <div className="flex items-start gap-4">
                                 <Image
-                                    src="/images/COVID-19-PANDEMIC/scenario-character-selection/CharacterB.png"
-                                    alt="Diana Gelus"
+                                    src="/images/Global-financial-crisis/characterB.png"
+                                    alt="Cain Amane"
                                     width={120}
                                     height={128}
                                     className="rounded-lg border border-[#B6D8F6] bg-white object-cover"
@@ -255,15 +254,15 @@ export default function PandemicPreviewPage() {
 
                                 <div>
                                     <h3 className="text-xl font-bold text-[#0A355B]">
-                                        Diana Gelus
+                                        Cain Amane
                                     </h3>
-                                    <p className="text-sm text-[#0A355B]">Age: 26</p>
+                                    <p className="text-sm text-[#0A355B]">Age: 46</p>
                                 </div>
                             </div>
 
                             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                <Badge label="Occupation" value="Flight Attendant" />
-                                <Badge label="Budget" value="$12,000" />
+                                <Badge label="Occupation" value="Real Estate Agent" />
+                                <Badge label="Budget" value="$20,000" />
                             </div>
                         </div>
 
@@ -271,21 +270,19 @@ export default function PandemicPreviewPage() {
                             <p className="mb-3 text-xl font-semibold text-blue-700">Scenario</p>
 
                             <div className="flex items-start gap-4">
-                                <Image
-                                    src="/images/COVID-19-PANDEMIC/scenario-character-selection/scenario-COVID-19-PANDEMIC.png"
-                                    alt="COVID-19 Crisis"
-                                    width={120}
-                                    height={96}
-                                    className="rounded-lg border border-[#B6D8F6] bg-white object-cover"
+                                <img
+                                    src="/images/Global-financial-crisis/globalCrisis.png"
+                                    alt="Global Financial Crisis"
+                                    className="h-24 w-[120px] rounded-lg border border-[#B6D8F6] bg-white object-cover"
                                 />
 
                                 <div>
                                     <h3 className="text-xl font-bold text-[#0A355B]">
-                                        COVID-19 Crisis
+                                        Global Financial Crisis
                                     </h3>
 
                                     <p className="text-sm font-semibold text-[#0A355B]">
-                                        2020 - 2021
+                                        2007 - 2009
                                     </p>
                                 </div>
                             </div>
@@ -293,8 +290,8 @@ export default function PandemicPreviewPage() {
 
                         <button
                             onClick={() => {
-                                resetGame(DIANA_STARTING_CASH);
-                                router.push("/main?character=D&scenario=pandemic");
+                                resetGame(CAIN_STARTING_CASH);
+                                router.push("/main?character=B&scenario=housing");
                             }}
                             className="
                                 w-full rounded-2xl bg-blue-700 py-4 text-lg font-semibold text-white
