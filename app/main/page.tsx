@@ -13,10 +13,12 @@ import {
     saveWallet,
 } from './utils/walletStorage';
 import DotComFrenzyModal from './components/DotComFrenzyModal';
+import PandemicDeclaredModal from './components/PandemicDeclaredModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
 import { GAME_EVENTS } from './utils/events';
+import { PANDEMIC_LIVE_NEWS_EVENTS } from './components/pandemicLiveNewsEvents';
 import FamilyHelpModal from './components/familyHelp';
 import ApplyForCollegeModal from './components/ApplyForCollege';
 import CarInsuranceModal from './components/CarInsurance';
@@ -57,6 +59,7 @@ import {
     saveRunStats,
     type RunStats,
 } from './utils/runStats';
+import VaccineAnnouncedModal from './components/VaccineAnnouncedModal';
 
 function formatNotificationTimestamp(date: Date) {
     return new Intl.DateTimeFormat('en-US', {
@@ -317,7 +320,12 @@ function MainPageContent() {
             : scenarioId === 'housing'
               ? 'triggeredEvents:housing'
               : 'triggeredEvents';
-    const scenarioEvents = scenarioId === 'dotcom' ? GAME_EVENTS : [];
+    const scenarioEvents =
+        scenarioId === 'pandemic'
+            ? PANDEMIC_LIVE_NEWS_EVENTS
+            : scenarioId === 'dotcom'
+              ? GAME_EVENTS
+              : [];
     const [startingCash] = useState(() => loadStartingCash(DEFAULT_STARTING_CASH));
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>(() =>
         readStoredTriggeredEvents(triggeredEventsStorageKey)
@@ -919,6 +927,9 @@ function MainPageContent() {
             ) : null}
 
             {eventModalOpen && activeEvent === 'dot-com-frenzy' && <DotComFrenzyModal onClose={handleCloseActiveEvent} />}
+            {eventModalOpen && activeEvent === 'pandemic-declared' && (
+                <PandemicDeclaredModal onClose={handleCloseActiveEvent} />
+            )}
             {eventModalOpen && activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal
                     wallet={wallet}
@@ -929,6 +940,9 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'dot-com-reality-check' && (
                 <DotComRealityCheckModal onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'vaccine-announced' && (
+                <VaccineAnnouncedModal onClose={handleCloseActiveEvent} />
             )}
             {eventModalOpen && activeEvent === 'family-help' && (
                 <FamilyHelpModal
