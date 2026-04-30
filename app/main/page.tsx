@@ -31,6 +31,7 @@ import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
+import { HOUSING_TIMELINE, HOUSING_TIMELINE_DATES } from './utils/housingTimeline';
 import { PANDEMIC_TIMELINE, PANDEMIC_TIMELINE_DATES } from './utils/pandemicTimeline';
 import {
     getScenarioAssetCatalogs,
@@ -114,28 +115,6 @@ function buildTradeNotification({
         title: `${titleVerb} ${symbol}`,
         message: `${units.toFixed(4)} shares ${messageVerb} for ${formatNotificationCurrency(totalValue)} at ${formatNotificationCurrency(price)}.`,
         timestampLabel,
-    };
-}
-
-function buildDailyMoveNotification(
-    asset: AssetWithData,
-    ownedUnits: number,
-    dateKey: string,
-    timestampLabel: string
-): NotificationDraft {
-    const positionMoveUsd = (asset.price - (asset.previous?.close ?? asset.price)) * ownedUnits;
-    const moveDirection = asset.change > 0 ? 'up' : asset.change < 0 ? 'down' : 'flat';
-    const positionVerb = positionMoveUsd > 0 ? 'gained' : positionMoveUsd < 0 ? 'lost' : 'held';
-
-    return {
-        tone: getPositionMoveTone(asset.change),
-        title: `${asset.symbol} is ${moveDirection} today`,
-        message:
-            asset.change === 0
-                ? `Your ${ownedUnits.toFixed(4)} shares are unchanged at ${formatNotificationCurrency(asset.price)}.`
-                : `Your ${ownedUnits.toFixed(4)} shares ${positionVerb} ${formatNotificationCurrency(Math.abs(positionMoveUsd))} after a ${Math.abs(asset.change).toFixed(2)}% move.`,
-        timestampLabel,
-        sourceKey: `daily-move:${dateKey}:${asset.symbol}`,
     };
 }
 
@@ -284,6 +263,20 @@ function readStoredTriggeredEvents(storageKey: string) {
     }
 }
 
+function getCharacterName(characterId: string | null) {
+    switch (characterId) {
+        case 'B':
+            return 'Cain Amane';
+        case 'D':
+            return 'Diana Gelus';
+        case 'C':
+            return 'Maya Thompson';
+        case 'A':
+        default:
+            return 'Kira Light';
+    }
+}
+
 export default function MainPage() {
     return (
         <Suspense fallback={null}>
@@ -293,26 +286,38 @@ export default function MainPage() {
 }
 
 function MainPageContent() {
-    const [mounted, setMounted] = useState(false);
     const searchParams = useSearchParams();
+    const characterId = searchParams.get('character');
     const scenarioId = normalizeScenarioId(searchParams.get('scenario'));
+    const characterName = useMemo(() => getCharacterName(characterId), [characterId]);
     const scenarioCatalogs = useMemo(() => getScenarioAssetCatalogs(scenarioId), [scenarioId]);
-    const timelineDates = useMemo(
-        () => (scenarioId === 'pandemic' ? PANDEMIC_TIMELINE_DATES : TIMELINE_DATES),
-        [scenarioId]
-    );
-    const timelineMarkers = useMemo(
-        () => (scenarioId === 'pandemic' ? PANDEMIC_TIMELINE : TIMELINE),
-        [scenarioId]
-    );
+    const timelineDates = useMemo(() => {
+        if (scenarioId === 'pandemic') return PANDEMIC_TIMELINE_DATES;
+        if (scenarioId === 'housing') return HOUSING_TIMELINE_DATES;
+        return TIMELINE_DATES;
+    }, [scenarioId]);
+    const timelineMarkers = useMemo(() => {
+        if (scenarioId === 'pandemic') return PANDEMIC_TIMELINE;
+        if (scenarioId === 'housing') return HOUSING_TIMELINE;
+        return TIMELINE;
+    }, [scenarioId]);
     const timelineDateObjects = useMemo(
         () => timelineDates.map(date => new Date(date)),
         [timelineDates]
     );
-    const timelineStorageKey = scenarioId === 'pandemic' ? 'timeline:pandemic' : 'timeline';
+    const timelineStorageKey =
+        scenarioId === 'pandemic'
+            ? 'timeline:pandemic'
+            : scenarioId === 'housing'
+              ? 'timeline:housing'
+              : 'timeline';
     const triggeredEventsStorageKey =
-        scenarioId === 'pandemic' ? 'triggeredEvents:pandemic' : 'triggeredEvents';
-    const scenarioEvents = scenarioId === 'pandemic' ? [] : GAME_EVENTS;
+        scenarioId === 'pandemic'
+            ? 'triggeredEvents:pandemic'
+            : scenarioId === 'housing'
+              ? 'triggeredEvents:housing'
+              : 'triggeredEvents';
+    const scenarioEvents = scenarioId === 'dotcom' ? GAME_EVENTS : [];
     const [startingCash] = useState(() => loadStartingCash(DEFAULT_STARTING_CASH));
     const [triggeredEvents, setTriggeredEvents] = useState<string[]>(() =>
         readStoredTriggeredEvents(triggeredEventsStorageKey)
@@ -533,13 +538,13 @@ function MainPageContent() {
         setGameOver(saveGameOver(reason));
     };
 
-    const handleRequestCashBreak = useCallback(() => {
+    const handleRequestCashBreak = () => {
         if (!activeEvent) return;
 
         const deadline = Date.now() + CASH_BREAK_SECONDS * 1000;
         setCashBreak({ eventId: activeEvent, deadline });
         setCashBreakTick(Date.now());
-    }, [activeEvent]);
+    };
 
     useEffect(() => {
         if (gameOver || hasReachedTimelineEnd || activeEvent) return;
@@ -733,20 +738,25 @@ function MainPageContent() {
         const currentCash = walletRef.current.find(item => item.id === 'cash')?.units ?? 0;
         const remainingCash = currentCash - totalOwed;
 
-        setWallet(prev =>
-            prev.map(item =>
-                item.id === 'cash'
-                    ? { ...item, units: item.units - totalOwed, usdValue: item.usdValue - totalOwed }
-                    : item
-            )
-        );
+        const walletTimer = window.setTimeout(() => {
+            setWallet(prev =>
+                prev.map(item =>
+                    item.id === 'cash'
+                        ? { ...item, units: item.units - totalOwed, usdValue: item.usdValue - totalOwed }
+                        : item
+                )
+            );
+        }, 0);
 
         if (remainingCash < 0) {
             const deadline = Date.now() + BILLING_BREAK_SECONDS * 1000;
-            setBillingBreak({ reason: billingParts.join(' + '), totalOwed, deadline });
-            setBillingBreakTick(Date.now());
+            window.setTimeout(() => {
+                setBillingBreak({ reason: billingParts.join(' + '), totalOwed, deadline });
+                setBillingBreakTick(Date.now());
+            }, 0);
         }
-    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification, setWallet]);
+        return () => window.clearTimeout(walletTimer);
+    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
 
     useEffect(() => {
         if (!billingBreak) return;
@@ -758,7 +768,8 @@ function MainPageContent() {
                 setBillingBreak(null);
                 const cash = walletRef.current.find(item => item.id === 'cash')?.units ?? 0;
                 if (cash < 0) {
-                    handleGameOver(`Could not cover monthly payments: ${billingBreak.reason}`);
+                    setCashBreak(null);
+                    setGameOver(saveGameOver(`Could not cover monthly payments: ${billingBreak.reason}`));
                 }
             }
         };
@@ -767,7 +778,7 @@ function MainPageContent() {
         return () => window.clearInterval(interval);
     }, [billingBreak]);
 
-    const flashSkip = useCallback((fromDateStr: string, toDateStr: string) => {
+    const flashSkip = (fromDateStr: string, toDateStr: string) => {
         const calDays = Math.round(
             (new Date(toDateStr + 'T00:00:00').getTime() - new Date(fromDateStr + 'T00:00:00').getTime()) /
                 (1000 * 60 * 60 * 24)
@@ -796,7 +807,7 @@ function MainPageContent() {
         if (skipLabelTimerRef.current) clearTimeout(skipLabelTimerRef.current);
         setSkipLabel(`${period} to ${dest}`);
         skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 30000);
-    }, []);
+    };
 
     const skip30Seconds = () => {
         if (activeEvent || billingBreakActive) return;
@@ -830,18 +841,15 @@ function MainPageContent() {
         setGameSeconds(current => Math.max(current, finalMinuteStartSeconds));
     };
 
-    const jumpToDate = useCallback(
-        (dateStr: string) => {
-            if (activeEvent || billingBreakActive) return;
-            const idx = timelineDates.indexOf(dateStr);
-            if (idx === -1) return;
-            if (idx > dayIndex) {
-                flashSkip(currentDateKey, dateStr);
-            }
-            setGameSeconds(idx * TOTAL_SECONDS);
-        },
-        [activeEvent, billingBreakActive, currentDateKey, dayIndex, flashSkip, timelineDates]
-    );
+    const jumpToDate = (dateStr: string) => {
+        if (activeEvent || billingBreakActive) return;
+        const idx = timelineDates.indexOf(dateStr);
+        if (idx === -1) return;
+        if (idx > dayIndex) {
+            flashSkip(currentDateKey, dateStr);
+        }
+        setGameSeconds(idx * TOTAL_SECONDS);
+    };
 
     useEffect(() => {
         saveWallet(wallet);
@@ -858,10 +866,6 @@ function MainPageContent() {
     useEffect(() => {
         runStatsRef.current = loadRunStats() ?? createRunStats(startingCash);
     }, [startingCash]);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     const router = useRouter();
 
@@ -892,8 +896,6 @@ function MainPageContent() {
 
         return () => window.clearTimeout(redirectTimer);
     }, [currentDateTime, hasReachedTimelineEnd, router]);
-
-    if (!mounted) return null;
 
     return (
         <>
@@ -993,6 +995,8 @@ function MainPageContent() {
                     currentDate={currentDateTime}
                     scenarioId={scenarioId}
                     startingCash={startingCash}
+                    characterName={characterName}
+                    characterId={characterId}
                 />
                 <div className="min-w-0 flex-1 box-border p-4 xl:p-5">
                     <div className="mx-auto w-full max-w-[1280px]">

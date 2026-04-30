@@ -4,10 +4,12 @@ import { clearRunStats, resetRunStats } from './runStats';
 const RESETTABLE_STORAGE_KEYS = [
     'timeline',
     'timeline:dotcom',
+    'timeline:housing',
     'timeline:pandemic',
     'events',
     'triggeredEvents',
     'triggeredEvents:dotcom',
+    'triggeredEvents:housing',
     'triggeredEvents:pandemic',
     'collegeParty',
     'familyHelpEvent',

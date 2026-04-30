@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { getNewsForDate } from '@/app/lib/guardian';
 import {
@@ -18,12 +17,14 @@ type NewsPageProps = {
     searchParams: Promise<{
         date?: string;
         scenario?: string;
+        character?: string;
     }>;
 };
 
 export default async function NewsPage({ searchParams }: NewsPageProps) {
     const resolvedSearchParams = await searchParams;
     const scenario = normalizeScenarioId(resolvedSearchParams.scenario);
+    const character = resolvedSearchParams.character ?? null;
     const date = coerceNewsDate(
         resolvedSearchParams.date ?? SCENARIO_DEFAULT_NEWS_DATE[scenario],
         scenario
@@ -43,7 +44,7 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
         <main className="min-h-screen bg-[#F6FAFF] px-6 py-10 text-[#0A355B] md:px-10">
             <div className="mx-auto max-w-6xl">
                 <Link
-                    href={`/main?scenario=${scenario}`}
+                    href={`/main?scenario=${scenario}${character ? `&character=${encodeURIComponent(character)}` : ''}`}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:underline"
                 >
                     <span aria-hidden>←</span>
@@ -76,15 +77,13 @@ export default async function NewsPage({ searchParams }: NewsPageProps) {
                         {articles.map(article => (
                             <Link
                                 key={article.id}
-                                href={buildNewsArticleHref(article.id, { date, scenario })}
+                                href={buildNewsArticleHref(article.id, { date, scenario, character })}
                                 className="group overflow-hidden rounded-[28px] border border-[#D9E9F8] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-[#9CC8F5] hover:shadow-md"
                             >
                                 {article.thumbnailUrl ? (
-                                    <Image
+                                    <img
                                         src={article.thumbnailUrl}
                                         alt={article.headline}
-                                        width={800}
-                                        height={416}
                                         className="h-52 w-full object-cover"
                                     />
                                 ) : null}

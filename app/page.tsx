@@ -3,12 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+const CHARACTER_SELECTION_SOURCE_KEY = 'timeex:selection-source';
+
 export default function LandingPage() {
     const router = useRouter();
     const [clicked, setClicked] = useState(false);
 
     const handlePlay = () => {
         setClicked(true);
+        localStorage.setItem(CHARACTER_SELECTION_SOURCE_KEY, 'landing');
         setTimeout(() => {
             router.push('/character');
         }, 850);

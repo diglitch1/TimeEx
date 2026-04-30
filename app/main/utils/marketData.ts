@@ -237,12 +237,62 @@ export const PANDEMIC_ALL_ASSET_CATALOG: AssetBase[] = mergeCatalogs(
     PANDEMIC_BROWSE_ASSET_CATALOG
 );
 
+export const HOUSING_FEATURED_ASSET_CATALOG: AssetBase[] = [
+    createAsset('WFC', 'Wells Fargo', WFCData as MarketRow[]),
+    createAsset('MS', 'Morgan Stanley', MSData as MarketRow[]),
+    createAsset('GE', 'General Electric', GEData as MarketRow[]),
+    createAsset('XLF', 'Financial Select Sector SPDR', XLFData as MarketRow[]),
+    createAsset('XLP', 'Consumer Staples Select Sector SPDR', XLPData as MarketRow[]),
+    createAsset('XLY', 'Consumer Discretionary Select Sector SPDR', XLYData as MarketRow[]),
+    createAsset('WMT', 'Walmart', WMTData as MarketRow[]),
+];
+
+export const HOUSING_BROWSE_ASSET_CATALOG: AssetBase[] = [
+    createAsset('AXP', 'American Express', AXPData as MarketRow[]),
+    createAsset('CAT', 'Caterpillar', CATData as MarketRow[]),
+    createAsset('CL', 'Colgate-Palmolive', CLData as MarketRow[]),
+    createAsset('CLX', 'Clorox', CLXData as MarketRow[]),
+    createAsset('DIS', 'Disney', DISData as MarketRow[]),
+    createAsset('EXC', 'Exelon', EXCData as MarketRow[]),
+    createAsset('GE', 'General Electric', GEData as MarketRow[]),
+    createAsset('HAL', 'Halliburton', HALData as MarketRow[]),
+    createAsset('HON', 'Honeywell', HONData as MarketRow[]),
+    createAsset('IBM', 'IBM', IBMData as MarketRow[]),
+    createAsset('KO', 'Coca-Cola', KOData as MarketRow[]),
+    createAsset('MCD', "McDonald's", MCDData as MarketRow[]),
+    createAsset('MMM', '3M', MMMData as MarketRow[]),
+    createAsset('MO', 'Altria', MOData as MarketRow[]),
+    createAsset('MRK', 'Merck', MRKData as MarketRow[]),
+    createAsset('MS', 'Morgan Stanley', MSData as MarketRow[]),
+    createAsset('OXY', 'Occidental Petroleum', OXYData as MarketRow[]),
+    createAsset('TGT', 'Target', TGTData as MarketRow[]),
+    createAsset('UNP', 'Union Pacific', UNPData as MarketRow[]),
+    createAsset('WFC', 'Wells Fargo', WFCData as MarketRow[]),
+    createAsset('WMT', 'Walmart', WMTData as MarketRow[]),
+    createAsset('XLF', 'Financial Select Sector SPDR', XLFData as MarketRow[]),
+    createAsset('XLP', 'Consumer Staples Select Sector SPDR', XLPData as MarketRow[]),
+    createAsset('XLY', 'Consumer Discretionary Select Sector SPDR', XLYData as MarketRow[]),
+];
+
+export const HOUSING_ALL_ASSET_CATALOG: AssetBase[] = mergeCatalogs(
+    HOUSING_FEATURED_ASSET_CATALOG,
+    HOUSING_BROWSE_ASSET_CATALOG
+);
+
 export function getScenarioAssetCatalogs(scenarioId?: string | null) {
     if (scenarioId === 'pandemic') {
         return {
             featuredCatalog: PANDEMIC_FEATURED_ASSET_CATALOG,
             browseCatalog: PANDEMIC_BROWSE_ASSET_CATALOG,
             allCatalog: PANDEMIC_ALL_ASSET_CATALOG,
+        };
+    }
+
+    if (scenarioId === 'housing') {
+        return {
+            featuredCatalog: HOUSING_FEATURED_ASSET_CATALOG,
+            browseCatalog: HOUSING_BROWSE_ASSET_CATALOG,
+            allCatalog: HOUSING_ALL_ASSET_CATALOG,
         };
     }
 
