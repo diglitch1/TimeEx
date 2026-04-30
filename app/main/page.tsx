@@ -992,6 +992,7 @@ function MainPageContent() {
             >
                 <Sidebar
                     wallet={wallet}
+                    setWallet={setWallet}
                     currentDate={currentDateTime}
                     scenarioId={scenarioId}
                     startingCash={startingCash}
