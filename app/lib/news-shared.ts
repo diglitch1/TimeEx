@@ -176,10 +176,20 @@ export const SCENARIO_DATE_NEWS_CONFIG: Partial<
             keywords: ['credit crunch', 'mortgage funds', 'liquidity', 'bank', 'subprime'],
             fallbackQuery: 'credit crunch OR liquidity OR bank OR subprime',
         },
+        '2007-12-12': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['Term Auction Facility', 'Federal Reserve', 'liquidity', 'funding markets', 'credit crunch'],
+            fallbackQuery: 'Term Auction Facility OR Federal Reserve liquidity OR credit crunch',
+        },
         '2008-03-16': {
             sections: ['business', 'money', 'world'],
             keywords: ['Bear Stearns', 'JPMorgan', 'Federal Reserve', 'rescue', 'investment bank'],
             fallbackQuery: 'Bear Stearns OR JPMorgan OR Federal Reserve rescue',
+        },
+        '2008-07-30': {
+            sections: ['business', 'money', 'politics'],
+            keywords: ['Housing and Economic Recovery Act', 'Fannie Mae', 'Freddie Mac', 'mortgage rescue', 'housing bill'],
+            fallbackQuery: 'Housing and Economic Recovery Act OR Fannie Mae OR Freddie Mac',
         },
         '2008-09-07': {
             sections: ['business', 'money', 'world'],
@@ -196,10 +206,20 @@ export const SCENARIO_DATE_NEWS_CONFIG: Partial<
             keywords: ['AIG', 'bailout', 'Federal Reserve', 'insurance giant', 'crisis'],
             fallbackQuery: 'AIG OR bailout OR Federal Reserve crisis',
         },
+        '2008-09-29': {
+            sections: ['business', 'money', 'politics'],
+            keywords: ['bailout vote', 'House rejected', 'Dow Jones', 'market plunge', 'financial rescue'],
+            fallbackQuery: 'bailout vote OR House rejected OR Dow Jones market plunge',
+        },
         '2008-10-03': {
             sections: ['business', 'money', 'politics'],
             keywords: ['TARP', 'bailout bill', 'bank rescue', 'Congress', 'Treasury'],
             fallbackQuery: 'TARP OR bailout bill OR bank rescue',
+        },
+        '2008-11-23': {
+            sections: ['business', 'money', 'world'],
+            keywords: ['Citigroup', 'bank rescue', 'Treasury', 'Federal Reserve', 'FDIC'],
+            fallbackQuery: 'Citigroup OR bank rescue OR Treasury Federal Reserve FDIC',
         },
         '2008-12-16': {
             sections: ['business', 'money'],

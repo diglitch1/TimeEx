@@ -22,6 +22,8 @@ const RESETTABLE_STORAGE_KEYS = [
     'freelanceGig',
     'jobOpportunity',
     'jobOpportunityResult',
+    'riskyDeal',
+    'daughterRentHelp',
     'dotComFrenzy',
     'dotComRealityCheck',
     'partyTroubleUnlocked',

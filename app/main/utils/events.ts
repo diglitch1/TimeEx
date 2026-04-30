@@ -54,3 +54,14 @@ export const GAME_EVENTS: GameEvent[] = [
     },
 ];
 
+export const HOUSING_GAME_EVENTS: GameEvent[] = [
+    {
+        id: 'risky-deal',
+        date: '2007-08-09',
+    },
+    {
+        id: 'daughter-rent-help',
+        date: '2007-12-12',
+    },
+];
+

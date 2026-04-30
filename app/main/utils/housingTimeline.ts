@@ -14,10 +14,34 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         subtitle: 'Mortgage-linked losses spill into global funding markets and confidence breaks.',
     },
     {
+        date: '2007-08-09',
+        kind: 'event',
+        title: 'Risky Deal',
+        eventId: 'risky-deal',
+    },
+    {
+        date: '2007-12-12',
+        kind: 'market',
+        title: 'Fed opens emergency funding',
+        subtitle: 'The Term Auction Facility is announced to ease pressure in bank funding markets.',
+    },
+    {
+        date: '2007-12-12',
+        kind: 'event',
+        title: 'Daughter Needs Rent Help',
+        eventId: 'daughter-rent-help',
+    },
+    {
         date: '2008-03-16',
         kind: 'market',
         title: 'Bear Stearns rescued',
         subtitle: 'JPMorgan acquires Bear Stearns with Federal Reserve support.',
+    },
+    {
+        date: '2008-07-30',
+        kind: 'market',
+        title: 'Housing rescue law signed',
+        subtitle: 'New federal tools aim to steady mortgage markets and protect Fannie and Freddie.',
     },
     {
         date: '2008-09-07',
@@ -38,10 +62,22 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         subtitle: 'Authorities move to contain contagion after the Lehman collapse.',
     },
     {
+        date: '2008-09-29',
+        kind: 'market',
+        title: 'Bailout vote fails',
+        subtitle: 'Markets plunge after the first rescue bill is rejected by the House.',
+    },
+    {
         date: '2008-10-03',
         kind: 'market',
         title: 'TARP becomes law',
         subtitle: 'A $700 billion rescue package is approved to stabilize the banking system.',
+    },
+    {
+        date: '2008-11-23',
+        kind: 'market',
+        title: 'Citigroup receives support',
+        subtitle: 'U.S. authorities announce a rescue package for a major bank under pressure.',
     },
     {
         date: '2008-12-16',
