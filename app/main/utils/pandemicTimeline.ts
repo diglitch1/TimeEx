@@ -14,6 +14,12 @@ export const PANDEMIC_TIMELINE: TimelineMarker[] = [
         subtitle: 'Global risk sentiment shifts sharply as the outbreak becomes a worldwide crisis',
     },
     {
+        date: '2020-03-11',
+        kind: 'event',
+        title: 'WHO Declares COVID-19 a Global Pandemic',
+        eventId: 'pandemic-declared',
+    },
+    {
         date: '2020-03-27',
         kind: 'market',
         title: 'CARES Act signed',
@@ -48,6 +54,12 @@ export const PANDEMIC_TIMELINE: TimelineMarker[] = [
         kind: 'market',
         title: 'Pfizer vaccine breakthrough',
         subtitle: 'Vaccine trial results trigger a sharp rotation toward recovery trades',
+    },
+    {
+        date: '2020-11-09',
+        kind: 'event',
+        title: 'Vaccine Breakthrough Sends Markets Higher',
+        eventId: 'vaccine-announced',
     },
     {
         date: '2020-12-14',
