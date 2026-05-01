@@ -58,7 +58,7 @@ const CHARACTERS: Record<CharacterId, CharacterInfo> = {
         motivation: "building savings and stability",
         risk: "Medium",
         experience: "Low-Medium",
-        budget: "$12,000",
+        budget: "$20,000",
         image: "/images/CharacterA.png",
 
     },
@@ -155,7 +155,7 @@ const DOTCOM_SOURCES = [
 
 const CHARACTER_STARTING_CASH: Record<CharacterId, number> = {
     A: 5000,
-    B: 12000,
+    B: 20000,
     C: 9000,
     D: 12000,
 };

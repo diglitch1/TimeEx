@@ -104,6 +104,12 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         subtitle: 'U.S. authorities announce a rescue package for a major bank under pressure.',
     },
     {
+        date: '2008-11-23',
+        kind: 'event',
+        title: 'Client Lawsuit',
+        eventId: 'client-lawsuit',
+    },
+    {
         date: '2008-12-16',
         kind: 'market',
         title: 'Rates cut near zero',
@@ -116,10 +122,22 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         subtitle: 'After months of panic, U.S. equities finally bottom out.',
     },
     {
+        date: '2009-03-09',
+        kind: 'event',
+        title: 'Apartment Search',
+        eventId: 'apartment-search',
+    },
+    {
         date: '2009-06-01',
         kind: 'market',
         title: 'Stabilization begins',
         subtitle: 'Emergency support starts calming markets, even though households are still under pressure.',
+    },
+    {
+        date: '2009-06-01',
+        kind: 'event',
+        title: 'Racetrack Wager',
+        eventId: 'horse-bets',
     },
     {
         date: '2009-12-31',

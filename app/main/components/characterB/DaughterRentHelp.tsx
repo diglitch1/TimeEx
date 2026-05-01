@@ -10,7 +10,7 @@ type Props = {
     onRequestCashBreak: () => void;
 };
 
-const RENT_HELP_AMOUNT = 2000;
+const RENT_HELP_AMOUNT = 1000;
 
 function formatWalletCurrency(value: number) {
     return new Intl.NumberFormat('en-US', {
