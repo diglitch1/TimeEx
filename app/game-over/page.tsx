@@ -62,7 +62,11 @@ function StatCard({
 
 function ActionBadge({ entry }: { entry: ActionSummaryEntry }) {
     const toneClass =
-        entry.direction === 'received'
+        entry.type === 'INCOME'
+            ? 'bg-purple-100 text-purple-700'
+            : entry.type === 'RENT'
+              ? 'bg-orange-100 text-orange-700'
+            : entry.direction === 'received'
             ? 'bg-emerald-100 text-emerald-700'
             : entry.direction === 'spent'
                 ? 'bg-rose-100 text-rose-700'
@@ -73,6 +77,14 @@ function ActionBadge({ entry }: { entry: ActionSummaryEntry }) {
             {entry.type}
         </span>
     );
+}
+
+function getActionDetailLabel(entry: ActionSummaryEntry) {
+    if (entry.symbol) return entry.symbol;
+    if (entry.type === 'INCOME') return 'Income';
+    if (entry.type === 'RENT') return 'Rent';
+    if (entry.type === 'EVENT') return 'Event';
+    return entry.type.charAt(0) + entry.type.slice(1).toLowerCase();
 }
 
 export default function GameOverPage() {
@@ -199,7 +211,7 @@ export default function GameOverPage() {
                                                                 {formatDate(entry.date)} — {entry.name}
                                                             </p>
                                                             <p className="mt-1 text-sm font-medium text-[#335B7E]">
-                                                                {entry.symbol ? `${entry.symbol}` : 'Event'}
+                                                                {getActionDetailLabel(entry)}
                                                                 {entry.units ? ` — ${entry.units.toFixed(4)} units` : ''}
                                                             </p>
                                                         </div>

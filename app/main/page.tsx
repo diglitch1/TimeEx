@@ -39,6 +39,9 @@ import LaptopFailureModal from './components/characterB/LaptopFailure';
 import GolfTournamentModal from './components/characterB/GolfTournament';
 import GolfTournamentDayModal from './components/characterB/GolfTournamentDay';
 import EmergencyHousingNoticeModal from './components/characterB/EmergencyHousingNotice';
+import ClientLawsuitModal from './components/characterB/ClientLawsuit';
+import ApartmentSearchModal from './components/characterB/ApartmentSearch';
+import HorseBetsModal from './components/characterB/HorseBets';
 import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
@@ -64,6 +67,8 @@ import {
     loadRunStats,
     recordBuyAction,
     recordEventAction,
+    recordIncomeAction,
+    recordRentAction,
     recordSellAction,
     saveGameOverSummary,
     saveRunStats,
@@ -100,11 +105,13 @@ function canTriggerEvent(
     eventId: string,
     attendedCollegeParty: boolean,
     acceptedGig: boolean,
-    acceptedGolfTournament: boolean
+    acceptedGolfTournament: boolean,
+    pushedRiskyDeal: boolean
 ) {
     if (eventId === 'party-consequences') return attendedCollegeParty;
     if (eventId === 'job-opportunity') return acceptedGig;
     if (eventId === 'golf-tournament-day') return acceptedGolfTournament;
+    if (eventId === 'client-lawsuit') return pushedRiskyDeal;
     return true;
 }
 
@@ -223,6 +230,9 @@ const BILLING_BREAK_SECONDS = 120;
 const EVENT_MODAL_DELAY_MS = 600;
 const POST_SICK_PASSENGER_NEWS_DELAY_MS = 5000;
 const BASE_FLIGHT_ATTENDANT_SALARY = 3200;
+const CAIN_MONTHLY_CASHFLOW = 1500;
+const CAIN_STARTING_RENT = 600;
+const CAIN_RENT_END_DATE = '2008-09-29';
 const MONTHLY_INSURANCE = 70;
 const MONTHLY_TUITION: Record<string, number> = {
     atlas: 700,
@@ -231,6 +241,11 @@ const MONTHLY_TUITION: Record<string, number> = {
     'state-university': 200,
     'city-college': 150,
     'community-college': 100,
+};
+
+type ApartmentSearchDecision = {
+    monthlyRent?: number;
+    title?: string;
 };
 
 function getMonthsElapsed(fromDateStr: string, toDateStr: string): number {
@@ -434,7 +449,9 @@ function MainPageContent() {
     const attendedCollegeParty = readStoredDecision('collegeParty', 'attended');
     const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
     const acceptedGolfTournament = readStoredDecision('golfTournament', 'accepted');
+    const pushedRiskyDeal = readStoredDecision('riskyDeal', 'pushedSale');
     const isDianaPandemicScenario = scenarioId === 'pandemic' && characterId === 'D';
+    const isCainHousingScenario = scenarioId === 'housing' && characterId === 'B';
     const activeRouteAssignment =
         isDianaPandemicScenario && triggeredEvents.includes('route-assignment')
             ? routeAssignmentState
@@ -554,7 +571,13 @@ function MainPageContent() {
               if (event.id === 'route-assignment' && !isDianaPandemicScenario) return false;
               if (event.id === 'sick-passenger' && !isDianaPandemicScenario) return false;
               if (event.id === 'goodbye-party' && !isDianaPandemicScenario) return false;
-              return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig, acceptedGolfTournament);
+              return canTriggerEvent(
+                  event.id,
+                  attendedCollegeParty,
+                  acceptedGig,
+                  acceptedGolfTournament,
+                  pushedRiskyDeal
+              );
           })?.id ?? null);
 
     const cashBreakActive =
@@ -746,13 +769,15 @@ function MainPageContent() {
                 ? routeAssignment.monthlyBaseSalary ?? BASE_FLIGHT_ATTENDANT_SALARY
                 : isDianaPandemicScenario
                   ? BASE_FLIGHT_ATTENDANT_SALARY
-                  : 0;
+                  : isCainHousingScenario
+                    ? CAIN_MONTHLY_CASHFLOW
+                    : 0;
         const monthlyRouteBonus =
             routeAssignment && Number.isFinite(routeAssignment.monthlyBonus)
                 ? routeAssignment.monthlyBonus ?? 0
                 : 0;
         const monthlyPayroll = monthlyBaseSalary + monthlyRouteBonus;
-        if (monthlyPayroll > 0) {
+        if (monthlyPayroll > 0 && !isCainHousingScenario) {
             setWallet(prev => {
                 const currentIncome = prev.find(item => item.id === 'monthly-income');
                 const hasOldIncomeRows = prev.some(
@@ -777,6 +802,8 @@ function MainPageContent() {
                     },
                 ];
             });
+        } else if (isCainHousingScenario) {
+            setWallet(prev => prev.filter(item => item.id !== 'monthly-income'));
         }
         let tuitionSchoolId: string | null = null;
         let tuitionSchoolName: string | null = null;
@@ -796,28 +823,89 @@ function MainPageContent() {
         const dateIso = new Date(currentDateKey + 'T00:00:00').toISOString();
 
         if (monthlyPayroll > 0) {
-            const lastPaid = localStorage.getItem('payroll_flight_attendant_lastDate');
+            const payrollStorageKey = isCainHousingScenario
+                ? 'payroll_cain_lastDate'
+                : 'payroll_flight_attendant_lastDate';
+            const payrollSourceId = isCainHousingScenario
+                ? 'payroll-cain'
+                : 'payroll-flight-attendant';
+            const payrollSourceKey = isCainHousingScenario
+                ? `payroll-cain:${currentDateKey}`
+                : `payroll-flight-attendant:${currentDateKey}`;
+            const payrollTitle = isCainHousingScenario
+                ? 'Monthly income surplus'
+                : 'Monthly flight attendant pay';
+
+            const lastPaid = localStorage.getItem(payrollStorageKey);
             if (!lastPaid) {
-                localStorage.setItem('payroll_flight_attendant_lastDate', currentDateKey);
+                localStorage.setItem(payrollStorageKey, currentDateKey);
             } else {
                 const months = getMonthsElapsed(lastPaid, currentDateKey);
                 if (months > 0) {
                     const amount = months * monthlyPayroll;
                     totalIncome += amount;
-                    localStorage.setItem('payroll_flight_attendant_lastDate', currentDateKey);
+                    localStorage.setItem(payrollStorageKey, currentDateKey);
                     pushNotification({
                         tone: 'gain',
-                        title: 'Monthly flight attendant pay',
-                        message: `${formatNotificationCurrency(amount)} added for ${months} month${months > 1 ? 's' : ''} of salary${monthlyRouteBonus > 0 ? ' including long-haul bonus' : ''}.`,
+                        title: payrollTitle,
+                        message: isCainHousingScenario
+                            ? `${formatNotificationCurrency(amount)} added for ${months} month${months > 1 ? 's' : ''} of Cain's monthly income.`
+                            : `${formatNotificationCurrency(amount)} added for ${months} month${months > 1 ? 's' : ''} of salary${monthlyRouteBonus > 0 ? ' including long-haul bonus' : ''}.`,
                         timestampLabel: dayStartTimestampLabel,
-                        sourceKey: `payroll-flight-attendant:${currentDateKey}`,
+                        sourceKey: payrollSourceKey,
                     });
-                    recordEventAction(runStatsRef.current, {
-                        eventId: 'payroll-flight-attendant',
-                        valueDelta: amount,
+                    recordIncomeAction(runStatsRef.current, {
+                        sourceId: payrollSourceId,
+                        name: payrollTitle,
+                        amount,
                         date: dateIso,
                     });
                     saveRunStats(runStatsRef.current);
+                }
+            }
+        }
+
+        if (isCainHousingScenario) {
+            const apartmentDecision = readStoredJson<ApartmentSearchDecision>('apartmentSearch');
+            const selectedApartmentRent =
+                typeof apartmentDecision?.monthlyRent === 'number' &&
+                Number.isFinite(apartmentDecision.monthlyRent) &&
+                apartmentDecision.monthlyRent > 0
+                    ? apartmentDecision.monthlyRent
+                    : null;
+            const monthlyRent =
+                selectedApartmentRent ??
+                (currentDateKey <= CAIN_RENT_END_DATE ? CAIN_STARTING_RENT : null);
+            const rentTitle = selectedApartmentRent
+                ? `${apartmentDecision?.title ?? 'New apartment'} rent`
+                : 'Monthly apartment rent';
+
+            if (monthlyRent !== null) {
+                const lastBilled = localStorage.getItem('cain_rent_lastDate');
+                if (!lastBilled) {
+                    localStorage.setItem('cain_rent_lastDate', currentDateKey);
+                } else {
+                    const months = getMonthsElapsed(lastBilled, currentDateKey);
+                    if (months > 0) {
+                        const amount = months * monthlyRent;
+                        totalOwed += amount;
+                        billingParts.push(`rent (${months} mo x $${monthlyRent})`);
+                        localStorage.setItem('cain_rent_lastDate', currentDateKey);
+                        pushNotification({
+                            tone: 'loss',
+                            title: rentTitle,
+                            message: `${formatNotificationCurrency(amount)} deducted for ${months} month${months > 1 ? 's' : ''} of rent.`,
+                            timestampLabel: dayStartTimestampLabel,
+                            sourceKey: `rent-cain:${currentDateKey}`,
+                        });
+                        recordRentAction(runStatsRef.current, {
+                            sourceId: 'rent-cain',
+                            name: rentTitle,
+                            amount,
+                            date: dateIso,
+                        });
+                        saveRunStats(runStatsRef.current);
+                    }
                 }
             }
         }
@@ -902,7 +990,7 @@ function MainPageContent() {
             }, 0);
         }
         return () => window.clearTimeout(walletTimer);
-    }, [activeRouteAssignment, currentDateKey, dayStartTimestampLabel, gameOver, isDianaPandemicScenario, pushNotification, triggeredEvents]);
+    }, [activeRouteAssignment, currentDateKey, dayStartTimestampLabel, gameOver, isCainHousingScenario, isDianaPandemicScenario, pushNotification, triggeredEvents]);
 
     useEffect(() => {
         if (!billingBreak) return;
@@ -1213,6 +1301,30 @@ function MainPageContent() {
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                     onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'client-lawsuit' && (
+                <ClientLawsuitModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                    onGameOver={handleGameOver}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'apartment-search' && (
+                <ApartmentSearchModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'horse-bets' && (
+                <HorseBetsModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
                 />
             )}
 

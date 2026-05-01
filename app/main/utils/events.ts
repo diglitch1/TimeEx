@@ -79,5 +79,17 @@ export const HOUSING_GAME_EVENTS: GameEvent[] = [
         id: 'emergency-housing-notice',
         date: '2008-09-29',
     },
+    {
+        id: 'client-lawsuit',
+        date: '2008-11-23',
+    },
+    {
+        id: 'apartment-search',
+        date: '2009-03-09',
+    },
+    {
+        id: 'horse-bets',
+        date: '2009-06-01',
+    },
 ];
 

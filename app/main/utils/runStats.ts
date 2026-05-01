@@ -1,4 +1,6 @@
 import { ALL_ASSET_CATALOG } from './marketData';
+import { HOUSING_TIMELINE } from './housingTimeline';
+import { PANDEMIC_TIMELINE } from './pandemicTimeline';
 import { TIMELINE } from './timeline';
 import type { WalletItem } from './walletData';
 
@@ -8,7 +10,7 @@ export const GAME_OVER_SUMMARY_KEY = 'timeex_game_over_summary';
 export type ActionSummaryEntry = {
     id: string;
     date: string;
-    type: 'BUY' | 'SELL' | 'EVENT';
+    type: 'BUY' | 'SELL' | 'EVENT' | 'INCOME' | 'RENT';
     name: string;
     symbol?: string;
     amount: number;
@@ -153,9 +155,73 @@ export function recordSellAction(
 
 function getEventName(eventId: string) {
     return (
-        TIMELINE.find(marker => marker.kind === 'event' && marker.eventId === eventId)?.title ??
+        [...TIMELINE, ...HOUSING_TIMELINE, ...PANDEMIC_TIMELINE].find(
+            marker => marker.kind === 'event' && marker.eventId === eventId
+        )?.title ??
         eventId
     );
+}
+
+function isPayrollAction(entry: ActionSummaryEntry) {
+    return entry.id.includes('payroll-cain') || entry.id.includes('payroll-flight-attendant');
+}
+
+function normalizePayrollAction(entry: ActionSummaryEntry): ActionSummaryEntry {
+    if (!isPayrollAction(entry)) return entry;
+
+    const isCainPayroll = entry.id.includes('payroll-cain') || entry.name === 'payroll-cain';
+
+    return {
+        ...entry,
+        type: 'INCOME',
+        name: isCainPayroll ? 'Monthly income surplus' : 'Monthly flight attendant pay',
+        direction: 'received',
+    };
+}
+
+function normalizeActions(actions: ActionSummaryEntry[]) {
+    return actions.map(normalizePayrollAction);
+}
+
+export function recordIncomeAction(
+    stats: RunStats,
+    details: {
+        sourceId: string;
+        name: string;
+        amount: number;
+        date: string;
+    }
+) {
+    const amount = roundCurrency(details.amount);
+    stats.totalMoneyEarned += amount;
+    stats.actions.push({
+        id: `income-${details.sourceId}-${details.date}-${stats.actions.length + 1}`,
+        date: details.date,
+        type: 'INCOME',
+        name: details.name,
+        amount,
+        direction: 'received',
+    });
+}
+
+export function recordRentAction(
+    stats: RunStats,
+    details: {
+        sourceId: string;
+        name: string;
+        amount: number;
+        date: string;
+    }
+) {
+    const amount = roundCurrency(details.amount);
+    stats.actions.push({
+        id: `rent-${details.sourceId}-${details.date}-${stats.actions.length + 1}`,
+        date: details.date,
+        type: 'RENT',
+        name: details.name,
+        amount,
+        direction: 'spent',
+    });
 }
 
 export function recordEventAction(
@@ -195,14 +261,20 @@ export function buildGameOverSummary(
     wallet: WalletItem[],
     completedAt: Date
 ): GameOverSummary {
+    const actionSummary = normalizeActions(stats.actions).sort((left, right) =>
+        left.date.localeCompare(right.date)
+    );
+    const startingCash = roundCurrency(stats.startingCash);
+    const finalBalance = roundCurrency(wallet.reduce((sum, item) => sum + item.usdValue, 0));
+
     return {
-        startingCash: roundCurrency(stats.startingCash),
-        finalBalance: roundCurrency(wallet.reduce((sum, item) => sum + item.usdValue, 0)),
+        startingCash,
+        finalBalance,
         totalInvestedAmount: roundCurrency(stats.totalInvestedAmount),
         moneySpentOnEvents: roundCurrency(stats.moneySpentOnEvents),
-        totalMoneyEarned: roundCurrency(stats.totalMoneyEarned),
-        eventsTriggered: stats.eventsTriggered,
-        actionSummary: [...stats.actions].sort((left, right) => left.date.localeCompare(right.date)),
+        totalMoneyEarned: roundCurrency(finalBalance - startingCash),
+        eventsTriggered: actionSummary.filter(entry => entry.type === 'EVENT').length,
+        actionSummary,
         completedAt: completedAt.toISOString(),
     };
 }
@@ -218,14 +290,18 @@ export function loadGameOverSummary() {
     const parsed = safeParse<Partial<GameOverSummary>>(localStorage.getItem(GAME_OVER_SUMMARY_KEY));
     if (!parsed) return null;
 
+    const actionSummary = normalizeActions(parsed.actionSummary ?? []);
+    const startingCash = parsed.startingCash ?? 0;
+    const finalBalance = parsed.finalBalance ?? 0;
+
     return {
-        startingCash: parsed.startingCash ?? 0,
-        finalBalance: parsed.finalBalance ?? 0,
+        startingCash,
+        finalBalance,
         totalInvestedAmount: parsed.totalInvestedAmount ?? 0,
         moneySpentOnEvents: parsed.moneySpentOnEvents ?? 0,
-        totalMoneyEarned: parsed.totalMoneyEarned ?? 0,
-        eventsTriggered: parsed.eventsTriggered ?? 0,
-        actionSummary: parsed.actionSummary ?? [],
+        totalMoneyEarned: roundCurrency(finalBalance - startingCash),
+        eventsTriggered: actionSummary.filter(entry => entry.type === 'EVENT').length,
+        actionSummary,
         completedAt: parsed.completedAt ?? new Date(0).toISOString(),
     };
 }

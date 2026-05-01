@@ -10,7 +10,7 @@ type Props = {
     onRequestCashBreak: () => void;
 };
 
-const REPAIR_COST = 250;
+const REPAIR_COST = 125;
 
 function formatWalletCurrency(value: number) {
     return new Intl.NumberFormat('en-US', {
