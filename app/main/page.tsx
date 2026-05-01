@@ -15,6 +15,7 @@ import {
 import DotComFrenzyModal from './components/DotComFrenzyModal';
 import PandemicDeclaredModal from './components/PandemicDeclaredModal';
 import SickPassengerModal from './components/SickPassengerModal';
+import GoodbyePartyModal from './components/GoodbyePartyModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -552,6 +553,7 @@ function MainPageContent() {
               if (triggeredEvents.includes(event.id)) return false;
               if (event.id === 'route-assignment' && !isDianaPandemicScenario) return false;
               if (event.id === 'sick-passenger' && !isDianaPandemicScenario) return false;
+              if (event.id === 'goodbye-party' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig, acceptedGolfTournament);
           })?.id ?? null);
 
@@ -1088,12 +1090,19 @@ function MainPageContent() {
             {eventModalOpen && activeEvent === 'pandemic-declared' && (
                 <PandemicDeclaredModal onClose={handleCloseActiveEvent} />
             )}
-            {eventModalOpen && activeEvent === 'sick-passenger' && (
+            {eventModalOpen && activeEvent === 'sick-passenger' && isDianaPandemicScenario && (
                 <SickPassengerModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                     onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'goodbye-party' && isDianaPandemicScenario && (
+                <GoodbyePartyModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
                 />
             )}
             {eventModalOpen && activeEvent === 'route-assignment' && isDianaPandemicScenario && (
