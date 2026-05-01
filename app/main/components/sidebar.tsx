@@ -243,14 +243,20 @@ export default function Sidebar({
                                     key={item.id}
                                     className="flex items-center gap-3 rounded-[20px] border border-gray-200 bg-gradient-to-r from-gray-50 to-white px-3 py-3"
                                 >
-                                    <WalletIcon label={item.label} />
+                                    <WalletIcon item={item} />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
                                             <p className="truncate text-sm font-semibold text-gray-950">
                                                 {item.label}
                                             </p>
                                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                                                {item.id === 'cash' ? 'Cash' : item.id === 'car' ? 'Asset' : 'Stock'}
+                                                {item.id === 'cash'
+                                                    ? 'Cash'
+                                                    : item.id === 'car'
+                                                      ? 'Asset'
+                                                      : item.id === 'monthly-income'
+                                                        ? 'JOB'
+                                                        : 'Stock'}
                                             </span>
                                         </div>
                                         <p className="mt-1 text-sm text-gray-500">
@@ -417,8 +423,8 @@ export default function Sidebar({
     );
 }
 
-function WalletIcon({ label }: { label: string }) {
-    if (label === 'Cash') {
+function WalletIcon({ item }: { item: WalletItem }) {
+    if (item.id === 'cash') {
         return (
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-emerald-200 bg-gradient-to-br from-emerald-100 via-white to-emerald-50 p-2 shadow-[0_6px_16px_rgba(16,185,129,0.18)]">
                 <Image
@@ -432,7 +438,21 @@ function WalletIcon({ label }: { label: string }) {
         );
     }
 
-    if (label === 'Car') {
+    if (item.id === 'monthly-income') {
+        return (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-2 shadow-[0_6px_16px_rgba(14,165,233,0.14)]">
+                <Image
+                    src="/images/COVID-19-PANDEMIC/icons/job.png"
+                    alt="Job income icon"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-contain"
+                />
+            </div>
+        );
+    }
+
+    if (item.id === 'car') {
         return (
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-slate-50 p-2 shadow-[0_6px_16px_rgba(59,130,246,0.12)]">
                 <Image
@@ -448,7 +468,7 @@ function WalletIcon({ label }: { label: string }) {
 
     return (
         <AssetAvatar
-            symbol={label}
+            symbol={item.label}
             size={32}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-gray-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
             imageClassName="h-8 w-8 object-contain"

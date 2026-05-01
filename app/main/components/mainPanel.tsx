@@ -231,7 +231,7 @@ export default function MainTradePanel({
         () =>
             new Set(
                 wallet
-                    .filter(item => item.id !== 'cash' && item.units > 0)
+                    .filter(item => item.id !== 'cash' && item.id !== 'car' && item.id !== 'monthly-income' && item.units > 0)
                     .map(item => item.label)
             ),
         [wallet]

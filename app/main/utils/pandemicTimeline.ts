@@ -2,6 +2,12 @@ import type { TimelineMarker } from './timeline';
 
 export const PANDEMIC_TIMELINE: TimelineMarker[] = [
     {
+        date: '2020-02-18',
+        kind: 'market',
+        title: 'Orientation day',
+        subtitle: 'Diana starts her flight attendant timeline with a day to review the market and her wallet',
+    },
+    {
         date: '2020-02-19',
         kind: 'market',
         title: 'Pre-crash market peak',
