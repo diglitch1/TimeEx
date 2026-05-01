@@ -276,10 +276,10 @@ export default function GolfTournamentDayModal({ wallet, setWallet, onClose }: P
                 {stage === 'outfit' && (
                     <>
                         <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
-                            Before the tournament begins
+                            Tournament Preparations
                         </h2>
                         <p className="mb-5 text-center text-lg text-gray-700">
-                            Please pick Cain's outfit. Remember the invitation recommendations.
+                            Pick Cain's outfit and keep the invitation recommendations in mind.
                         </p>
 
                         <div className="mb-6 grid gap-4 md:grid-cols-3">
@@ -325,10 +325,10 @@ export default function GolfTournamentDayModal({ wallet, setWallet, onClose }: P
                 {stage === 'equipment' && (
                     <>
                         <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
-                            Pick your equipment
+                            Tournament Preparations
                         </h2>
                         <p className="mb-5 text-center text-lg text-gray-700">
-                            Choose the clubs Cain should bring to the course.
+                            Choose the equipment Cain should bring to the course.
                         </p>
 
                         <div className="mb-6 grid gap-4 md:grid-cols-3">
