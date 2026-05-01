@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { WalletItem } from '../utils/walletData';
+import { formatWalletUnits, WalletItem } from '../utils/walletData';
 import {
     getScenarioAssetCatalogs,
     getAssetsWithMarket,
@@ -262,7 +262,7 @@ export default function Sidebar({
                                         <p className="mt-1 text-sm text-gray-500">
                                             {item.id === 'cash'
                                                 ? `${formatSidebarCurrency(item.units)} available`
-                                                : `${item.units.toFixed(4)} ${item.unitLabel}`}
+                                                : formatWalletUnits(item)}
                                         </p>
                                     </div>
                                     <div className="text-right">

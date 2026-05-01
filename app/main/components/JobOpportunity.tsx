@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { WalletItem } from '../utils/walletData';
+import { formatWalletCurrency, formatWalletUnits, type WalletItem } from '../utils/walletData';
 
 type Props = {
     wallet: WalletItem[];
@@ -374,10 +374,10 @@ They’re dealing with a busy sprint and ask if you’d be available for a short
                                         <p key={item.id}>
                                             {item.label}:{' '}
                                             <span className="font-medium">
-                                                {item.units.toFixed(3)} {item.unitLabel}
+                                                {formatWalletUnits(item)}
                                             </span>
                                             <span className="text-gray-500">
-                                                {' '}(${item.usdValue.toFixed(2)})
+                                                {' '}({formatWalletCurrency(item.usdValue)})
                                             </span>
                                         </p>
                                     ))}
