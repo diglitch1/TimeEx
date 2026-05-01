@@ -14,6 +14,8 @@ import {
 } from './utils/walletStorage';
 import DotComFrenzyModal from './components/DotComFrenzyModal';
 import PandemicDeclaredModal from './components/PandemicDeclaredModal';
+import SickPassengerModal from './components/SickPassengerModal';
+import GoodbyePartyModal from './components/GoodbyePartyModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -226,6 +228,7 @@ const END_GAME_REDIRECT_DELAY_MS = 2200;
 const CASH_BREAK_SECONDS = 30;
 const BILLING_BREAK_SECONDS = 120;
 const EVENT_MODAL_DELAY_MS = 600;
+const POST_SICK_PASSENGER_NEWS_DELAY_MS = 5000;
 const BASE_FLIGHT_ATTENDANT_SALARY = 3200;
 const CAIN_MONTHLY_CASHFLOW = 1500;
 const CAIN_STARTING_RENT = 600;
@@ -566,6 +569,8 @@ function MainPageContent() {
               if (event.date !== currentDateKey) return false;
               if (triggeredEvents.includes(event.id)) return false;
               if (event.id === 'route-assignment' && !isDianaPandemicScenario) return false;
+              if (event.id === 'sick-passenger' && !isDianaPandemicScenario) return false;
+              if (event.id === 'goodbye-party' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(
                   event.id,
                   attendedCollegeParty,
@@ -642,12 +647,17 @@ function MainPageContent() {
         setEventModalReady(false);
         if (!activeEvent || hasReachedTimelineEnd) return;
 
+        const delay =
+            activeEvent === 'pandemic-declared' && triggeredEvents.includes('sick-passenger')
+                ? POST_SICK_PASSENGER_NEWS_DELAY_MS
+                : EVENT_MODAL_DELAY_MS;
+
         const timer = window.setTimeout(() => {
             setEventModalReady(true);
-        }, EVENT_MODAL_DELAY_MS);
+        }, delay);
 
         return () => window.clearTimeout(timer);
-    }, [activeEvent, hasReachedTimelineEnd]);
+    }, [activeEvent, hasReachedTimelineEnd, triggeredEvents]);
 
     useEffect(() => {
         if (!cashBreak || cashBreak.eventId !== activeEvent) return;
@@ -1167,6 +1177,21 @@ function MainPageContent() {
             {eventModalOpen && activeEvent === 'dot-com-frenzy' && <DotComFrenzyModal onClose={handleCloseActiveEvent} />}
             {eventModalOpen && activeEvent === 'pandemic-declared' && (
                 <PandemicDeclaredModal onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'sick-passenger' && isDianaPandemicScenario && (
+                <SickPassengerModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'goodbye-party' && isDianaPandemicScenario && (
+                <GoodbyePartyModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
             )}
             {eventModalOpen && activeEvent === 'route-assignment' && isDianaPandemicScenario && (
                 <RouteAssignmentModal

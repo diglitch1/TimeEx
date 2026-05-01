@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { WalletItem } from '../../utils/walletData';
+import { formatWalletUnits, type WalletItem } from '../../utils/walletData';
 
 type Props = {
     wallet: WalletItem[];
@@ -169,12 +169,7 @@ export default function LaptopFailureModal({
                                 <p key={item.id}>
                                     {item.label}:{' '}
                                     <span className="font-medium">
-                                        {item.id === 'cash'
-                                            ? formatWalletCurrency(item.units)
-                                            : `${item.units.toLocaleString('en-US', {
-                                                  minimumFractionDigits: 3,
-                                                  maximumFractionDigits: 3,
-                                              })} ${item.unitLabel}`}
+                                        {formatWalletUnits(item)}
                                     </span>
                                     <span className="text-gray-500">
                                         {' '}({formatWalletCurrency(item.usdValue)})
