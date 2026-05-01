@@ -24,6 +24,7 @@ import ApplyForCollegeModal from './components/ApplyForCollege';
 import CarInsuranceModal from './components/CarInsurance';
 import CollegeResultsModal from './components/CollegeResults';
 import CollegePartyInvite from './components/CollegePartyInvite';
+import RouteAssignmentModal from './components/RouteAssignmentModal';
 import PartyConsequencesModal from './components/CollegePartyConsequences';
 import ParentsSupportModal from './components/ParentsSupport';
 import CarCrashModal from './components/CarCrash';
@@ -216,6 +217,8 @@ const TOTAL_SECONDS = DAY_DURATION_SECONDS;
 const END_GAME_REDIRECT_DELAY_MS = 2200;
 const CASH_BREAK_SECONDS = 30;
 const BILLING_BREAK_SECONDS = 120;
+const EVENT_MODAL_DELAY_MS = 600;
+const BASE_FLIGHT_ATTENDANT_SALARY = 3200;
 const MONTHLY_INSURANCE = 70;
 const MONTHLY_TUITION: Record<string, number> = {
     atlas: 700,
@@ -234,6 +237,16 @@ function getMonthsElapsed(fromDateStr: string, toDateStr: string): number {
 
 function getWalletTotalValue(wallet: WalletItem[]) {
     return wallet.reduce((sum, item) => sum + item.usdValue, 0);
+}
+
+function isNonMarketWalletItem(item: WalletItem) {
+    return (
+        item.id === 'cash' ||
+        item.id === 'car' ||
+        item.id === 'monthly-income' ||
+        item.id === 'flight-attendant-salary' ||
+        item.id === 'long-haul-bonus'
+    );
 }
 
 function readStoredDecision(key: string, property: string) {
@@ -359,6 +372,7 @@ function MainPageContent() {
         deadline: number;
     } | null>(null);
     const [billingBreakTick, setBillingBreakTick] = useState(() => Date.now());
+    const [eventModalReady, setEventModalReady] = useState(false);
     const [gameSeconds, setGameSeconds] = useState(() =>
         readStoredGameSeconds(timelineStorageKey, timelineDates)
     );
@@ -404,6 +418,7 @@ function MainPageContent() {
     const attendedCollegeParty = readStoredDecision('collegeParty', 'attended');
     const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
     const acceptedGolfTournament = readStoredDecision('golfTournament', 'accepted');
+    const isDianaPandemicScenario = scenarioId === 'pandemic' && characterId === 'D';
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
         if (
@@ -510,6 +525,7 @@ function MainPageContent() {
         : (scenarioEvents.find(event => {
               if (event.date !== currentDateKey) return false;
               if (triggeredEvents.includes(event.id)) return false;
+              if (event.id === 'route-assignment' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig, acceptedGolfTournament);
           })?.id ?? null);
 
@@ -524,7 +540,7 @@ function MainPageContent() {
     const billingBreakRemaining = billingBreakActive
         ? Math.max(0, Math.ceil((billingBreak.deadline - billingBreakTick) / 1000))
         : 0;
-    const eventModalOpen = activeEvent !== null && !cashBreakActive && !hasReachedTimelineEnd;
+    const eventModalOpen = activeEvent !== null && eventModalReady && !cashBreakActive && !hasReachedTimelineEnd;
 
     const handleCloseActiveEvent = () => {
         if (!activeEvent) return;
@@ -575,6 +591,17 @@ function MainPageContent() {
 
         return () => clearInterval(interval);
     }, [activeEvent, billingBreak, gameOver, hasReachedTimelineEnd]);
+
+    useEffect(() => {
+        setEventModalReady(false);
+        if (!activeEvent || hasReachedTimelineEnd) return;
+
+        const timer = window.setTimeout(() => {
+            setEventModalReady(true);
+        }, EVENT_MODAL_DELAY_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [activeEvent, hasReachedTimelineEnd]);
 
     useEffect(() => {
         if (!cashBreak || cashBreak.eventId !== activeEvent) return;
@@ -641,7 +668,7 @@ function MainPageContent() {
         if (fromDateKey === currentDateKey) return;
 
         const ownedStocks = walletRef.current.filter(
-            item => item.id !== 'cash' && item.id !== 'car' && item.units > 0
+            item => !isNonMarketWalletItem(item) && item.units > 0
         );
         if (ownedStocks.length === 0 || gameOver) return;
 
@@ -680,6 +707,51 @@ function MainPageContent() {
         const collegeResult = readStoredJson<{ result: string; fallback?: string | null }>('collegeResult');
         const collegeResultKind = collegeResult?.result;
         const collegeApp = readStoredJson<{ schoolId: string; schoolName?: string }>('collegeApplication');
+        const routeAssignmentCompleted = triggeredEvents.includes('route-assignment');
+        const routeAssignment = isDianaPandemicScenario && routeAssignmentCompleted
+            ? readStoredJson<{
+                  monthlyBaseSalary?: number;
+                  monthlyBonus?: number;
+                  route?: string;
+              }>('routeAssignment')
+            : null;
+        const monthlyBaseSalary =
+            routeAssignment && Number.isFinite(routeAssignment.monthlyBaseSalary)
+                ? routeAssignment.monthlyBaseSalary ?? BASE_FLIGHT_ATTENDANT_SALARY
+                : isDianaPandemicScenario
+                  ? BASE_FLIGHT_ATTENDANT_SALARY
+                  : 0;
+        const monthlyRouteBonus =
+            routeAssignment && Number.isFinite(routeAssignment.monthlyBonus)
+                ? routeAssignment.monthlyBonus ?? 0
+                : 0;
+        const monthlyPayroll = monthlyBaseSalary + monthlyRouteBonus;
+        if (monthlyPayroll > 0) {
+            setWallet(prev => {
+                const currentIncome = prev.find(item => item.id === 'monthly-income');
+                const hasOldIncomeRows = prev.some(
+                    item => item.id === 'flight-attendant-salary' || item.id === 'long-haul-bonus'
+                );
+
+                if (currentIncome?.units === monthlyPayroll && !hasOldIncomeRows) return prev;
+
+                return [
+                    ...prev.filter(
+                        item =>
+                            item.id !== 'monthly-income' &&
+                            item.id !== 'flight-attendant-salary' &&
+                            item.id !== 'long-haul-bonus'
+                    ),
+                    {
+                        id: 'monthly-income',
+                        label: 'Monthly income',
+                        units: monthlyPayroll,
+                        unitLabel: '$/month',
+                        usdValue: monthlyPayroll,
+                    },
+                ];
+            });
+        }
         let tuitionSchoolId: string | null = null;
         let tuitionSchoolName: string | null = null;
 
@@ -693,8 +765,36 @@ function MainPageContent() {
 
         const monthlyTuition = tuitionSchoolId ? (MONTHLY_TUITION[tuitionSchoolId] ?? null) : null;
         let totalOwed = 0;
+        let totalIncome = 0;
         const billingParts: string[] = [];
         const dateIso = new Date(currentDateKey + 'T00:00:00').toISOString();
+
+        if (monthlyPayroll > 0) {
+            const lastPaid = localStorage.getItem('payroll_flight_attendant_lastDate');
+            if (!lastPaid) {
+                localStorage.setItem('payroll_flight_attendant_lastDate', currentDateKey);
+            } else {
+                const months = getMonthsElapsed(lastPaid, currentDateKey);
+                if (months > 0) {
+                    const amount = months * monthlyPayroll;
+                    totalIncome += amount;
+                    localStorage.setItem('payroll_flight_attendant_lastDate', currentDateKey);
+                    pushNotification({
+                        tone: 'gain',
+                        title: 'Monthly flight attendant pay',
+                        message: `${formatNotificationCurrency(amount)} added for ${months} month${months > 1 ? 's' : ''} of salary${monthlyRouteBonus > 0 ? ' including long-haul bonus' : ''}.`,
+                        timestampLabel: dayStartTimestampLabel,
+                        sourceKey: `payroll-flight-attendant:${currentDateKey}`,
+                    });
+                    recordEventAction(runStatsRef.current, {
+                        eventId: 'payroll-flight-attendant',
+                        valueDelta: amount,
+                        date: dateIso,
+                    });
+                    saveRunStats(runStatsRef.current);
+                }
+            }
+        }
 
         if (hasInsurance) {
             const lastBilled = localStorage.getItem('billing_insurance_lastDate');
@@ -752,22 +852,23 @@ function MainPageContent() {
             }
         }
 
-        if (totalOwed <= 0) return;
+        if (totalIncome <= 0 && totalOwed <= 0) return;
 
         const currentCash = walletRef.current.find(item => item.id === 'cash')?.units ?? 0;
-        const remainingCash = currentCash - totalOwed;
+        const cashDelta = totalIncome - totalOwed;
+        const remainingCash = currentCash + cashDelta;
 
         const walletTimer = window.setTimeout(() => {
             setWallet(prev =>
                 prev.map(item =>
                     item.id === 'cash'
-                        ? { ...item, units: item.units - totalOwed, usdValue: item.usdValue - totalOwed }
+                        ? { ...item, units: item.units + cashDelta, usdValue: item.usdValue + cashDelta }
                         : item
                 )
             );
         }, 0);
 
-        if (remainingCash < 0) {
+        if (totalOwed > 0 && remainingCash < 0) {
             const deadline = Date.now() + BILLING_BREAK_SECONDS * 1000;
             window.setTimeout(() => {
                 setBillingBreak({ reason: billingParts.join(' + '), totalOwed, deadline });
@@ -775,7 +876,7 @@ function MainPageContent() {
             }, 0);
         }
         return () => window.clearTimeout(walletTimer);
-    }, [currentDateKey, dayStartTimestampLabel, gameOver, pushNotification]);
+    }, [currentDateKey, dayStartTimestampLabel, gameOver, isDianaPandemicScenario, pushNotification, triggeredEvents]);
 
     useEffect(() => {
         if (!billingBreak) return;
@@ -826,6 +927,16 @@ function MainPageContent() {
         if (skipLabelTimerRef.current) clearTimeout(skipLabelTimerRef.current);
         setSkipLabel(`${period} to ${dest}`);
         skipLabelTimerRef.current = setTimeout(() => setSkipLabel(null), 30000);
+    };
+
+    const handleLongHaulIncomeIncrease = () => {
+        pushNotification({
+            tone: 'gain',
+            title: 'Monthly income increased',
+            message: `${formatNotificationCurrency(400)} more per month from Diana's long-haul route assignment.`,
+            timestampLabel: formatNotificationTimestamp(currentDateTime),
+            sourceKey: `route-long-haul-income:${currentDateKey}`,
+        });
     };
 
     const skip30Seconds = () => {
@@ -940,6 +1051,14 @@ function MainPageContent() {
             {eventModalOpen && activeEvent === 'dot-com-frenzy' && <DotComFrenzyModal onClose={handleCloseActiveEvent} />}
             {eventModalOpen && activeEvent === 'pandemic-declared' && (
                 <PandemicDeclaredModal onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'route-assignment' && isDianaPandemicScenario && (
+                <RouteAssignmentModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onLongHaulIncomeIncrease={handleLongHaulIncomeIncrease}
+                    onClose={handleCloseActiveEvent}
+                />
             )}
             {eventModalOpen && activeEvent === 'apply-for-college' && (
                 <ApplyForCollegeModal

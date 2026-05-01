@@ -5,6 +5,10 @@ export type PandemicLiveNewsEvent = {
 
 export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
     {
+        id: 'route-assignment',
+        date: '2020-02-19',
+    },
+    {
         id: 'pandemic-declared',
         date: '2020-03-11',
     },
