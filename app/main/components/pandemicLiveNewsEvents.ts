@@ -9,6 +9,10 @@ export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
         date: '2020-02-19',
     },
     {
+        id: 'sick-passenger',
+        date: '2020-03-11',
+    },
+    {
         id: 'pandemic-declared',
         date: '2020-03-11',
     },
