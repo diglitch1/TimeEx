@@ -38,6 +38,12 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         subtitle: 'JPMorgan acquires Bear Stearns with Federal Reserve support.',
     },
     {
+        date: '2008-03-16',
+        kind: 'event',
+        title: 'Workstation Failure',
+        eventId: 'laptop-failure',
+    },
+    {
         date: '2008-07-30',
         kind: 'market',
         title: 'Housing rescue law signed',
@@ -50,10 +56,22 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         subtitle: 'The U.S. government places the mortgage giants into conservatorship.',
     },
     {
+        date: '2008-09-07',
+        kind: 'event',
+        title: 'Golf Tournament Invitation',
+        eventId: 'golf-tournament',
+    },
+    {
         date: '2008-09-15',
         kind: 'market',
         title: 'Lehman Brothers fails',
         subtitle: 'The bankruptcy intensifies panic across the global financial system.',
+    },
+    {
+        date: '2008-09-15',
+        kind: 'event',
+        title: 'Tournament Day',
+        eventId: 'golf-tournament-day',
     },
     {
         date: '2008-09-16',
@@ -66,6 +84,12 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         kind: 'market',
         title: 'Bailout vote fails',
         subtitle: 'Markets plunge after the first rescue bill is rejected by the House.',
+    },
+    {
+        date: '2008-09-29',
+        kind: 'event',
+        title: 'Emergency Housing Notice',
+        eventId: 'emergency-housing-notice',
     },
     {
         date: '2008-10-03',

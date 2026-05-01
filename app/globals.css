@@ -138,8 +138,75 @@ body::before {
     to   { opacity: 1; transform: translateY(0)   scale(1);    }
 }
 
+@keyframes letterUnfold {
+    0% {
+        opacity: 0;
+        transform: perspective(900px) rotateX(-78deg) translateY(-22px) scaleY(0.35);
+    }
+    55% {
+        opacity: 1;
+        transform: perspective(900px) rotateX(10deg) translateY(4px) scaleY(1.04);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(900px) rotateX(0) translateY(0) scaleY(1);
+    }
+}
+
+@keyframes letterFoldBack {
+    0% {
+        opacity: 1;
+        transform: perspective(900px) rotateX(0) translateY(0) scaleY(1);
+    }
+    45% {
+        opacity: 1;
+        transform: perspective(900px) rotateX(12deg) translateY(4px) scaleY(1.03);
+    }
+    100% {
+        opacity: 0;
+        transform: perspective(900px) rotateX(-82deg) translateY(-24px) scaleY(0.32);
+    }
+}
+
+@keyframes golfConfettiFall {
+    0% {
+        opacity: 0;
+        top: -12%;
+        transform: translateY(0) rotate(0deg);
+    }
+    12% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        top: 112%;
+        transform: translateY(30px) rotate(540deg);
+    }
+}
+
 .skip-badge {
     animation: skipBadgeIn 0.22s ease-out both;
+}
+
+.animate-letter-unfold {
+    animation: letterUnfold 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+    transform-origin: top center;
+}
+
+.animate-letter-fold-back {
+    animation: letterFoldBack 420ms cubic-bezier(0.55, 0, 0.85, 0.2) both;
+    transform-origin: top center;
+}
+
+.golf-confetti-piece {
+    position: absolute;
+    top: -12%;
+    width: 10px;
+    height: 18px;
+    border-radius: 2px;
+    animation-name: golfConfettiFall;
+    animation-timing-function: cubic-bezier(0.18, 0.75, 0.4, 1);
+    animation-fill-mode: both;
 }
 
 .animate-event-in {
