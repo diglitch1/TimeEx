@@ -31,6 +31,10 @@ import FreelanceGigModal from './components/FreelanceGig';
 import JobOpportunityModal from './components/JobOpportunity';
 import RiskyDealModal from './components/characterB/RiskyDeal';
 import DaughterRentHelpModal from './components/characterB/DaughterRentHelp';
+import LaptopFailureModal from './components/characterB/LaptopFailure';
+import GolfTournamentModal from './components/characterB/GolfTournament';
+import GolfTournamentDayModal from './components/characterB/GolfTournamentDay';
+import EmergencyHousingNoticeModal from './components/characterB/EmergencyHousingNotice';
 import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
@@ -91,10 +95,12 @@ function getPositionMoveTone(changePercent: number): NotificationTone {
 function canTriggerEvent(
     eventId: string,
     attendedCollegeParty: boolean,
-    acceptedGig: boolean
+    acceptedGig: boolean,
+    acceptedGolfTournament: boolean
 ) {
     if (eventId === 'party-consequences') return attendedCollegeParty;
     if (eventId === 'job-opportunity') return acceptedGig;
+    if (eventId === 'golf-tournament-day') return acceptedGolfTournament;
     return true;
 }
 
@@ -397,6 +403,7 @@ function MainPageContent() {
 
     const attendedCollegeParty = readStoredDecision('collegeParty', 'attended');
     const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
+    const acceptedGolfTournament = readStoredDecision('golfTournament', 'accepted');
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
         if (
@@ -503,7 +510,7 @@ function MainPageContent() {
         : (scenarioEvents.find(event => {
               if (event.date !== currentDateKey) return false;
               if (triggeredEvents.includes(event.id)) return false;
-              return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig);
+              return canTriggerEvent(event.id, attendedCollegeParty, acceptedGig, acceptedGolfTournament);
           })?.id ?? null);
 
     const cashBreakActive =
@@ -1007,6 +1014,28 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'daughter-rent-help' && (
                 <DaughterRentHelpModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'laptop-failure' && (
+                <LaptopFailureModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'golf-tournament' && (
+                <GolfTournamentModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'golf-tournament-day' && (
+                <GolfTournamentDayModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'emergency-housing-notice' && (
+                <EmergencyHousingNoticeModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
