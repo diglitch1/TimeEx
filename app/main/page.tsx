@@ -25,6 +25,7 @@ import CarInsuranceModal from './components/CarInsurance';
 import CollegeResultsModal from './components/CollegeResults';
 import CollegePartyInvite from './components/CollegePartyInvite';
 import RouteAssignmentModal from './components/RouteAssignmentModal';
+import FlightRouteMap from './components/FlightRouteMap';
 import PartyConsequencesModal from './components/CollegePartyConsequences';
 import ParentsSupportModal from './components/ParentsSupport';
 import CarCrashModal from './components/CarCrash';
@@ -239,6 +240,15 @@ function getWalletTotalValue(wallet: WalletItem[]) {
     return wallet.reduce((sum, item) => sum + item.usdValue, 0);
 }
 
+type RouteAssignmentState = {
+    route?: string;
+    longHaul?: boolean;
+    shortHaul?: boolean;
+    monthlyBaseSalary?: number;
+    monthlyBonus?: number;
+    date?: string;
+};
+
 function isNonMarketWalletItem(item: WalletItem) {
     return (
         item.id === 'cash' ||
@@ -373,6 +383,9 @@ function MainPageContent() {
     } | null>(null);
     const [billingBreakTick, setBillingBreakTick] = useState(() => Date.now());
     const [eventModalReady, setEventModalReady] = useState(false);
+    const [routeAssignmentState, setRouteAssignmentState] = useState<RouteAssignmentState | null>(() =>
+        readStoredJson<RouteAssignmentState>('routeAssignment')
+    );
     const [gameSeconds, setGameSeconds] = useState(() =>
         readStoredGameSeconds(timelineStorageKey, timelineDates)
     );
@@ -419,6 +432,16 @@ function MainPageContent() {
     const acceptedGig = readStoredDecision('freelanceGig', 'accepted');
     const acceptedGolfTournament = readStoredDecision('golfTournament', 'accepted');
     const isDianaPandemicScenario = scenarioId === 'pandemic' && characterId === 'D';
+    const activeRouteAssignment =
+        isDianaPandemicScenario && triggeredEvents.includes('route-assignment')
+            ? routeAssignmentState
+            : null;
+    const activeRoute =
+        activeRouteAssignment?.route === 'long-haul' || activeRouteAssignment?.longHaul
+            ? 'long-haul'
+            : activeRouteAssignment?.route === 'short-haul' || activeRouteAssignment?.shortHaul
+              ? 'short-haul'
+              : null;
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
         if (
@@ -707,14 +730,7 @@ function MainPageContent() {
         const collegeResult = readStoredJson<{ result: string; fallback?: string | null }>('collegeResult');
         const collegeResultKind = collegeResult?.result;
         const collegeApp = readStoredJson<{ schoolId: string; schoolName?: string }>('collegeApplication');
-        const routeAssignmentCompleted = triggeredEvents.includes('route-assignment');
-        const routeAssignment = isDianaPandemicScenario && routeAssignmentCompleted
-            ? readStoredJson<{
-                  monthlyBaseSalary?: number;
-                  monthlyBonus?: number;
-                  route?: string;
-              }>('routeAssignment')
-            : null;
+        const routeAssignment = activeRouteAssignment;
         const monthlyBaseSalary =
             routeAssignment && Number.isFinite(routeAssignment.monthlyBaseSalary)
                 ? routeAssignment.monthlyBaseSalary ?? BASE_FLIGHT_ATTENDANT_SALARY
@@ -876,7 +892,7 @@ function MainPageContent() {
             }, 0);
         }
         return () => window.clearTimeout(walletTimer);
-    }, [currentDateKey, dayStartTimestampLabel, gameOver, isDianaPandemicScenario, pushNotification, triggeredEvents]);
+    }, [activeRouteAssignment, currentDateKey, dayStartTimestampLabel, gameOver, isDianaPandemicScenario, pushNotification, triggeredEvents]);
 
     useEffect(() => {
         if (!billingBreak) return;
@@ -936,6 +952,18 @@ function MainPageContent() {
             message: `${formatNotificationCurrency(400)} more per month from Diana's long-haul route assignment.`,
             timestampLabel: formatNotificationTimestamp(currentDateTime),
             sourceKey: `route-long-haul-income:${currentDateKey}`,
+        });
+    };
+
+    const handleRouteAssigned = () => {
+        const nextRouteAssignment = readStoredJson<RouteAssignmentState>('routeAssignment');
+        setRouteAssignmentState(nextRouteAssignment);
+        pushNotification({
+            tone: 'info',
+            title: 'Route map unlocked',
+            message: `Diana's ${nextRouteAssignment?.route === 'long-haul' ? 'international' : 'European'} flight map is now available in the bottom-right corner.`,
+            timestampLabel: formatNotificationTimestamp(currentDateTime),
+            sourceKey: `route-map-unlocked:${currentDateKey}`,
         });
     };
 
@@ -1057,6 +1085,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onLongHaulIncomeIncrease={handleLongHaulIncomeIncrease}
+                    onRouteAssigned={handleRouteAssigned}
                     onClose={handleCloseActiveEvent}
                 />
             )}
@@ -1208,6 +1237,12 @@ function MainPageContent() {
                         </div>
                     </div>
                 </div>
+                {activeRoute ? (
+                    <FlightRouteMap
+                        route={activeRoute}
+                        currentDate={currentDateTime}
+                    />
+                ) : null}
             </div>
             {gameOver ? <GameOverModal reason={gameOver.reason} onReturnHome={handleReturnHome} /> : null}
         </>

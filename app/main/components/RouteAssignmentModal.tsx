@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onLongHaulIncomeIncrease: () => void;
+    onRouteAssigned: () => void;
     onClose: () => void;
 };
 
@@ -20,6 +21,7 @@ export default function RouteAssignmentModal({
                                                  wallet,
                                                  setWallet,
                                                  onLongHaulIncomeIncrease,
+                                                 onRouteAssigned,
                                                  onClose,
                                              }: Props) {
     const [choice, setChoice] = useState<'long-haul' | 'short-haul'>('long-haul');
@@ -59,6 +61,7 @@ export default function RouteAssignmentModal({
             });
 
             onLongHaulIncomeIncrease();
+            onRouteAssigned();
             onClose();
             return;
         }
@@ -85,6 +88,7 @@ export default function RouteAssignmentModal({
             ];
         });
 
+        onRouteAssigned();
         onClose();
     };
 
