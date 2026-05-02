@@ -51,6 +51,7 @@ import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
 import RehiringOfferModal from './components/RehiringOfferModal';
+import PilotTrainingApplicationModal from './components/PilotTrainingApplicationModal';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 import { HOUSING_TIMELINE, HOUSING_TIMELINE_DATES } from './utils/housingTimeline';
 import { PANDEMIC_TIMELINE, PANDEMIC_TIMELINE_DATES } from './utils/pandemicTimeline';
@@ -1381,6 +1382,9 @@ function MainPageContent() {
                     onDecisionComplete={handleRehiringDecisionComplete}
                     onClose={handleCloseActiveEvent}
                 />
+            )}
+            {eventModalOpen && activeEvent === 'pilot-training-application' && isDianaPandemicScenario && (
+                <PilotTrainingApplicationModal onClose={handleCloseActiveEvent} />
             )}
             {eventModalOpen && activeEvent === 'route-assignment' && isDianaPandemicScenario && (
                 <RouteAssignmentModal
