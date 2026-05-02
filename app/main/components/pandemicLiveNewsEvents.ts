@@ -25,6 +25,10 @@ export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
         date: '2020-04-20',
     },
     {
+        id: 'grounded-choice',
+        date: '2020-06-08',
+    },
+    {
         id: 'vaccine-announced',
         date: '2020-11-09',
     },

@@ -17,6 +17,7 @@ import PandemicDeclaredModal from './components/PandemicDeclaredModal';
 import SickPassengerModal from './components/SickPassengerModal';
 import GoodbyePartyModal from './components/GoodbyePartyModal';
 import CovidTestModal from './components/CovidTestModal';
+import GroundedChoiceModal from './components/GroundedChoiceModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -476,8 +477,9 @@ function MainPageContent() {
         const isDiana = scenarioId === 'pandemic' && characterId === 'D';
         const terminated = isDiana && hasConfirmedDianaTermination(triggeredEvents);
         const routeAssignment = readStoredJson<RouteAssignmentState>('routeAssignment');
+        const hasRouteAssignment = triggeredEvents.includes('route-assignment');
         const startingIncome =
-            routeAssignment?.route === 'long-haul' || routeAssignment?.longHaul
+            hasRouteAssignment && (routeAssignment?.route === 'long-haul' || routeAssignment?.longHaul)
                 ? BASE_FLIGHT_ATTENDANT_SALARY + (routeAssignment.monthlyBonus ?? 400)
                 : BASE_FLIGHT_ATTENDANT_SALARY;
 
@@ -646,6 +648,7 @@ function MainPageContent() {
               if (event.id === 'sick-passenger' && !isDianaPandemicScenario) return false;
               if (event.id === 'goodbye-party' && !isDianaPandemicScenario) return false;
               if (event.id === 'covid-test' && !isDianaPandemicScenario) return false;
+              if (event.id === 'grounded-choice' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(
                   event.id,
                   attendedCollegeParty,
@@ -855,7 +858,11 @@ function MainPageContent() {
                 : routeAssignment && Number.isFinite(routeAssignment.monthlyBonus)
                 ? routeAssignment.monthlyBonus ?? 0
                 : 0;
-        const monthlyPayroll = monthlyBaseSalary + monthlyRouteBonus;
+        const groundShiftMonthlyIncome = triggeredEvents.includes('grounded-choice')
+            ? (readStoredJson<{ groundShiftMonthlyIncome?: number }>('groundedChoice')
+                  ?.groundShiftMonthlyIncome ?? 0)
+            : 0;
+        const monthlyPayroll = monthlyBaseSalary + monthlyRouteBonus + groundShiftMonthlyIncome;
         if (monthlyPayroll > 0 && !isCainHousingScenario) {
             setWallet(prev => {
                 const currentIncome = prev.find(item => item.id === 'monthly-income');
@@ -1279,6 +1286,13 @@ function MainPageContent() {
                 <CovidTestModal
                     wallet={wallet}
                     onRouteMapLocked={handleRouteMapLocked}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'grounded-choice' && isDianaPandemicScenario && (
+                <GroundedChoiceModal
+                    wallet={wallet}
+                    setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
                 />
             )}

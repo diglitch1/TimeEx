@@ -104,10 +104,13 @@ export default function GoodbyePartyModal({ wallet, setWallet, onClose }: Props)
                             <label className="mb-1 block text-sm font-medium">
                                 Immediate effect
                             </label>
-                            <div className="rounded-lg border px-3 py-2 text-sm text-gray-700">
-                                {choice === 'attend'
-                                    ? `Diana buys snacks to bring along (-$${SNACK_COST}) and gets the emotional boost she needed.`
-                                    : 'Diana stays home and video-calls one colleague instead. The evening is quiet, but her record stays clean.'}
+                            <div className="rounded-lg border px-3 py-2 text-base font-semibold">
+                                {choice === 'attend' ? `-${formatWalletCurrency(SNACK_COST)}` : '$0'}
+                                <span className="block text-xs font-medium text-gray-500">
+                                    {choice === 'attend'
+                                        ? 'Diana buys snacks to bring along and gets the emotional boost she needed.'
+                                        : 'Diana stays home and video-calls one colleague instead. Her record stays clean.'}
+                                </span>
                             </div>
                         </div>
 
