@@ -15,6 +15,8 @@ type RouteStop = {
 type Props = {
     route: RouteKind;
     currentDate: Date;
+    locked?: boolean;
+    lockedDate?: string;
 };
 
 // Manually adjust route point positions here.
@@ -83,13 +85,18 @@ function routePath(stops: RouteStop[]) {
     return stops.map((stop, index) => `${index === 0 ? 'M' : 'L'} ${stop.x} ${stop.y}`).join(' ');
 }
 
-export default function FlightRouteMap({ route, currentDate }: Props) {
+export default function FlightRouteMap({ route, currentDate, locked = false, lockedDate }: Props) {
     const [open, setOpen] = useState(false);
+    const [lockMessageOpen, setLockMessageOpen] = useState(false);
     const [showUnlockHint, setShowUnlockHint] = useState(true);
     const [markerStop, setMarkerStop] = useState<RouteStop | null>(null);
     const [railIndex, setRailIndex] = useState(0);
     const stops = route === 'long-haul' ? LONG_HAUL_STOPS : SHORT_HAUL_STOPS;
-    const activeIndex = useMemo(() => getActiveStopIndex(stops, currentDate), [currentDate, stops]);
+    const effectiveDate = useMemo(
+        () => (locked && lockedDate ? new Date(`${lockedDate}T00:00:00`) : currentDate),
+        [currentDate, locked, lockedDate]
+    );
+    const activeIndex = useMemo(() => getActiveStopIndex(stops, effectiveDate), [effectiveDate, stops]);
     const activeStop = stops[activeIndex];
     const previousStop = stops[Math.max(0, activeIndex - 1)];
     const completedStops = stops.slice(0, Math.max(1, activeIndex));
@@ -115,6 +122,11 @@ export default function FlightRouteMap({ route, currentDate }: Props) {
 
     const openMap = () => {
         setShowUnlockHint(false);
+        if (locked) {
+            setLockMessageOpen(true);
+            return;
+        }
+
         setOpen(true);
     };
 
@@ -135,8 +147,14 @@ export default function FlightRouteMap({ route, currentDate }: Props) {
         <>
             {showUnlockHint ? (
                 <div className="fixed bottom-20 right-5 z-40 w-[min(280px,calc(100vw-40px))] rounded-2xl border border-sky-200 bg-white p-3 text-sm text-slate-700 shadow-[0_16px_38px_rgba(15,23,42,0.18)]">
-                    <p className="font-semibold text-slate-950">Route map unlocked</p>
-                    <p className="mt-1">Tap the map button to follow Diana&apos;s flights.</p>
+                    <p className="font-semibold text-slate-950">
+                        {locked ? 'Route map unavailable' : 'Route map unlocked'}
+                    </p>
+                    <p className="mt-1">
+                        {locked
+                            ? "Diana's active roster is suspended."
+                            : "Tap the map button to follow Diana's flights."}
+                    </p>
                 </div>
             ) : null}
 
@@ -148,15 +166,47 @@ export default function FlightRouteMap({ route, currentDate }: Props) {
             >
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-100 text-sky-700">
                     <Image
-                        src="/images/COVID-19-PANDEMIC/map/plane.png"
+                        src={locked ? '/images/lock.png' : '/images/COVID-19-PANDEMIC/map/plane.png'}
                         alt=""
                         width={44}
                         height={44}
                         className="h-9 w-9 object-contain"
                     />
                 </span>
-                Route map
+                {locked ? 'Route locked' : 'Route map'}
             </button>
+
+            {lockMessageOpen ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+                    <div className="animate-event-in w-[min(460px,calc(100vw-32px))] rounded-2xl bg-white p-6 text-center text-slate-900 shadow-2xl">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+                            <Image
+                                src="/images/lock.png"
+                                alt=""
+                                width={46}
+                                height={46}
+                                className="h-11 w-11 object-contain"
+                            />
+                        </div>
+                        <h2 className="text-xl font-bold">This feature is currently unavailable.</h2>
+                        <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+                            {`Diana's flying duties have been suspended following
+her COVID-19 diagnosis. She is no longer on the
+active roster.
+
+The Route Map will reflect her status once
+her situation changes.`}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setLockMessageOpen(false)}
+                            className="mt-5 w-full rounded-full bg-blue-600 py-3 text-base font-semibold text-white transition hover:bg-blue-500"
+                        >
+                            close
+                        </button>
+                    </div>
+                </div>
+            ) : null}
 
             {open ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">

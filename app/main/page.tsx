@@ -17,6 +17,10 @@ import PandemicDeclaredModal from './components/PandemicDeclaredModal';
 import SickPassengerModal from './components/SickPassengerModal';
 import GoodbyePartyModal from './components/GoodbyePartyModal';
 import FinancialCrisisNewsModal from './components/FinancialCrisisNewsModal';
+import CovidTestModal from './components/CovidTestModal';
+import GroundedChoiceModal from './components/GroundedChoiceModal';
+import FlatmateRentModal from './components/FlatmateRentModal';
+import MomHospitalizedModal from './components/MomHospitalizedModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -221,6 +225,30 @@ function createStartingWallet(startingCash: number): WalletItem[] {
     ];
 }
 
+function withoutFlightAttendantIncome(wallet: WalletItem[]) {
+    return wallet.filter(
+        item =>
+            item.id !== 'monthly-income' &&
+            item.id !== 'flight-attendant-salary' &&
+            item.id !== 'long-haul-bonus'
+    );
+}
+
+function withFlightAttendantIncome(wallet: WalletItem[], monthlyIncome: number) {
+    const withoutOldIncome = withoutFlightAttendantIncome(wallet);
+
+    return [
+        ...withoutOldIncome,
+        {
+            id: 'monthly-income',
+            label: 'Monthly income',
+            units: monthlyIncome,
+            unitLabel: '$/month',
+            usdValue: monthlyIncome,
+        },
+    ];
+}
+
 const DAY_DURATION_SECONDS = 6 * 60;
 const DAY_START_MINUTES = 2 * 60;
 const DAY_END_MINUTES = 24 * 60 - 1;
@@ -229,7 +257,8 @@ const END_GAME_REDIRECT_DELAY_MS = 2200;
 const CASH_BREAK_SECONDS = 30;
 const BILLING_BREAK_SECONDS = 120;
 const EVENT_MODAL_DELAY_MS = 600;
-const POST_SICK_PASSENGER_NEWS_DELAY_MS = 5000;
+const POST_SICK_PASSENGER_NEWS_DELAY_MS = 1800;
+const POST_VACCINE_FLATMATE_DELAY_MS = 2000;
 const BASE_FLIGHT_ATTENDANT_SALARY = 3200;
 const CAIN_MONTHLY_CASHFLOW = 1500;
 const CAIN_STARTING_RENT = 600;
@@ -330,6 +359,18 @@ function getCharacterName(characterId: string | null) {
     }
 }
 
+function hasConfirmedDianaTermination(triggeredEvents: string[]) {
+    if (typeof window === 'undefined') return false;
+    if (!triggeredEvents.includes('covid-test')) return false;
+
+    const covidTest = readStoredJson<{ result?: string; employmentStatus?: string }>('covidTest');
+    return (
+        covidTest?.result === 'positive' &&
+        (covidTest.employmentStatus === 'terminated' ||
+            localStorage.getItem('employmentStatus') === 'terminated')
+    );
+}
+
 export default function MainPage() {
     return (
         <Suspense fallback={null}>
@@ -405,6 +446,20 @@ function MainPageContent() {
     const [routeAssignmentState, setRouteAssignmentState] = useState<RouteAssignmentState | null>(() =>
         readStoredJson<RouteAssignmentState>('routeAssignment')
     );
+    const [routeMapLocked, setRouteMapLocked] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return (
+            scenarioId === 'pandemic' &&
+            characterId === 'D' &&
+            localStorage.getItem('routeMapLocked') === 'true' &&
+            hasConfirmedDianaTermination(triggeredEvents)
+        );
+    });
+    const [dianaEmploymentTerminatedState, setDianaEmploymentTerminatedState] = useState(() =>
+        scenarioId === 'pandemic' &&
+        characterId === 'D' &&
+        hasConfirmedDianaTermination(triggeredEvents)
+    );
     const [gameSeconds, setGameSeconds] = useState(() =>
         readStoredGameSeconds(timelineStorageKey, timelineDates)
     );
@@ -423,14 +478,34 @@ function MainPageContent() {
     const hasReachedTimelineEnd = !gameOver && isLastDay && secondsIntoDay >= 60;
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
+        const isDiana = scenarioId === 'pandemic' && characterId === 'D';
+        const terminated = isDiana && hasConfirmedDianaTermination(triggeredEvents);
+        const routeAssignment = readStoredJson<RouteAssignmentState>('routeAssignment');
+        const hasRouteAssignment = triggeredEvents.includes('route-assignment');
+        const startingIncome =
+            hasRouteAssignment && (routeAssignment?.route === 'long-haul' || routeAssignment?.longHaul)
+                ? BASE_FLIGHT_ATTENDANT_SALARY + (routeAssignment.monthlyBonus ?? 400)
+                : BASE_FLIGHT_ATTENDANT_SALARY;
+
         if (typeof window === 'undefined') {
-            return createStartingWallet(DEFAULT_STARTING_CASH);
+            return isDiana && !terminated
+                ? withFlightAttendantIncome(
+                      createStartingWallet(DEFAULT_STARTING_CASH),
+                      startingIncome
+                  )
+                : createStartingWallet(DEFAULT_STARTING_CASH);
         }
 
         const stored = loadWallet();
-        if (stored) return stored;
+        if (stored) {
+            if (!isDiana) return stored;
+            return terminated
+                ? withoutFlightAttendantIncome(stored)
+                : withFlightAttendantIncome(stored, startingIncome);
+        }
 
-        return createStartingWallet(loadStartingCash(DEFAULT_STARTING_CASH));
+        const wallet = createStartingWallet(loadStartingCash(DEFAULT_STARTING_CASH));
+        return isDiana && !terminated ? withFlightAttendantIncome(wallet, startingIncome) : wallet;
     });
 
     const currentDateTime = useMemo(() => {
@@ -463,6 +538,10 @@ function MainPageContent() {
             : activeRouteAssignment?.route === 'short-haul' || activeRouteAssignment?.shortHaul
               ? 'short-haul'
               : null;
+    const dianaEmploymentTerminated =
+        isDianaPandemicScenario &&
+        (dianaEmploymentTerminatedState ||
+            (routeMapLocked && hasConfirmedDianaTermination(triggeredEvents)));
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
         if (
@@ -572,6 +651,10 @@ function MainPageContent() {
               if (event.id === 'route-assignment' && !isDianaPandemicScenario) return false;
               if (event.id === 'sick-passenger' && !isDianaPandemicScenario) return false;
               if (event.id === 'goodbye-party' && !isDianaPandemicScenario) return false;
+              if (event.id === 'covid-test' && !isDianaPandemicScenario) return false;
+              if (event.id === 'grounded-choice' && !isDianaPandemicScenario) return false;
+              if (event.id === 'flatmate-rent' && !isDianaPandemicScenario) return false;
+              if (event.id === 'mom-hospitalized' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(
                   event.id,
                   attendedCollegeParty,
@@ -651,6 +734,8 @@ function MainPageContent() {
         const delay =
             activeEvent === 'pandemic-declared' && triggeredEvents.includes('sick-passenger')
                 ? POST_SICK_PASSENGER_NEWS_DELAY_MS
+                : activeEvent === 'flatmate-rent' && triggeredEvents.includes('vaccine-announced')
+                  ? POST_VACCINE_FLATMATE_DELAY_MS
                 : EVENT_MODAL_DELAY_MS;
 
         const timer = window.setTimeout(() => {
@@ -766,7 +851,9 @@ function MainPageContent() {
         const collegeApp = readStoredJson<{ schoolId: string; schoolName?: string }>('collegeApplication');
         const routeAssignment = activeRouteAssignment;
         const monthlyBaseSalary =
-            routeAssignment && Number.isFinite(routeAssignment.monthlyBaseSalary)
+            dianaEmploymentTerminated
+                ? 0
+                : routeAssignment && Number.isFinite(routeAssignment.monthlyBaseSalary)
                 ? routeAssignment.monthlyBaseSalary ?? BASE_FLIGHT_ATTENDANT_SALARY
                 : isDianaPandemicScenario
                   ? BASE_FLIGHT_ATTENDANT_SALARY
@@ -774,10 +861,16 @@ function MainPageContent() {
                     ? CAIN_MONTHLY_CASHFLOW
                     : 0;
         const monthlyRouteBonus =
-            routeAssignment && Number.isFinite(routeAssignment.monthlyBonus)
+            dianaEmploymentTerminated
+                ? 0
+                : routeAssignment && Number.isFinite(routeAssignment.monthlyBonus)
                 ? routeAssignment.monthlyBonus ?? 0
                 : 0;
-        const monthlyPayroll = monthlyBaseSalary + monthlyRouteBonus;
+        const groundShiftMonthlyIncome = triggeredEvents.includes('grounded-choice')
+            ? (readStoredJson<{ groundShiftMonthlyIncome?: number }>('groundedChoice')
+                  ?.groundShiftMonthlyIncome ?? 0)
+            : 0;
+        const monthlyPayroll = monthlyBaseSalary + monthlyRouteBonus + groundShiftMonthlyIncome;
         if (monthlyPayroll > 0 && !isCainHousingScenario) {
             setWallet(prev => {
                 const currentIncome = prev.find(item => item.id === 'monthly-income');
@@ -787,24 +880,14 @@ function MainPageContent() {
 
                 if (currentIncome?.units === monthlyPayroll && !hasOldIncomeRows) return prev;
 
-                return [
-                    ...prev.filter(
-                        item =>
-                            item.id !== 'monthly-income' &&
-                            item.id !== 'flight-attendant-salary' &&
-                            item.id !== 'long-haul-bonus'
-                    ),
-                    {
-                        id: 'monthly-income',
-                        label: 'Monthly income',
-                        units: monthlyPayroll,
-                        unitLabel: '$/month',
-                        usdValue: monthlyPayroll,
-                    },
-                ];
+                return withFlightAttendantIncome(prev, monthlyPayroll);
             });
-        } else if (isCainHousingScenario) {
-            setWallet(prev => prev.filter(item => item.id !== 'monthly-income'));
+        } else if (isCainHousingScenario || dianaEmploymentTerminated) {
+            setWallet(prev =>
+                dianaEmploymentTerminated
+                    ? withoutFlightAttendantIncome(prev)
+                    : prev.filter(item => item.id !== 'monthly-income')
+            );
         }
         let tuitionSchoolId: string | null = null;
         let tuitionSchoolName: string | null = null;
@@ -991,7 +1074,7 @@ function MainPageContent() {
             }, 0);
         }
         return () => window.clearTimeout(walletTimer);
-    }, [activeRouteAssignment, currentDateKey, dayStartTimestampLabel, gameOver, isCainHousingScenario, isDianaPandemicScenario, pushNotification, triggeredEvents]);
+    }, [activeRouteAssignment, currentDateKey, dayStartTimestampLabel, dianaEmploymentTerminated, gameOver, isCainHousingScenario, isDianaPandemicScenario, pushNotification, triggeredEvents]);
 
     useEffect(() => {
         if (!billingBreak) return;
@@ -1063,6 +1146,19 @@ function MainPageContent() {
             message: `Diana's ${nextRouteAssignment?.route === 'long-haul' ? 'international' : 'European'} flight map is now available in the bottom-right corner.`,
             timestampLabel: formatNotificationTimestamp(currentDateTime),
             sourceKey: `route-map-unlocked:${currentDateKey}`,
+        });
+    };
+
+    const handleRouteMapLocked = () => {
+        setDianaEmploymentTerminatedState(true);
+        setRouteMapLocked(true);
+        setWallet(prev => withoutFlightAttendantIncome(prev));
+        pushNotification({
+            tone: 'loss',
+            title: 'Route map locked',
+            message: "Diana's flying duties have been suspended after her COVID-19 diagnosis.",
+            timestampLabel: formatNotificationTimestamp(currentDateTime),
+            sourceKey: `route-map-locked:${currentDateKey}`,
         });
     };
 
@@ -1189,6 +1285,34 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'goodbye-party' && isDianaPandemicScenario && (
                 <GoodbyePartyModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'covid-test' && isDianaPandemicScenario && (
+                <CovidTestModal
+                    wallet={wallet}
+                    onRouteMapLocked={handleRouteMapLocked}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'grounded-choice' && isDianaPandemicScenario && (
+                <GroundedChoiceModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'flatmate-rent' && isDianaPandemicScenario && (
+                <FlatmateRentModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'mom-hospitalized' && isDianaPandemicScenario && (
+                <MomHospitalizedModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
@@ -1391,6 +1515,8 @@ function MainPageContent() {
                     <FlightRouteMap
                         route={activeRoute}
                         currentDate={currentDateTime}
+                        locked={routeMapLocked}
+                        lockedDate="2020-04-20"
                     />
                 ) : null}
             </div>

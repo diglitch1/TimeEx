@@ -20,7 +20,7 @@ const DIALOGUE_LINES = [
     'Airlines are cancelling flights, passenger demand is collapsing, and aviation is entering one of its worst crises in modern history.',
     'Markets are reacting with panic.',
     'Airline and travel-related stocks are falling sharply as investors price in a sudden halt to global mobility.',
-    'For workers across the industry, including flight attendants like Diana, the impact is immediate - and the future is becoming increasingly uncertain.',
+    'For workers across the industry, including flight attendants, the impact is immediate - and the future is becoming increasingly uncertain.',
 ];
 
 const TYPE_SPEED = 42;
