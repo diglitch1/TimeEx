@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 type Stage = 'call' | 'main' | 'followup';
@@ -53,8 +54,18 @@ function isLongHaulRoute() {
     }
 }
 
-export default function MomHospitalizedModal({ wallet, setWallet, onClose }: Props) {
-    const [stage, setStage] = useState<Stage>('call');
+export default function MomHospitalizedModal({
+    wallet,
+    setWallet,
+    onClose,
+    onRequestCashBreak,
+}: Props) {
+    const [stage, setStage] = useState<Stage>(() =>
+        typeof window !== 'undefined' &&
+        localStorage.getItem('momHospitalizedResumeStage') === 'main'
+            ? 'main'
+            : 'call'
+    );
     const [visible, setVisible] = useState(true);
     const [choice, setChoice] = useState<Choice>('hospital');
     const [helpBills, setHelpBills] = useState(false);
@@ -122,12 +133,30 @@ export default function MomHospitalizedModal({ wallet, setWallet, onClose }: Pro
 
     const handleClose = () => {
         localStorage.setItem('momHospitalizedFollowupSeen', 'true');
+        localStorage.removeItem('momHospitalizedResumeStage');
         onClose();
+    };
+
+    const handleRequestMainCashBreak = () => {
+        localStorage.setItem('momHospitalizedResumeStage', 'main');
+        onRequestCashBreak();
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="party-event-modal relative overflow-hidden rounded-2xl bg-white text-gray-900 shadow-xl animate-event-in">
+                {stage === 'main' && helpBills ? (
+                    <button
+                        type="button"
+                        onClick={handleRequestMainCashBreak}
+                        className="scenario-break-button"
+                        aria-label="Exit scenario for 30 seconds to raise cash"
+                        title="Exit for 30 seconds to sell assets"
+                    >
+                        x
+                    </button>
+                ) : null}
+
                 <div
                     className="transition-opacity ease-in-out"
                     style={{

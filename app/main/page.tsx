@@ -1340,6 +1340,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'covid-test' && isDianaPandemicScenario && (
@@ -1354,6 +1355,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'flatmate-rent' && isDianaPandemicScenario && (
@@ -1361,6 +1363,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'mom-hospitalized' && isDianaPandemicScenario && (
@@ -1368,6 +1371,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'rehiring-offer' && isDianaPandemicScenario && (
@@ -1487,7 +1491,12 @@ function MainPageContent() {
                 />
             )}
             {eventModalOpen && activeEvent === 'golf-tournament' && (
-                <GolfTournamentModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
+                <GolfTournamentModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
             )}
             {eventModalOpen && activeEvent === 'golf-tournament-day' && (
                 <GolfTournamentDayModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
@@ -1522,6 +1531,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
 
