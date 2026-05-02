@@ -21,6 +21,10 @@ export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
         date: '2020-03-27',
     },
     {
+        id: 'covid-test',
+        date: '2020-04-20',
+    },
+    {
         id: 'vaccine-announced',
         date: '2020-11-09',
     },
