@@ -7,12 +7,18 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 const IMG_PARTY = '/images/COVID-19-PANDEMIC/events/party.png';
 const SNACK_COST = 35;
 
-export default function GoodbyePartyModal({ wallet, setWallet, onClose }: Props) {
+export default function GoodbyePartyModal({
+    wallet,
+    setWallet,
+    onClose,
+    onRequestCashBreak,
+}: Props) {
     const [choice, setChoice] = useState<'attend' | 'stay-home'>('stay-home');
 
     const cash = wallet.find(item => item.id === 'cash');
@@ -52,6 +58,18 @@ export default function GoodbyePartyModal({ wallet, setWallet, onClose }: Props)
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="party-event-modal relative overflow-hidden rounded-2xl bg-white text-gray-900 shadow-xl animate-event-in">
+                {choice === 'attend' ? (
+                    <button
+                        type="button"
+                        onClick={onRequestCashBreak}
+                        className="scenario-break-button"
+                        aria-label="Exit scenario for 30 seconds to raise cash"
+                        title="Exit for 30 seconds to sell assets"
+                    >
+                        x
+                    </button>
+                ) : null}
+
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
                     The Goodbye Party
                 </h2>

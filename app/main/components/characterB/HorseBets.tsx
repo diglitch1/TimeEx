@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 type HorseColor = 'purple' | 'blue' | 'yellow' | 'pink';
@@ -32,7 +33,12 @@ function getRandomWinner() {
     return colors[Math.floor(Math.random() * colors.length)].id;
 }
 
-export default function HorseBetsModal({ wallet, setWallet, onClose }: Props) {
+export default function HorseBetsModal({
+    wallet,
+    setWallet,
+    onClose,
+    onRequestCashBreak,
+}: Props) {
     const [selectedColor, setSelectedColor] = useState<HorseColor | null>(null);
     const [betInput, setBetInput] = useState('');
     const [stage, setStage] = useState<Stage>('pick');
@@ -110,6 +116,18 @@ export default function HorseBetsModal({ wallet, setWallet, onClose }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="relative w-[min(820px,calc(100vw-32px))] max-h-[calc(100svh-32px)] overflow-y-auto rounded-2xl bg-white p-7 text-gray-900 shadow-xl animate-event-in">
+                {stage === 'pick' ? (
+                    <button
+                        type="button"
+                        onClick={onRequestCashBreak}
+                        className="scenario-break-button"
+                        aria-label="Exit scenario for 30 seconds to raise cash"
+                        title="Exit for 30 seconds to sell assets"
+                    >
+                        x
+                    </button>
+                ) : null}
+
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
                     Racetrack Wager
                 </h2>

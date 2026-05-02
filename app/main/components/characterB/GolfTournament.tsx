@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 const TOURNAMENT_FEE = 500;
@@ -21,10 +22,19 @@ function formatWalletCurrency(value: number) {
     }).format(value);
 }
 
-export default function GolfTournamentModal({ wallet, setWallet, onClose }: Props) {
+export default function GolfTournamentModal({
+    wallet,
+    setWallet,
+    onClose,
+    onRequestCashBreak,
+}: Props) {
     const [letterOpen, setLetterOpen] = useState(false);
     const [letterClosing, setLetterClosing] = useState(false);
-    const [letterRead, setLetterRead] = useState(false);
+    const [letterRead, setLetterRead] = useState(
+        () =>
+            typeof window !== 'undefined' &&
+            localStorage.getItem('golfTournamentResumeDecision') === 'true'
+    );
     const [choice, setChoice] = useState<'accept' | 'decline'>('accept');
     const walletNeedsScroll = wallet.length > 3;
     const cash = wallet.find(item => item.id === 'cash');
@@ -49,6 +59,7 @@ export default function GolfTournamentModal({ wallet, setWallet, onClose }: Prop
 
     const handleConfirm = () => {
         if (choice === 'decline') {
+            localStorage.removeItem('golfTournamentResumeDecision');
             localStorage.setItem(
                 'golfTournament',
                 JSON.stringify({
@@ -87,12 +98,30 @@ export default function GolfTournamentModal({ wallet, setWallet, onClose }: Prop
             })
         );
 
+        localStorage.removeItem('golfTournamentResumeDecision');
         onClose();
+    };
+
+    const handleRequestDecisionCashBreak = () => {
+        localStorage.setItem('golfTournamentResumeDecision', 'true');
+        onRequestCashBreak();
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="relative w-[min(820px,calc(100vw-32px))] max-h-[calc(100svh-32px)] overflow-y-auto rounded-2xl bg-white p-7 text-gray-900 shadow-xl animate-event-in">
+                {letterRead && choice === 'accept' ? (
+                    <button
+                        type="button"
+                        onClick={handleRequestDecisionCashBreak}
+                        className="scenario-break-button"
+                        aria-label="Exit scenario for 30 seconds to raise cash"
+                        title="Exit for 30 seconds to sell assets"
+                    >
+                        x
+                    </button>
+                ) : null}
+
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
                     Golf Tournament Invitation
                 </h2>

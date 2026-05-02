@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 type Choice = 'online-course' | 'ground-shifts';
@@ -37,7 +38,12 @@ function isTerminatedPath() {
     }
 }
 
-export default function GroundedChoiceModal({ wallet, setWallet, onClose }: Props) {
+export default function GroundedChoiceModal({
+    wallet,
+    setWallet,
+    onClose,
+    onRequestCashBreak,
+}: Props) {
     const [choice, setChoice] = useState<Choice>('online-course');
     const [certificateOpen, setCertificateOpen] = useState(false);
     const terminatedPath = isTerminatedPath();
@@ -116,6 +122,18 @@ export default function GroundedChoiceModal({ wallet, setWallet, onClose }: Prop
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="party-event-modal relative overflow-hidden rounded-2xl bg-white text-gray-900 shadow-xl animate-event-in">
+                {choice === 'online-course' && !certificateOpen ? (
+                    <button
+                        type="button"
+                        onClick={onRequestCashBreak}
+                        className="scenario-break-button"
+                        aria-label="Exit scenario for 30 seconds to raise cash"
+                        title="Exit for 30 seconds to sell assets"
+                    >
+                        x
+                    </button>
+                ) : null}
+
                 {certificateOpen ? (
                     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/35 px-4">
                         <div

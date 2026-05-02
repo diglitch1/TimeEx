@@ -86,6 +86,12 @@ export const PANDEMIC_TIMELINE: TimelineMarker[] = [
         subtitle: 'Another major U.S. stimulus package reinforces the growth and inflation narrative',
     },
     {
+        date: '2021-03-11',
+        kind: 'event',
+        title: 'The airline wants you back - on their terms',
+        eventId: 'rehiring-offer',
+    },
+    {
         date: '2021-06-15',
         kind: 'market',
         title: 'Inflation debate intensifies',

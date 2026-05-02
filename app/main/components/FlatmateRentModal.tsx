@@ -7,6 +7,7 @@ type Props = {
     wallet: WalletItem[];
     setWallet: React.Dispatch<React.SetStateAction<WalletItem[]>>;
     onClose: () => void;
+    onRequestCashBreak: () => void;
 };
 
 type Choice = 'cover' | 'refuse';
@@ -15,7 +16,12 @@ const IMG_FLATMATE_RENT = '/images/COVID-19-PANDEMIC/events/cant-pay-rent.png';
 const COVER_RENT_COST = 700;
 const REPLACEMENT_COST = 300;
 
-export default function FlatmateRentModal({ wallet, setWallet, onClose }: Props) {
+export default function FlatmateRentModal({
+    wallet,
+    setWallet,
+    onClose,
+    onRequestCashBreak,
+}: Props) {
     const [choice, setChoice] = useState<Choice>('cover');
     const cash = wallet.find(item => item.id === 'cash');
     const immediateCost = choice === 'cover' ? COVER_RENT_COST : REPLACEMENT_COST;
@@ -56,6 +62,16 @@ export default function FlatmateRentModal({ wallet, setWallet, onClose }: Props)
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="party-event-modal relative overflow-hidden rounded-2xl bg-white text-gray-900 shadow-xl animate-event-in">
+                <button
+                    type="button"
+                    onClick={onRequestCashBreak}
+                    className="scenario-break-button"
+                    aria-label="Exit scenario for 30 seconds to raise cash"
+                    title="Exit for 30 seconds to sell assets"
+                >
+                    x
+                </button>
+
                 <h2 className="mb-3 text-center text-2xl font-bold text-red-600">
                     Flatmate Can&apos;t Pay
                 </h2>

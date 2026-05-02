@@ -50,6 +50,7 @@ import HorseBetsModal from './components/characterB/HorseBets';
 import GameOverModal from './components/GameOverModal';
 import EndGameOverlay from './components/EndGameOverlay';
 import Timeline from './components/Timeline';
+import RehiringOfferModal from './components/RehiringOfferModal';
 import { TIMELINE, TIMELINE_DATES } from './utils/timeline';
 import { HOUSING_TIMELINE, HOUSING_TIMELINE_DATES } from './utils/housingTimeline';
 import { PANDEMIC_TIMELINE, PANDEMIC_TIMELINE_DATES } from './utils/pandemicTimeline';
@@ -363,12 +364,30 @@ function hasConfirmedDianaTermination(triggeredEvents: string[]) {
     if (typeof window === 'undefined') return false;
     if (!triggeredEvents.includes('covid-test')) return false;
 
+    const rehiringOffer = readStoredJson<{ employmentStatus?: string }>('rehiringOffer');
+    if (rehiringOffer?.employmentStatus === 'active') return false;
+
     const covidTest = readStoredJson<{ result?: string; employmentStatus?: string }>('covidTest');
     return (
         covidTest?.result === 'positive' &&
         (covidTest.employmentStatus === 'terminated' ||
             localStorage.getItem('employmentStatus') === 'terminated')
     );
+}
+
+function hasDianaNoFlightIncome(triggeredEvents: string[]) {
+    if (typeof window === 'undefined') return false;
+
+    const rehiringOffer = readStoredJson<{ employmentStatus?: string }>('rehiringOffer');
+    if (rehiringOffer?.employmentStatus === 'active') return false;
+    if (
+        triggeredEvents.includes('rehiring-offer') &&
+        rehiringOffer?.employmentStatus === 'inactive'
+    ) {
+        return true;
+    }
+
+    return hasConfirmedDianaTermination(triggeredEvents);
 }
 
 export default function MainPage() {
@@ -452,13 +471,13 @@ function MainPageContent() {
             scenarioId === 'pandemic' &&
             characterId === 'D' &&
             localStorage.getItem('routeMapLocked') === 'true' &&
-            hasConfirmedDianaTermination(triggeredEvents)
+            hasDianaNoFlightIncome(triggeredEvents)
         );
     });
     const [dianaEmploymentTerminatedState, setDianaEmploymentTerminatedState] = useState(() =>
         scenarioId === 'pandemic' &&
         characterId === 'D' &&
-        hasConfirmedDianaTermination(triggeredEvents)
+        hasDianaNoFlightIncome(triggeredEvents)
     );
     const [gameSeconds, setGameSeconds] = useState(() =>
         readStoredGameSeconds(timelineStorageKey, timelineDates)
@@ -479,16 +498,21 @@ function MainPageContent() {
 
     const [wallet, setWallet] = useState<WalletItem[]>(() => {
         const isDiana = scenarioId === 'pandemic' && characterId === 'D';
-        const terminated = isDiana && hasConfirmedDianaTermination(triggeredEvents);
+        const noFlightIncome = isDiana && hasDianaNoFlightIncome(triggeredEvents);
         const routeAssignment = readStoredJson<RouteAssignmentState>('routeAssignment');
-        const hasRouteAssignment = triggeredEvents.includes('route-assignment');
+        const hasRouteAssignment =
+            triggeredEvents.includes('route-assignment') || triggeredEvents.includes('rehiring-offer');
+        const assignedBaseSalary =
+            routeAssignment && Number.isFinite(routeAssignment.monthlyBaseSalary)
+                ? routeAssignment.monthlyBaseSalary ?? BASE_FLIGHT_ATTENDANT_SALARY
+                : BASE_FLIGHT_ATTENDANT_SALARY;
         const startingIncome =
             hasRouteAssignment && (routeAssignment?.route === 'long-haul' || routeAssignment?.longHaul)
-                ? BASE_FLIGHT_ATTENDANT_SALARY + (routeAssignment.monthlyBonus ?? 400)
-                : BASE_FLIGHT_ATTENDANT_SALARY;
+                ? assignedBaseSalary + (routeAssignment.monthlyBonus ?? 400)
+                : assignedBaseSalary;
 
         if (typeof window === 'undefined') {
-            return isDiana && !terminated
+            return isDiana && !noFlightIncome
                 ? withFlightAttendantIncome(
                       createStartingWallet(DEFAULT_STARTING_CASH),
                       startingIncome
@@ -499,13 +523,13 @@ function MainPageContent() {
         const stored = loadWallet();
         if (stored) {
             if (!isDiana) return stored;
-            return terminated
+            return noFlightIncome
                 ? withoutFlightAttendantIncome(stored)
                 : withFlightAttendantIncome(stored, startingIncome);
         }
 
         const wallet = createStartingWallet(loadStartingCash(DEFAULT_STARTING_CASH));
-        return isDiana && !terminated ? withFlightAttendantIncome(wallet, startingIncome) : wallet;
+        return isDiana && !noFlightIncome ? withFlightAttendantIncome(wallet, startingIncome) : wallet;
     });
 
     const currentDateTime = useMemo(() => {
@@ -541,7 +565,7 @@ function MainPageContent() {
     const dianaEmploymentTerminated =
         isDianaPandemicScenario &&
         (dianaEmploymentTerminatedState ||
-            (routeMapLocked && hasConfirmedDianaTermination(triggeredEvents)));
+            (routeMapLocked && hasDianaNoFlightIncome(triggeredEvents)));
 
     const pushNotification = useCallback((draft: NotificationDraft) => {
         if (
@@ -1162,6 +1186,34 @@ function MainPageContent() {
         });
     };
 
+    const handleRehiringDecisionComplete = () => {
+        const rehiringOffer = readStoredJson<{
+            acceptedOffer?: boolean;
+            choice?: string;
+            negotiationOutcome?: string | null;
+            monthlySalary?: number;
+            randomRoute?: string | null;
+        }>('rehiringOffer');
+        const nextRouteAssignment = readStoredJson<RouteAssignmentState>('routeAssignment');
+        const acceptedOffer = rehiringOffer?.acceptedOffer === true;
+
+        setRouteAssignmentState(nextRouteAssignment);
+        setDianaEmploymentTerminatedState(!acceptedOffer);
+        setRouteMapLocked(!acceptedOffer);
+
+        pushNotification({
+            tone: acceptedOffer ? 'gain' : 'loss',
+            title: acceptedOffer ? 'Airline income restored' : 'Airline offer declined',
+            message: acceptedOffer
+                ? `${formatNotificationCurrency(rehiringOffer?.monthlySalary ?? 0)}/month under the new return contract. Route assignment is ${rehiringOffer?.randomRoute ?? 'pending'}.`
+                : rehiringOffer?.negotiationOutcome === 'failure'
+                  ? 'The airline pulled the offer after Diana negotiated, leaving her without flight income.'
+                  : 'Diana turned down the airline contract and committed to the pilot path.',
+            timestampLabel: formatNotificationTimestamp(currentDateTime),
+            sourceKey: `rehiring-offer:${currentDateKey}`,
+        });
+    };
+
     const skip30Seconds = () => {
         if (activeEvent || billingBreakActive) return;
         const newSeconds = gameSeconds + 30;
@@ -1288,6 +1340,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'covid-test' && isDianaPandemicScenario && (
@@ -1302,6 +1355,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'flatmate-rent' && isDianaPandemicScenario && (
@@ -1309,12 +1363,22 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
             {eventModalOpen && activeEvent === 'mom-hospitalized' && isDianaPandemicScenario && (
                 <MomHospitalizedModal
                     wallet={wallet}
                     setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'rehiring-offer' && isDianaPandemicScenario && (
+                <RehiringOfferModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onDecisionComplete={handleRehiringDecisionComplete}
                     onClose={handleCloseActiveEvent}
                 />
             )}
@@ -1427,7 +1491,12 @@ function MainPageContent() {
                 />
             )}
             {eventModalOpen && activeEvent === 'golf-tournament' && (
-                <GolfTournamentModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
+                <GolfTournamentModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
+                />
             )}
             {eventModalOpen && activeEvent === 'golf-tournament-day' && (
                 <GolfTournamentDayModal wallet={wallet} setWallet={setWallet} onClose={handleCloseActiveEvent} />
@@ -1462,6 +1531,7 @@ function MainPageContent() {
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
+                    onRequestCashBreak={handleRequestCashBreak}
                 />
             )}
 
