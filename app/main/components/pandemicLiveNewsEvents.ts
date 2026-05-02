@@ -36,4 +36,8 @@ export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
         id: 'flatmate-rent',
         date: '2020-11-09',
     },
+    {
+        id: 'mom-hospitalized',
+        date: '2021-01-15',
+    },
 ];

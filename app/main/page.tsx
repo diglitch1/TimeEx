@@ -19,6 +19,7 @@ import GoodbyePartyModal from './components/GoodbyePartyModal';
 import CovidTestModal from './components/CovidTestModal';
 import GroundedChoiceModal from './components/GroundedChoiceModal';
 import FlatmateRentModal from './components/FlatmateRentModal';
+import MomHospitalizedModal from './components/MomHospitalizedModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -652,6 +653,7 @@ function MainPageContent() {
               if (event.id === 'covid-test' && !isDianaPandemicScenario) return false;
               if (event.id === 'grounded-choice' && !isDianaPandemicScenario) return false;
               if (event.id === 'flatmate-rent' && !isDianaPandemicScenario) return false;
+              if (event.id === 'mom-hospitalized' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(
                   event.id,
                   attendedCollegeParty,
@@ -1303,6 +1305,13 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'flatmate-rent' && isDianaPandemicScenario && (
                 <FlatmateRentModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'mom-hospitalized' && isDianaPandemicScenario && (
+                <MomHospitalizedModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
