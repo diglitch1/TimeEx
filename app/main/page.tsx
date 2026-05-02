@@ -18,6 +18,8 @@ import SickPassengerModal from './components/SickPassengerModal';
 import GoodbyePartyModal from './components/GoodbyePartyModal';
 import CovidTestModal from './components/CovidTestModal';
 import GroundedChoiceModal from './components/GroundedChoiceModal';
+import FlatmateRentModal from './components/FlatmateRentModal';
+import MomHospitalizedModal from './components/MomHospitalizedModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -255,6 +257,7 @@ const CASH_BREAK_SECONDS = 30;
 const BILLING_BREAK_SECONDS = 120;
 const EVENT_MODAL_DELAY_MS = 600;
 const POST_SICK_PASSENGER_NEWS_DELAY_MS = 1800;
+const POST_VACCINE_FLATMATE_DELAY_MS = 2000;
 const BASE_FLIGHT_ATTENDANT_SALARY = 3200;
 const CAIN_MONTHLY_CASHFLOW = 1500;
 const CAIN_STARTING_RENT = 600;
@@ -649,6 +652,8 @@ function MainPageContent() {
               if (event.id === 'goodbye-party' && !isDianaPandemicScenario) return false;
               if (event.id === 'covid-test' && !isDianaPandemicScenario) return false;
               if (event.id === 'grounded-choice' && !isDianaPandemicScenario) return false;
+              if (event.id === 'flatmate-rent' && !isDianaPandemicScenario) return false;
+              if (event.id === 'mom-hospitalized' && !isDianaPandemicScenario) return false;
               return canTriggerEvent(
                   event.id,
                   attendedCollegeParty,
@@ -728,6 +733,8 @@ function MainPageContent() {
         const delay =
             activeEvent === 'pandemic-declared' && triggeredEvents.includes('sick-passenger')
                 ? POST_SICK_PASSENGER_NEWS_DELAY_MS
+                : activeEvent === 'flatmate-rent' && triggeredEvents.includes('vaccine-announced')
+                  ? POST_VACCINE_FLATMATE_DELAY_MS
                 : EVENT_MODAL_DELAY_MS;
 
         const timer = window.setTimeout(() => {
@@ -1291,6 +1298,20 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'grounded-choice' && isDianaPandemicScenario && (
                 <GroundedChoiceModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'flatmate-rent' && isDianaPandemicScenario && (
+                <FlatmateRentModal
+                    wallet={wallet}
+                    setWallet={setWallet}
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'mom-hospitalized' && isDianaPandemicScenario && (
+                <MomHospitalizedModal
                     wallet={wallet}
                     setWallet={setWallet}
                     onClose={handleCloseActiveEvent}
