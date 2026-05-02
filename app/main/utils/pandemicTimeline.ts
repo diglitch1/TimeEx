@@ -110,6 +110,12 @@ export const PANDEMIC_TIMELINE: TimelineMarker[] = [
         subtitle: 'Bottlenecks and cost pressures complicate the late-pandemic expansion',
     },
     {
+        date: '2021-09-23',
+        kind: 'event',
+        title: 'Diana Applies for Pilot Training',
+        eventId: 'pilot-training-application',
+    },
+    {
         date: '2021-12-31',
         kind: 'market',
         title: 'Pandemic era year-end',

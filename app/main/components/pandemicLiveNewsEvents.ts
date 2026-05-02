@@ -44,4 +44,8 @@ export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
         id: 'rehiring-offer',
         date: '2021-03-11',
     },
+    {
+        id: 'pilot-training-application',
+        date: '2021-09-23',
+    },
 ];
