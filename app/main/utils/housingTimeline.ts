@@ -40,6 +40,12 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
     {
         date: '2008-03-16',
         kind: 'event',
+        title: 'Subprime Lender Collapse',
+        eventId: 'subprime-lender-collapse-news',
+    },
+    {
+        date: '2008-03-16',
+        kind: 'event',
         title: 'Workstation Failure',
         eventId: 'laptop-failure',
     },
@@ -102,6 +108,12 @@ export const HOUSING_TIMELINE: TimelineMarker[] = [
         kind: 'market',
         title: 'Citigroup receives support',
         subtitle: 'U.S. authorities announce a rescue package for a major bank under pressure.',
+    },
+    {
+        date: '2008-11-23',
+        kind: 'event',
+        title: 'Banking Crisis Deepens',
+        eventId: 'banking-crisis-deepens-news',
     },
     {
         date: '2008-11-23',

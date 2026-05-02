@@ -27,8 +27,9 @@ type MemoryRound = {
 };
 
 const OUTSIDE_LAWYER_COST = 7500;
-const FULL_CLAIM_AMOUNT = 50000;
+const FULL_CLAIM_AMOUNT = 40000;
 const PENDING_LAWSUIT_KEY = 'clientLawsuitPending';
+const GAME_OVER_RESULT_DELAY_MS = 3500;
 
 type PendingLawsuitState = {
     lawyer: LawyerChoice;
@@ -180,6 +181,16 @@ export default function ClientLawsuitModal({
 
         onGameOver(`Could not raise enough cash for court costs of ${formatWalletCurrency(totalCost)}.`);
     }, [hasEnoughCash, onGameOver, pendingAtOpen, totalCost]);
+
+    useEffect(() => {
+        if (stage !== 'result' || canCoverWithNetWorth) return;
+
+        const timer = window.setTimeout(() => {
+            onGameOver(`Cain's total net worth could not cover court costs of ${formatWalletCurrency(totalCost)}.`);
+        }, GAME_OVER_RESULT_DELAY_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [canCoverWithNetWorth, onGameOver, stage, totalCost]);
 
     const startMemoryGame = () => {
         setRoundIndex(0);

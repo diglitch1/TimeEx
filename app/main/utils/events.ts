@@ -64,6 +64,10 @@ export const HOUSING_GAME_EVENTS: GameEvent[] = [
         date: '2007-12-12',
     },
     {
+        id: 'subprime-lender-collapse-news',
+        date: '2008-03-16',
+    },
+    {
         id: 'laptop-failure',
         date: '2008-03-16',
     },
@@ -78,6 +82,10 @@ export const HOUSING_GAME_EVENTS: GameEvent[] = [
     {
         id: 'emergency-housing-notice',
         date: '2008-09-29',
+    },
+    {
+        id: 'banking-crisis-deepens-news',
+        date: '2008-11-23',
     },
     {
         id: 'client-lawsuit',

@@ -16,6 +16,7 @@ import DotComFrenzyModal from './components/DotComFrenzyModal';
 import PandemicDeclaredModal from './components/PandemicDeclaredModal';
 import SickPassengerModal from './components/SickPassengerModal';
 import GoodbyePartyModal from './components/GoodbyePartyModal';
+import FinancialCrisisNewsModal from './components/FinancialCrisisNewsModal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './components/sidebar';
 import MainPanel from './components/mainPanel';
@@ -1215,6 +1216,18 @@ function MainPageContent() {
             )}
             {eventModalOpen && activeEvent === 'vaccine-announced' && (
                 <VaccineAnnouncedModal onClose={handleCloseActiveEvent} />
+            )}
+            {eventModalOpen && activeEvent === 'subprime-lender-collapse-news' && (
+                <FinancialCrisisNewsModal
+                    variant="subprime-lender-collapse"
+                    onClose={handleCloseActiveEvent}
+                />
+            )}
+            {eventModalOpen && activeEvent === 'banking-crisis-deepens-news' && (
+                <FinancialCrisisNewsModal
+                    variant="banking-crisis-deepens"
+                    onClose={handleCloseActiveEvent}
+                />
             )}
             {eventModalOpen && activeEvent === 'family-help' && (
                 <FamilyHelpModal
