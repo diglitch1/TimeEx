@@ -40,4 +40,8 @@ export const PANDEMIC_LIVE_NEWS_EVENTS: PandemicLiveNewsEvent[] = [
         id: 'mom-hospitalized',
         date: '2021-01-15',
     },
+    {
+        id: 'rehiring-offer',
+        date: '2021-03-11',
+    },
 ];
