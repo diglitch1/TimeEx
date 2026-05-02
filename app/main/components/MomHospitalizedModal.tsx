@@ -15,23 +15,28 @@ type Choice = 'hospital' | 'phone';
 const PHONE_GIF = '/images/COVID-19-PANDEMIC/icons/phone.gif';
 const PHONE_ICON = '/images/COVID-19-PANDEMIC/icons/phone2.png';
 const HOSPITAL_ICON = '/images/COVID-19-PANDEMIC/icons/hospital.png';
+const ARROW_ICON = '/images/COVID-19-PANDEMIC/icons/arrow.png';
 const EVENT_IMAGE = '/images/COVID-19-PANDEMIC/events/mom-hospitalized.png';
 const FADE_MS = 700;
 const BILL_HELP_AMOUNT = 800;
+const SHOW_PICKUP_HOTSPOT = true;
 
 const PICKUP_HOTSPOT = {
-    // Manual position and size controls for the invisible clickable pickup area over phone.gif.
-    x: 63,
-    y: 70,
-    width: 18,
-    height: 12,
+    // Manual position and size controls for the clickable pickup area over phone.gif.
+    // Set SHOW_PICKUP_HOTSPOT to true while positioning, then false when done.
+    x: 46.9,
+    y: 45.3,
+    width: 7,
+    height: 7,
 };
 
 const PICKUP_ARROW = {
     // Manual position and rotation controls for the visible animated arrow over phone.gif.
-    x: -85,
-    y: -170,
+    x: -90,
+    y: -20,
     rotationDeg: 90,
+    widthRem: 2.8,
+    heightRem: 2.8,
 };
 
 function isLongHaulRoute() {
@@ -58,7 +63,7 @@ export default function MomHospitalizedModal({ wallet, setWallet, onClose }: Pro
     const billCost = helpBills ? BILL_HELP_AMOUNT : 0;
 
     useEffect(() => {
-        [PHONE_GIF, PHONE_ICON, HOSPITAL_ICON, EVENT_IMAGE].forEach(src => {
+        [PHONE_GIF, PHONE_ICON, HOSPITAL_ICON, ARROW_ICON, EVENT_IMAGE].forEach(src => {
             const image = new window.Image();
             image.src = src;
         });
@@ -152,20 +157,27 @@ export default function MomHospitalizedModal({ wallet, setWallet, onClose }: Pro
                                         height: `${PICKUP_HOTSPOT.height}%`,
                                     }}
                                 >
-                                    <span
-                                        className="absolute animate-bounce text-3xl font-black leading-none text-red-900"
+                                    <img
+                                        src={ARROW_ICON}
+                                        alt=""
+                                        className="absolute animate-bounce object-contain drop-shadow-[0_8px_14px_rgba(239,68,68,0.35)]"
                                         style={{
                                             left: `${PICKUP_ARROW.x - PICKUP_HOTSPOT.x + 50}%`,
                                             top: `${PICKUP_ARROW.y - PICKUP_HOTSPOT.y + 50}%`,
+                                            width: `${PICKUP_ARROW.widthRem}rem`,
+                                            height: `${PICKUP_ARROW.heightRem}rem`,
                                             transform: `translate(-50%, -50%) rotate(${PICKUP_ARROW.rotationDeg}deg)`,
                                         }}
-                                    >
-                                        {'>'}
-                                    </span>
+                                        draggable={false}
+                                    />
                                     <button
                                         type="button"
                                         onClick={() => transitionTo('main')}
-                                        className="absolute inset-0 h-full w-full opacity-0"
+                                        className={`absolute inset-0 h-full w-full ${
+                                            SHOW_PICKUP_HOTSPOT
+                                                ? 'rounded-lg border-2 border-dashed border-red-500 bg-red-500/20'
+                                                : 'opacity-0'
+                                        }`}
                                         style={{ cursor: 'pointer' }}
                                         aria-label="Pick up incoming call"
                                     />
